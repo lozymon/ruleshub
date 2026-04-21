@@ -641,12 +641,12 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Phase 4 — CLI
 
-- [ ] `npx ruleshub install <name> --tool claude-code` — installs into correct paths
-- [ ] `npx ruleshub publish` — packages and publishes
-- [ ] `npx ruleshub outdated` — check installed assets for newer versions
-- [ ] `npx ruleshub update` — update outdated assets
-- [ ] Conflict detection — warn before overwriting existing files
-- [ ] Asset preview — show file contents before writing (`--dry-run`)
+- [x] `npx ruleshub install <name> --tool claude-code` — installs into correct paths
+- [x] `npx ruleshub publish` — packages and publishes
+- [x] `npx ruleshub outdated` — check installed assets for newer versions
+- [x] `npx ruleshub update` — update outdated assets
+- [x] Conflict detection — warn before overwriting existing files
+- [x] Asset preview — show file contents before writing (`--dry-run`)
 
 ### Phase 5 — Organisations & Trust
 

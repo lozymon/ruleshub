@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
 
 export default async function HomePage() {
+  const empty = { data: [], total: 0 };
   const [{ data: trending, total }, { data: recent }] = await Promise.all([
-    searchPackages({ limit: 6 }),
-    searchPackages({ limit: 6 }),
+    searchPackages({ limit: 6 }).catch(() => empty),
+    searchPackages({ limit: 6 }).catch(() => empty),
   ]);
 
   return (

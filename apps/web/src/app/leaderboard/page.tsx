@@ -11,7 +11,11 @@ interface LeaderboardData {
 }
 
 export default async function LeaderboardPage() {
-  const data = await apiClient.get<LeaderboardData>('/leaderboard');
+  const data = await apiClient.get<LeaderboardData>('/leaderboard').catch(() => ({
+    topPublishers: [],
+    trendingPackages: [],
+    mostStarred: [],
+  } as LeaderboardData));
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">

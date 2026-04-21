@@ -2,23 +2,31 @@ import { PackageCardSkeleton } from '@/components/packages/package-card-skeleton
 
 export default function BrowseLoading() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex gap-8">
-        <aside className="w-64 shrink-0">
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-8 bg-muted rounded animate-pulse" />
-            ))}
-          </div>
-        </aside>
-        <main className="flex-1">
-          <div className="h-4 w-24 bg-muted rounded animate-pulse mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <PackageCardSkeleton key={i} />
-            ))}
-          </div>
-        </main>
+    <div className="mx-auto max-w-[1240px] px-6">
+      <div className="pt-7">
+        <div className="skeleton-shimmer h-7 w-48 rounded" />
+        <div className="skeleton-shimmer mt-2 h-4 w-32 rounded" />
+      </div>
+
+      <div className="mt-5 border-b border-border pb-px">
+        <div className="flex gap-1 py-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton-shimmer h-8 w-20 rounded" />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 py-8 md:grid-cols-[240px_1fr]">
+        <div className="space-y-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="skeleton-shimmer h-7 rounded" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <PackageCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,19 +1,40 @@
-'use client'; // needs interactivity for filter changes
+'use client';
 
+import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { TOOL_LABELS, type PackageSearchParams } from '@ruleshub/types';
-import { routes } from '@/lib/routes';
+import { FileText, Terminal, GitBranch, Bot, Plug, Package, Flame, Clock, Star, Download, Shield } from 'lucide-react';
 
-const ASSET_TYPES = ['rule', 'command', 'workflow', 'agent', 'mcp-server', 'pack'] as const;
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.12-1.47-1.12-1.47-.91-.62.07-.61.07-.61 1.01.07 1.54 1.04 1.54 1.04.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.28.1-2.66 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.41.1 2.66.64.7 1.03 1.59 1.03 2.68 0 3.84-2.35 4.68-4.58 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z" />
+    </svg>
+  );
+}
+import { TOOL_LABELS } from '@ruleshub/types';
+import type { SupportedTool, PackageSearchParams } from '@ruleshub/types';
+import { TOOL_COLORS } from '@/lib/tool-colors';
+import { routes } from '@/lib/routes';
+import { cn } from '@/lib/utils';
+
+const ASSET_TYPES = [
+  { id: 'rule',     label: 'Rules',       Icon: FileText },
+  { id: 'command',  label: 'Commands',    Icon: Terminal },
+  { id: 'workflow', label: 'Workflows',   Icon: GitBranch },
+  { id: 'agent',    label: 'Agents',      Icon: Bot },
+  { id: 'mcp',      label: 'MCP Servers', Icon: Plug },
+  { id: 'pack',     label: 'Packs',       Icon: Package },
+] as const;
+
+const SORT_OPTIONS = [
+  { id: 'trending',  label: 'Trending',        Icon: Flame },
+  { id: 'newest',    label: 'Newest',           Icon: Clock },
+  { id: 'stars',     label: 'Most stars',       Icon: Star },
+  { id: 'downloads', label: 'Most downloads',   Icon: Download },
+] as const;
 
 interface BrowseFiltersProps {
-  current: PackageSearchParams;
-}
-
-function toSelectValue(value: string | null | undefined): string {
-  return value == null ? 'all' : value;
+  current: PackageSearchParams & { sort?: string };
 }
 
 export function BrowseFilters({ current }: BrowseFiltersProps) {
@@ -35,44 +56,71 @@ export function BrowseFilters({ current }: BrowseFiltersProps) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  const currentType = current.type ?? 'all';
+  const currentTool = current.tool ?? 'all';
+  const currentSort = (current as { sort?: string }).sort ?? 'trending';
+
+  const filterBtn = (active: boolean) =>
+    cn(
+      'flex w-full items-center gap-2 rounded-[4px] px-2 py-1.5 text-[13px] text-left transition-colors',
+      active
+        ? 'bg-bg-elev text-foreground'
+        : 'text-fg-muted hover:bg-bg-elev hover:text-foreground',
+    );
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+
+      {/* Asset type */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Search</label>
-        <Input
-          placeholder="Search assets…"
-          defaultValue={current.q}
-          onBlur={(e) => update('q', e.target.value || undefined)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') update('q', (e.target as HTMLInputElement).value || undefined);
-          }}
-        />
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+          Asset type
+        </div>
+        <button className={filterBtn(currentType === 'all')} onClick={() => update('type', undefined)}>
+          All types
+        </button>
+        {ASSET_TYPES.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            className={filterBtn(currentType === id)}
+            onClick={() => update('type', id)}
+          >
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            {label}
+          </button>
+        ))}
       </div>
 
+      {/* Sort by */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Type</label>
-        <Select value={toSelectValue(current.type)} onValueChange={(v) => update('type', v === 'all' ? undefined : v)}>
-          <SelectTrigger><SelectValue placeholder="All types" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {ASSET_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+          Sort by
+        </div>
+        {SORT_OPTIONS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            className={filterBtn(currentSort === id)}
+            onClick={() => update('sort', id)}
+          >
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            {label}
+          </button>
+        ))}
       </div>
 
+      {/* Community */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Tool</label>
-        <Select value={toSelectValue(current.tool)} onValueChange={(v) => update('tool', v === 'all' ? undefined : v)}>
-          <SelectTrigger><SelectValue placeholder="All tools" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All tools</SelectItem>
-            {Object.entries(TOOL_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+          Community
+        </div>
+        <button className={filterBtn(false)}>
+          <Shield className="h-3.5 w-3.5 shrink-0" />
+          Verified only
+        </button>
+        <button className={filterBtn(false)}>
+          <GithubIcon className="h-3.5 w-3.5 shrink-0" />
+          Open source
+        </button>
       </div>
     </div>
   );

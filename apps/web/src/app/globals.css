@@ -161,15 +161,23 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* next/font sets --font-geist-sans on this element; make it globally available */
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'cv11', 'ss01';
   }
-  html {
-    @apply font-sans;
+  /* Ensure mono font applies where needed */
+  code, kbd, pre, samp {
+    font-family: var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+    font-feature-settings: normal;
   }
 }
 

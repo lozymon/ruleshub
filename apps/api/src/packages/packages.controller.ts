@@ -91,6 +91,16 @@ export class PackagesController {
     return this.packagesService.publish(user.id, file.buffer);
   }
 
+  @Post(':namespace/:name/fork')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Fork a package into own namespace' })
+  @ApiResponse({ status: 201 })
+  @ApiParam({ name: 'namespace' }) @ApiParam({ name: 'name' })
+  fork(@Req() req: Request, @Param('namespace') namespace: string, @Param('name') name: string) {
+    return this.packagesService.fork((req.user as User).id, namespace, name);
+  }
+
   @Delete(':namespace/:name/:version')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

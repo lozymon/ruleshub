@@ -5,6 +5,11 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { StorageModule } from './storage/storage.module';
 import { PackagesModule } from './packages/packages.module';
+import { StarsModule } from './stars/stars.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+import { CollectionsModule } from './collections/collections.module';
+import { CommentsModule } from './comments/comments.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -18,6 +23,11 @@ import configuration from './config/configuration';
     AuthModule,
     StorageModule,
     PackagesModule,
+    StarsModule,
+    RecommendationsModule,
+    CollectionsModule,
+    CommentsModule,
+    LeaderboardModule,
   ],
 })
 export class AppModule {}

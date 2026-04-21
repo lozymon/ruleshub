@@ -168,6 +168,38 @@ export class PackagesService {
     return { url };
   }
 
+  async fork(userId: string, namespace: string, name: string): Promise<Package> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new ForbiddenException('User not found');
+
+    const source = await this.prisma.package.findUnique({
+      where: { namespace_name: { namespace, name } },
+    });
+    if (!source) throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    const existing = await this.prisma.package.findUnique({
+      where: { namespace_name: { namespace: user.username, name } },
+    });
+    if (existing) {
+      throw new ConflictException(`You already have a package named ${name}`);
+    }
+
+    return this.prisma.package.create({
+      data: {
+        namespace: user.username,
+        name,
+        type: source.type,
+        description: source.description,
+        tags: source.tags,
+        projectTypes: source.projectTypes,
+        supportedTools: source.supportedTools,
+        ownerType: 'user',
+        ownerUserId: userId,
+        forkedFromId: source.id,
+      },
+    });
+  }
+
   async yank(userId: string, namespace: string, name: string, version: string): Promise<void> {
     await this.assertOwnership(userId, namespace);
 

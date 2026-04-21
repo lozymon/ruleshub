@@ -28,9 +28,11 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  packages   Package[]
-  orgMembers OrgMember[]
-  stars      Star[]
+  packages     Package[]
+  orgMembers   OrgMember[]
+  stars        Star[]
+  collections  Collection[]
+  comments     Comment[]
 }
 
 model Organisation {
@@ -80,9 +82,11 @@ model Package {
   forkedFromId String?
   forks      Package[]     @relation("Forks")
 
-  versions      PackageVersion[]
-  starredBy     Star[]
-  githubImport  GitHubImport?
+  versions         PackageVersion[]
+  starredBy        Star[]
+  githubImport     GitHubImport?
+  collectionItems  CollectionItem[]
+  comments         Comment[]
 
   @@unique([namespace, name])
   @@index([namespace])
@@ -122,4 +126,50 @@ model GitHubImport {
   lastSyncedAt DateTime?
   webhookId    String?
   createdAt    DateTime @default(now())
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  slug        String
+  title       String
+  description String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       CollectionItem[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model CollectionItem {
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+  package      Package    @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  packageId    String
+  addedAt      DateTime   @default(now())
+
+  @@id([collectionId, packageId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  packageId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([packageId])
+}
+
+model EmailSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }

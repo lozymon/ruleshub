@@ -629,14 +629,14 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Phase 3 — Discovery & Community
 
-- [ ] Stars and ratings
-- [ ] Recommendations endpoint (`projectType` + `tool`)
-- [ ] Featured / trending on homepage
-- [ ] `/tools/:tool` pages
-- [ ] Fork & remix — fork asset into own namespace with attribution
-- [ ] Collections — create and share curated asset lists
-- [ ] Comments & discussions per asset
-- [ ] Leaderboard — top publishers and trending assets
+- [x] Stars and ratings
+- [x] Recommendations endpoint (`projectType` + `tool`)
+- [x] Featured / trending on homepage
+- [x] `/tools/:tool` pages
+- [x] Fork & remix — fork asset into own namespace with attribution
+- [x] Collections — create and share curated asset lists
+- [x] Comments & discussions per asset
+- [x] Leaderboard — top publishers and trending assets
 - [ ] Weekly digest email signup + sending
 
 ### Phase 4 — CLI

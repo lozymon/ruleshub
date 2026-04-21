@@ -15,16 +15,32 @@ function GithubIcon({ className }: { className?: string }) {
 import { useState, useEffect, useRef } from 'react';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { config } from '@/lib/config';
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { user, logout, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function close(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -121,14 +137,67 @@ export function Navbar() {
             <GithubIcon className="h-4 w-4" />
           </a>
 
-          {/* Sign in */}
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/v1/auth/github`}
-            className="flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <GithubIcon className="h-3.5 w-3.5" />
-            Sign in
-          </a>
+          {/* Auth */}
+          {mounted && !loading && (
+            user ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen((o) => !o)}
+                  className="flex h-[34px] items-center gap-2 rounded-md border border-border px-2 text-[13px] font-medium text-foreground transition-colors hover:border-border-hover hover:bg-bg-elev"
+                >
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.username} className="h-5 w-5 rounded-full" />
+                  ) : (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary font-mono text-[10px] font-bold text-primary-foreground">
+                      {user.username[0]?.toUpperCase()}
+                    </span>
+                  )}
+                  <span className="hidden sm:block">{user.username}</span>
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-[calc(100%+6px)] z-50 min-w-[160px] overflow-hidden rounded-lg border border-border bg-bg-elev shadow-lg">
+                    <Link
+                      href={routes.dashboard}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center px-3 py-2 text-[13px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href={routes.publish}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center px-3 py-2 text-[13px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
+                    >
+                      Publish
+                    </Link>
+                    <Link
+                      href={routes.user(user.username)}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center px-3 py-2 text-[13px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
+                    >
+                      Profile
+                    </Link>
+                    <div className="border-t border-border" />
+                    <button
+                      onClick={() => { logout(); setUserMenuOpen(false); }}
+                      className="flex w-full items-center px-3 py-2 text-[13px] text-destructive transition-colors hover:bg-bg-elev-2"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <a
+                href={`${config.apiUrl}/auth/github`}
+                className="flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <GithubIcon className="h-3.5 w-3.5" />
+                Sign in
+              </a>
+            )
+          )}
         </div>
       </div>
     </nav>

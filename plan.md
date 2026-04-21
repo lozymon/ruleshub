@@ -615,8 +615,8 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Shared `types` package — `PackageManifest` schema + Zod validation + supported tools enum
 - [x] NestJS API skeleton with Swagger/OpenAPI
 - [x] Prisma schema + migrations
-- [ ] GitHub OAuth (Passport.js)
-- [ ] File storage abstraction (local dev → R2 in prod)
+- [x] GitHub OAuth (Passport.js)
+- [x] File storage abstraction (local dev → R2 in prod)
 - [x] Next.js 15 scaffold with Tailwind + shadcn/ui
 
 ### Phase 2 — Core Features

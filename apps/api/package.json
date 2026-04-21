@@ -20,6 +20,7 @@
     "@nestjs/swagger": "^7.0.0",
     "@prisma/client": "^5.0.0",
     "@ruleshub/types": "workspace:*",
+    "adm-zip": "^0.5.17",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "minio": "^8.0.7",
@@ -32,7 +33,9 @@
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
+    "@types/adm-zip": "^0.5.8",
     "@types/express": "^4.17.21",
+    "@types/multer": "^2.1.0",
     "@types/node": "^20.0.0",
     "@types/passport-github2": "^1.2.9",
     "@types/passport-jwt": "^4.0.1",

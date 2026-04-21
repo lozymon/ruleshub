@@ -621,11 +621,11 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Phase 2 — Core Features
 
-- [ ] Publish endpoint + web UI form
-- [ ] Browse/search page — filter by tool, type, tag, projectType
-- [ ] Package detail page with readme rendering + per-tool install instructions
-- [ ] Download endpoint
-- [ ] User profile pages
+- [x] Publish endpoint + web UI form
+- [x] Browse/search page — filter by tool, type, tag, projectType
+- [x] Package detail page with readme rendering + per-tool install instructions
+- [x] Download endpoint
+- [x] User profile pages
 
 ### Phase 3 — Discovery & Community
 

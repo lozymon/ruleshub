@@ -1,14 +1,15 @@
-import type { Metadata } from 'next';
-import { Wrench } from 'lucide-react';
+import type { Metadata } from "next";
+import { Wrench } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: 'Maintenance — RulesHub',
-  description: 'RulesHub is currently undergoing maintenance. We\'ll be back shortly.',
+  title: "Maintenance — RulesHub",
+  description:
+    "RulesHub is currently undergoing maintenance. We'll be back shortly.",
 };
 
 export default function MaintenancePage() {
   return (
-    <div className="flex min-h-[calc(100vh-var(--navbar-height,64px))] flex-col items-center justify-center px-6 py-24 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-24 text-center">
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-bg-elev text-fg-muted">
         <Wrench className="h-7 w-7" />
       </div>
@@ -23,8 +24,8 @@ export default function MaintenancePage() {
       </h1>
 
       <p className="max-w-[460px] text-[16px] leading-relaxed text-fg-muted">
-        RulesHub is currently undergoing maintenance. We&apos;re making improvements
-        to the platform and will be back online shortly.
+        RulesHub is currently undergoing maintenance. We&apos;re making
+        improvements to the platform and will be back online shortly.
       </p>
     </div>
   );

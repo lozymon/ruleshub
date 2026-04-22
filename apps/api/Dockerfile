@@ -15,7 +15,7 @@ WORKDIR /app
 COPY packages/types ./packages/types
 COPY apps/api ./apps/api
 RUN pnpm --filter @ruleshub/types build
-RUN pnpm --filter api prisma generate
+RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter api build
 
 # Production image

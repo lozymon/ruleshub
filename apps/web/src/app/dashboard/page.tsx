@@ -42,7 +42,7 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 py-8">
         <div>
           <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Dashboard</h1>
-          <p className="mt-1 text-fg-dim">Here's how your packages are doing.</p>
+          <p className="mt-1 text-fg-dim">Here&apos;s how your packages are doing.</p>
         </div>
         <Link
           href={routes.publish}

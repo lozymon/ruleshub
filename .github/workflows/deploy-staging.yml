@@ -1,22 +1,4 @@
 name: Deploy — Staging
 
 on:
-  push:
-    branches: [develop]
-
-jobs:
-  deploy:
-    name: Trigger Coolify staging deploy
-    runs-on: ubuntu-latest
-    needs: []
-
-    steps:
-      - name: Trigger Coolify deploy (API)
-        run: |
-          curl --fail -X POST "${{ secrets.COOLIFY_STAGING_API_WEBHOOK }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_STAGING_API_TOKEN }}"
-
-      - name: Trigger Coolify deploy (Web)
-        run: |
-          curl --fail -X POST "${{ secrets.COOLIFY_STAGING_WEB_WEBHOOK }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_STAGING_WEB_TOKEN }}"
+  workflow_dispatch: # manual trigger only — staging not configured yet

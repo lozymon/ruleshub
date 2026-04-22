@@ -110,7 +110,7 @@ export default async function UserPage({ params }: UserPageProps) {
               <Package className="h-5 w-5 text-fg-dim" />
             </div>
             <h3 className="mb-1.5 text-[16px] font-medium">No packages yet</h3>
-            <p className="text-fg-dim">This publisher hasn't released anything yet.</p>
+            <p className="text-fg-dim">This publisher hasn&apos;t released anything yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">

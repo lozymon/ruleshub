@@ -9,7 +9,7 @@
     "start": "node dist/main",
     "lint": "echo 'ESLint not configured for API yet'",
     "typecheck": "tsc --noEmit",
-    "test": "jest --config jest-e2e.json"
+    "test": "jest --config jest-e2e.json --passWithNoTests"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

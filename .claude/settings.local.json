@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(pnpm --filter web exec tsc --noEmit)"
-    ]
-  }
-}

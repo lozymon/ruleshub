@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Generate Prisma client
-        run: pnpm --filter api prisma generate
+        run: pnpm --filter api exec prisma generate
       - run: pnpm typecheck
 
   Test:
@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Generate Prisma client
-        run: pnpm --filter api prisma generate
+        run: pnpm --filter api exec prisma generate
       - name: Run Prisma migrations
-        run: pnpm --filter api prisma migrate deploy
+        run: pnpm --filter api exec prisma migrate deploy
       - run: pnpm test

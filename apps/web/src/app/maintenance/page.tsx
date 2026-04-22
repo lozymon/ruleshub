@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function MaintenancePage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-24 text-center">
+    <div className="flex h-full flex-col items-center justify-center px-6 py-24 text-center">
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-bg-elev text-fg-muted">
         <Wrench className="h-7 w-7" />
       </div>

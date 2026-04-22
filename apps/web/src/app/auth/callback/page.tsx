@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 // Handles redirect from API OAuth: /auth/callback?token=<jwt>
 import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';

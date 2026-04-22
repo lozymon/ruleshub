@@ -1,0 +1,33 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { StorageModule } from './storage/storage.module';
+import { PackagesModule } from './packages/packages.module';
+import { StarsModule } from './stars/stars.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+import { CollectionsModule } from './collections/collections.module';
+import { CommentsModule } from './comments/comments.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
+import configuration from './config/configuration';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    StorageModule,
+    PackagesModule,
+    StarsModule,
+    RecommendationsModule,
+    CollectionsModule,
+    CommentsModule,
+    LeaderboardModule,
+  ],
+})
+export class AppModule {}

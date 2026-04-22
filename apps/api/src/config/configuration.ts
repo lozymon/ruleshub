@@ -1,0 +1,26 @@
+export default () => ({
+  port: parseInt(process.env.PORT ?? '3001', 10),
+  appUrl: process.env.APP_URL ?? 'http://localhost:3000',
+  database: {
+    url: process.env.DATABASE_URL,
+  },
+  auth: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackUrl: process.env.GITHUB_CALLBACK_URL,
+    },
+    jwt: {
+      secret: process.env.JWT_SECRET,
+      expiresIn: '7d',
+    },
+  },
+  storage: {
+    endpoint: process.env.MINIO_ENDPOINT ?? 'localhost',
+    port: parseInt(process.env.MINIO_PORT ?? '9000', 10),
+    useSsl: process.env.MINIO_USE_SSL === 'true',
+    accessKey: process.env.MINIO_ACCESS_KEY ?? '',
+    secretKey: process.env.MINIO_SECRET_KEY ?? '',
+    bucket: process.env.MINIO_BUCKET ?? 'ruleshub-packages',
+  },
+});

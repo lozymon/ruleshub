@@ -508,7 +508,7 @@ Everything that must exist before writing application code.
 
 #### GitHub
 
-- [ ] Create GitHub repository `ruleshub` (monorepo, public)
+- [x] Create GitHub repository `ruleshub` (monorepo, public)
 - [x] Add `LICENSE` files — AGPL-3.0 at root, MIT in `packages/types` and `packages/cli`
 - [x] Add `CONTRIBUTING.md` — how to add new tool targets, PR guidelines
 - [ ] Register GitHub OAuth App — get `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET`
@@ -612,47 +612,49 @@ MINIO_BUCKET=ruleshub-packages
 ### Phase 1 — Foundation
 
 - [x] Monorepo scaffold (pnpm + Turborepo)
-- [ ] Shared `types` package — `PackageManifest` schema + Zod validation + supported tools enum
-- [ ] NestJS API skeleton with Swagger/OpenAPI
-- [ ] Prisma schema + migrations
-- [ ] GitHub OAuth (Passport.js)
-- [ ] File storage abstraction (local dev → R2 in prod)
-- [ ] Next.js 15 scaffold with Tailwind + shadcn/ui
+- [x] Shared `types` package — `PackageManifest` schema + Zod validation + supported tools enum
+- [x] NestJS API skeleton with Swagger/OpenAPI
+- [x] Prisma schema + migrations
+- [x] GitHub OAuth (Passport.js)
+- [x] File storage abstraction (local dev → R2 in prod)
+- [x] Next.js 15 scaffold with Tailwind + shadcn/ui
+- [x] Design system overhaul — dark-first, Geist fonts, custom design tokens, navbar, footer
 
 ### Phase 2 — Core Features
 
-- [ ] Publish endpoint + web UI form
-- [ ] Browse/search page — filter by tool, type, tag, projectType
-- [ ] Package detail page with readme rendering + per-tool install instructions
-- [ ] Download endpoint
-- [ ] User profile pages
+- [x] Publish endpoint + web UI form (3-step wizard: manifest → upload → dry-run preview)
+- [x] Browse/search page — filter by tool, type, tag, projectType
+- [x] Package detail page — InstallBlock, StarButton, README/versions/sidebar layout
+- [x] Download endpoint
+- [x] Dashboard page — stat cards, packages table, chart placeholder
+- [ ] User profile page (`/users/[username]`) — stub exists, needs design overhaul
 
 ### Phase 3 — Discovery & Community
 
-- [ ] Stars and ratings
-- [ ] Recommendations endpoint (`projectType` + `tool`)
-- [ ] Featured / trending on homepage
-- [ ] `/tools/:tool` pages
-- [ ] Fork & remix — fork asset into own namespace with attribution
-- [ ] Collections — create and share curated asset lists
-- [ ] Comments & discussions per asset
-- [ ] Leaderboard — top publishers and trending assets
+- [x] Stars and ratings
+- [x] Recommendations endpoint (`projectType` + `tool`)
+- [x] Featured / trending on homepage
+- [ ] `/tools/:tool` pages — stub exists, needs design overhaul
+- [x] Fork & remix — fork asset into own namespace with attribution
+- [x] Collections — create and share curated asset lists
+- [x] Comments & discussions per asset
+- [ ] Leaderboard page (`/leaderboard`) — stub exists, needs design overhaul
 - [ ] Weekly digest email signup + sending
 
 ### Phase 4 — CLI
 
-- [ ] `npx ruleshub install <name> --tool claude-code` — installs into correct paths
-- [ ] `npx ruleshub publish` — packages and publishes
-- [ ] `npx ruleshub outdated` — check installed assets for newer versions
-- [ ] `npx ruleshub update` — update outdated assets
-- [ ] Conflict detection — warn before overwriting existing files
-- [ ] Asset preview — show file contents before writing (`--dry-run`)
+- [x] `npx ruleshub install <name> --tool claude-code` — installs into correct paths
+- [x] `npx ruleshub publish` — packages and publishes
+- [x] `npx ruleshub outdated` — check installed assets for newer versions
+- [x] `npx ruleshub update` — update outdated assets
+- [x] Conflict detection — warn before overwriting existing files
+- [x] Asset preview — show file contents before writing (`--dry-run`)
 
 ### Phase 5 — Organisations & Trust
 
 - [ ] Organisation accounts — team namespaces (`acmecorp/nestjs-rules`)
 - [ ] Org dashboard — manage members and packages
-- [ ] Verified publisher badges — manual review + badge on profile and packages
+- [ ] Verified publisher badges — `owner.verified` field exists in DB/DTO; badge shown on package detail; no admin management UI yet
 - [ ] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [ ] Version diff viewer — side-by-side diff between versions
 - [ ] Structured changelogs — per-version release notes field
@@ -660,6 +662,18 @@ MINIO_BUCKET=ruleshub-packages
 - [ ] API keys — `RULESHUB_TOKEN` for CI/CD publishing without browser OAuth
 - [ ] Webhooks for consumers — subscribe to new version notifications
 - [ ] README badges — auto-generated version + downloads badge per asset
+
+### Stub Pages Needing Design
+
+- [ ] `/users/[username]` — public profile page
+- [ ] `/tools/[tool]` — per-tool package listing
+- [ ] `/leaderboard` — top publishers and trending assets
+
+### Auth State (Browser)
+
+- [ ] Session token storage after GitHub OAuth callback
+- [ ] Auth-aware navbar (show avatar + logout when signed in)
+- [ ] Protected route redirects (`/dashboard`, `/publish`)
 
 ### Phase 6 — GitHub Integration
 

@@ -1,4 +1,0 @@
-name: Deploy — Staging
-
-on:
-  workflow_dispatch: # manual trigger only — staging not configured yet

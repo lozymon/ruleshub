@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
-const MAINTENANCE_PATH = '/maintenance';
+const MAINTENANCE_PATH = "/maintenance";
 
 export function middleware(request: NextRequest) {
-  if (process.env.MAINTENANCE_MODE !== 'true') {
+  if (process.env.MAINTENANCE_MODE !== "true") {
     return NextResponse.next();
   }
 
@@ -17,5 +17,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ["/((?!_next|favicon.ico|.*\\..*).*)"],
 };

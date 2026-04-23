@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
-const schema = z.object({
-  email: z.string().email(),
-});
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const result = schema.safeParse(body);
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
 
-  if (!result.success) {
+  if (!EMAIL_RE.test(email)) {
     return NextResponse.json(
       { error: "Invalid email address" },
       { status: 400 },
     );
   }
 
-  // TODO: wire up email service (SendGrid, Resend, etc.)
-  console.info("[waitlist]", result.data.email);
+  // Wire up email service (SendGrid, Resend, etc.) here
+  console.info("[waitlist]", email);
 
   return NextResponse.json({ success: true });
 }

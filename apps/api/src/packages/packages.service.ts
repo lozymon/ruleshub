@@ -5,15 +5,47 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
-} from '@nestjs/common';
-import AdmZip from 'adm-zip';
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { SearchPackagesDto } from './dto/search-packages.dto';
-import { PackageManifestSchema } from '@ruleshub/types';
-import { Package, PackageVersion, Prisma } from '@prisma/client';
+} from "@nestjs/common";
+import AdmZip from "adm-zip";
+import { PrismaService } from "../prisma/prisma.service";
+import { StorageService } from "../storage/storage.service";
+import { SearchPackagesDto } from "./dto/search-packages.dto";
+import { PackageManifestSchema } from "@ruleshub/types";
+import { Package, PackageVersion, User, Prisma } from "@prisma/client";
 
-export type PackageWithVersion = Package & { latestVersion: PackageVersion | null };
+type PackageWithIncludes = Package & {
+  versions: PackageVersion[];
+  owner: User | null;
+};
+
+export type PackageWithVersion = Package & {
+  latestVersion: PackageVersion | null;
+};
+
+function toPackageDto(p: PackageWithIncludes) {
+  return {
+    ...p,
+    fullName: `${p.namespace}/${p.name}`,
+    latestVersion: p.versions[0] ?? null,
+    owner: p.owner
+      ? {
+          id: p.owner.id,
+          username: p.owner.username,
+          avatarUrl: p.owner.avatarUrl,
+          bio: p.owner.bio,
+          verified: p.owner.verified,
+          createdAt: p.owner.createdAt,
+        }
+      : {
+          id: "",
+          username: p.namespace,
+          avatarUrl: null,
+          bio: null,
+          verified: false,
+          createdAt: p.createdAt,
+        },
+  };
+}
 
 @Injectable()
 export class PackagesService {
@@ -25,21 +57,40 @@ export class PackagesService {
   ) {}
 
   async search(params: SearchPackagesDto) {
-    const { q, type, tag, projectType, tool, scope, page = 1, limit = 20 } = params;
+    const {
+      q,
+      type,
+      tag,
+      projectType,
+      tool,
+      scope,
+      namespace,
+      sort,
+      page = 1,
+      limit = 20,
+    } = params;
     const skip = (page - 1) * limit;
+
+    const orderBy: Prisma.PackageOrderByWithRelationInput =
+      sort === "newest"
+        ? { createdAt: "desc" }
+        : sort === "mostStarred"
+          ? { stars: "desc" }
+          : { totalDownloads: "desc" };
 
     const where: Prisma.PackageWhereInput = {
       isPrivate: false,
+      ...(namespace && { namespace }),
       ...(type && { type }),
       ...(tag && { tags: { has: tag } }),
       ...(projectType && { projectTypes: { has: projectType } }),
       ...(tool && { supportedTools: { has: tool } }),
-      ...(scope === 'pack' && { type: 'pack' }),
-      ...(scope === 'individual' && { type: { not: 'pack' } }),
+      ...(scope === "pack" && { type: "pack" }),
+      ...(scope === "individual" && { type: { not: "pack" } }),
       ...(q && {
         OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { description: { contains: q, mode: 'insensitive' } },
+          { name: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
           { tags: { has: q } },
         ],
       }),
@@ -50,41 +101,54 @@ export class PackagesService {
         where,
         skip,
         take: limit,
-        orderBy: { totalDownloads: 'desc' },
-        include: { versions: { orderBy: { publishedAt: 'desc' }, take: 1 } },
+        orderBy,
+        include: {
+          versions: { orderBy: { publishedAt: "desc" }, take: 1 },
+          owner: true,
+        },
       }),
       this.prisma.package.count({ where }),
     ]);
 
     return {
-      data: data.map((p) => ({ ...p, latestVersion: p.versions[0] ?? null })),
+      data: data.map(toPackageDto),
       total,
       page,
       limit,
     };
   }
 
-  async findByFullName(namespace: string, name: string): Promise<PackageWithVersion> {
+  async findByFullName(namespace: string, name: string) {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
-      include: { versions: { orderBy: { publishedAt: 'desc' }, take: 1 } },
+      include: {
+        versions: { orderBy: { publishedAt: "desc" }, take: 1 },
+        owner: true,
+      },
     });
 
-    if (!pkg) throw new NotFoundException(`Package ${namespace}/${name} not found`);
+    if (!pkg)
+      throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
-    return { ...pkg, latestVersion: pkg.versions[0] ?? null };
+    return toPackageDto(pkg);
   }
 
-  async findVersion(namespace: string, name: string, version: string): Promise<PackageVersion> {
+  async findVersion(
+    namespace: string,
+    name: string,
+    version: string,
+  ): Promise<PackageVersion> {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
-    if (!pkg) throw new NotFoundException(`Package ${namespace}/${name} not found`);
+    if (!pkg)
+      throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
     const pkgVersion = await this.prisma.packageVersion.findUnique({
       where: { packageId_version: { packageId: pkg.id, version } },
     });
-    if (!pkgVersion) throw new NotFoundException(`Version ${version} not found`);
+    if (!pkgVersion)
+      throw new NotFoundException(`Version ${version} not found`);
 
     return pkgVersion;
   }
@@ -96,14 +160,16 @@ export class PackagesService {
       throw new BadRequestException(parsed.error.flatten());
     }
 
-    const [namespace, packageName] = parsed.data.name.split('/');
+    const [namespace, packageName] = parsed.data.name.split("/");
 
     await this.assertOwnership(userId, namespace);
 
-    const supportedTools = parsed.data.targets ? Object.keys(parsed.data.targets) : [];
+    const supportedTools = parsed.data.targets
+      ? Object.keys(parsed.data.targets)
+      : [];
 
     const storageKey = `packages/${namespace}/${packageName}/${parsed.data.version}.zip`;
-    await this.storage.upload(storageKey, fileBuffer, 'application/zip');
+    await this.storage.upload(storageKey, fileBuffer, "application/zip");
 
     return this.prisma.$transaction(async (tx) => {
       const pkg = await tx.package.upsert({
@@ -123,16 +189,23 @@ export class PackagesService {
           tags: parsed.data.tags,
           projectTypes: parsed.data.projectTypes,
           supportedTools,
-          ownerType: 'user',
+          ownerType: "user",
           ownerUserId: userId,
         },
       });
 
       const existing = await tx.packageVersion.findUnique({
-        where: { packageId_version: { packageId: pkg.id, version: parsed.data.version } },
+        where: {
+          packageId_version: {
+            packageId: pkg.id,
+            version: parsed.data.version,
+          },
+        },
       });
       if (existing) {
-        throw new ConflictException(`Version ${parsed.data.version} already exists`);
+        throw new ConflictException(
+          `Version ${parsed.data.version} already exists`,
+        );
       }
 
       return tx.packageVersion.create({
@@ -146,7 +219,11 @@ export class PackagesService {
     });
   }
 
-  async getDownloadUrl(namespace: string, name: string, version: string): Promise<{ url: string }> {
+  async getDownloadUrl(
+    namespace: string,
+    name: string,
+    version: string,
+  ): Promise<{ url: string }> {
     const pkgVersion = await this.findVersion(namespace, name, version);
 
     if (pkgVersion.yanked) {
@@ -168,14 +245,19 @@ export class PackagesService {
     return { url };
   }
 
-  async fork(userId: string, namespace: string, name: string): Promise<Package> {
+  async fork(
+    userId: string,
+    namespace: string,
+    name: string,
+  ): Promise<Package> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new ForbiddenException('User not found');
+    if (!user) throw new ForbiddenException("User not found");
 
     const source = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
-    if (!source) throw new NotFoundException(`Package ${namespace}/${name} not found`);
+    if (!source)
+      throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
     const existing = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace: user.username, name } },
@@ -193,14 +275,19 @@ export class PackagesService {
         tags: source.tags,
         projectTypes: source.projectTypes,
         supportedTools: source.supportedTools,
-        ownerType: 'user',
+        ownerType: "user",
         ownerUserId: userId,
         forkedFromId: source.id,
       },
     });
   }
 
-  async yank(userId: string, namespace: string, name: string, version: string): Promise<void> {
+  async yank(
+    userId: string,
+    namespace: string,
+    name: string,
+    version: string,
+  ): Promise<void> {
     await this.assertOwnership(userId, namespace);
 
     const pkgVersion = await this.findVersion(namespace, name, version);
@@ -213,18 +300,22 @@ export class PackagesService {
   private extractManifest(fileBuffer: Buffer): unknown {
     try {
       const zip = new AdmZip(fileBuffer);
-      const entry = zip.getEntry('ruleshub.json');
-      if (!entry) throw new BadRequestException('ruleshub.json not found in zip');
-      return JSON.parse(entry.getData().toString('utf-8'));
+      const entry = zip.getEntry("ruleshub.json");
+      if (!entry)
+        throw new BadRequestException("ruleshub.json not found in zip");
+      return JSON.parse(entry.getData().toString("utf-8"));
     } catch (e) {
       if (e instanceof BadRequestException) throw e;
-      throw new BadRequestException('Invalid zip file');
+      throw new BadRequestException("Invalid zip file");
     }
   }
 
-  private async assertOwnership(userId: string, namespace: string): Promise<void> {
+  private async assertOwnership(
+    userId: string,
+    namespace: string,
+  ): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new ForbiddenException('User not found');
+    if (!user) throw new ForbiddenException("User not found");
 
     if (user.username === namespace) return;
 
@@ -232,7 +323,9 @@ export class PackagesService {
       where: { userId, org: { slug: namespace } },
     });
     if (!orgMember) {
-      throw new ForbiddenException(`You do not have permission to publish under ${namespace}`);
+      throw new ForbiddenException(
+        `You do not have permission to publish under ${namespace}`,
+      );
     }
   }
 }

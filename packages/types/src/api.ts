@@ -1,5 +1,5 @@
-import { AssetType } from './manifest';
-import { SupportedTool } from './tools';
+import { AssetType } from "./manifest";
+import { SupportedTool } from "./tools";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -46,11 +46,13 @@ export interface PackageDto {
 
 export interface PackageSearchParams {
   q?: string;
+  namespace?: string;
   type?: AssetType;
   tag?: string;
   projectType?: string;
   tool?: SupportedTool;
-  scope?: 'individual' | 'pack';
+  scope?: "individual" | "pack";
+  sort?: "trending" | "newest" | "mostDownloaded" | "mostStarred";
   page?: number;
   limit?: number;
 }

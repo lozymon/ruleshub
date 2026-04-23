@@ -1,7 +1,13 @@
-import { PackageDto, PackageSearchParams, PaginatedResponse } from '@ruleshub/types';
+import {
+  PackageDto,
+  PackageSearchParams,
+  PaginatedResponse,
+} from '@ruleshub/types';
 import { apiClient } from './client';
 
-export function searchPackages(params: PackageSearchParams = {}): Promise<PaginatedResponse<PackageDto>> {
+export function searchPackages(
+  params: PackageSearchParams = {},
+): Promise<PaginatedResponse<PackageDto>> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) query.set(key, String(value));
@@ -10,19 +16,44 @@ export function searchPackages(params: PackageSearchParams = {}): Promise<Pagina
   return apiClient.get(`/packages${qs ? `?${qs}` : ''}`);
 }
 
-export function getPackage(namespace: string, name: string): Promise<PackageDto> {
+export function getPackage(
+  namespace: string,
+  name: string,
+): Promise<PackageDto> {
   return apiClient.get(`/packages/${namespace}/${name}`);
 }
 
-export function getPackageVersion(namespace: string, name: string, version: string): Promise<PackageDto> {
+export function getPackageVersion(
+  namespace: string,
+  name: string,
+  version: string,
+): Promise<PackageDto> {
   return apiClient.get(`/packages/${namespace}/${name}/${version}`);
 }
 
-export function getDownloadUrl(namespace: string, name: string, version: string): Promise<{ url: string }> {
+export function getDownloadUrl(
+  namespace: string,
+  name: string,
+  version: string,
+): Promise<{ url: string }> {
   return apiClient.get(`/packages/${namespace}/${name}/${version}/download`);
 }
 
-export async function publishPackage(file: File, token: string): Promise<unknown> {
+export function yankVersion(
+  namespace: string,
+  name: string,
+  version: string,
+  token: string,
+): Promise<void> {
+  return apiClient.delete(`/packages/${namespace}/${name}/${version}`, {
+    token,
+  });
+}
+
+export async function publishPackage(
+  file: File,
+  token: string,
+): Promise<unknown> {
   const { config } = await import('../config');
   const form = new FormData();
   form.append('file', file);

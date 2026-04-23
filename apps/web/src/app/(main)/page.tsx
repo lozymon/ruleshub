@@ -1,21 +1,21 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import Link from 'next/link';
-import { Flame, Clock, ArrowRight } from 'lucide-react';
-import { searchPackages } from '@/lib/api/packages';
-import { PackageCard } from '@/components/packages/package-card';
-import { routes } from '@/lib/routes';
-import { TOOL_LABELS } from '@ruleshub/types';
-import type { SupportedTool } from '@ruleshub/types';
-import { TOOL_COLORS as toolColors } from '@/lib/tool-colors';
+import Link from "next/link";
+import { Flame, Clock, ArrowRight } from "lucide-react";
+import { searchPackages } from "@/lib/api/packages";
+import { PackageCard } from "@/components/packages/package-card";
+import { routes } from "@/lib/routes";
+import { TOOL_LABELS } from "@ruleshub/types";
+import type { SupportedTool } from "@ruleshub/types";
+import { TOOL_COLORS as toolColors } from "@/lib/tool-colors";
 
 const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
 
 export default async function HomePage() {
   const empty = { data: [], total: 0 };
   const [{ data: trending, total }, { data: recent }] = await Promise.all([
-    searchPackages({ limit: 6 }).catch(() => empty),
-    searchPackages({ limit: 6 }).catch(() => empty),
+    searchPackages({ limit: 6, sort: "trending" }).catch(() => empty),
+    searchPackages({ limit: 6, sort: "newest" }).catch(() => empty),
   ]);
 
   return (
@@ -34,12 +34,14 @@ export default async function HomePage() {
           </div>
 
           <h1 className="mb-[18px] max-w-[820px] text-[56px] font-semibold leading-[1.05] tracking-[-0.035em]">
-            The registry for{' '}
+            The registry for{" "}
             <span className="text-primary">AI coding tool</span> assets.
           </h1>
 
           <p className="mb-7 max-w-[620px] text-[18px] leading-relaxed text-fg-muted">
-            Publish and install rules, commands, workflows, agents, and MCP servers for Claude Code, Cursor, Copilot, and more — one manifest, every tool.
+            Publish and install rules, commands, workflows, agents, and MCP
+            servers for Claude Code, Cursor, Copilot, and more — one manifest,
+            every tool.
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5">
@@ -58,7 +60,7 @@ export default async function HomePage() {
             <span className="inline-flex items-center gap-2.5 rounded-md border border-border bg-bg-elev px-3.5 py-2 font-mono text-[13px] text-fg-muted">
               <span className="text-fg-faint">$</span>
               <span className="text-foreground">
-                npx ruleshub install{' '}
+                npx ruleshub install{" "}
                 <span className="text-primary">vercel/nextjs-rules</span>
               </span>
             </span>
@@ -70,18 +72,30 @@ export default async function HomePage() {
       <section className="border-b border-border">
         <div className="mx-auto grid max-w-[1240px] grid-cols-2 divide-x divide-border md:grid-cols-4">
           {[
-            { num: total.toLocaleString(), label: 'Assets published', delta: null },
-            { num: '—', label: 'Monthly installs', delta: null },
-            { num: '—', label: 'Publishers', delta: null },
-            { num: String(TOOLS.length), label: 'Tools supported', delta: '+ more coming' },
+            {
+              num: total.toLocaleString(),
+              label: "Assets published",
+              delta: null,
+            },
+            { num: "—", label: "Monthly installs", delta: null },
+            { num: "—", label: "Publishers", delta: null },
+            {
+              num: String(TOOLS.length),
+              label: "Tools supported",
+              delta: "+ more coming",
+            },
           ].map(({ num, label, delta }) => (
             <div key={label} className="px-7 py-6">
-              <div className="font-mono text-[26px] font-medium tracking-[-0.02em]">{num}</div>
+              <div className="font-mono text-[26px] font-medium tracking-[-0.02em]">
+                {num}
+              </div>
               <div className="mt-1 text-[12px] font-medium uppercase tracking-[0.06em] text-fg-dim">
                 {label}
               </div>
               {delta && (
-                <div className="mt-0.5 font-mono text-[11.5px] text-success">{delta}</div>
+                <div className="mt-0.5 font-mono text-[11.5px] text-success">
+                  {delta}
+                </div>
               )}
             </div>
           ))}
@@ -127,9 +141,14 @@ export default async function HomePage() {
                 <Flame className="h-[18px] w-[18px] text-warn" />
                 Trending this week
               </h2>
-              <p className="mt-0.5 text-[13px] text-fg-dim">Based on installs, stars, and recency</p>
+              <p className="mt-0.5 text-[13px] text-fg-dim">
+                Based on installs, stars, and recency
+              </p>
             </div>
-            <Link href={`${routes.browse}?sort=trending`} className="inline-flex items-center gap-1 text-[13px] font-medium text-fg-muted transition-colors hover:text-foreground">
+            <Link
+              href={`${routes.browse}?sort=trending`}
+              className="inline-flex items-center gap-1 text-[13px] font-medium text-fg-muted transition-colors hover:text-foreground"
+            >
               See all trending <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -141,13 +160,17 @@ export default async function HomePage() {
               </div>
               <h3 className="mb-1.5 text-[16px] font-medium">No assets yet</h3>
               <p className="mb-5 text-fg-dim">
-                Be the first to publish →{' '}
-                <Link href={routes.publish} className="text-primary underline">Publish now</Link>
+                Be the first to publish →{" "}
+                <Link href={routes.publish} className="text-primary underline">
+                  Publish now
+                </Link>
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {trending.map((pkg) => <PackageCard key={pkg.id} pkg={pkg} />)}
+              {trending.map((pkg) => (
+                <PackageCard key={pkg.id} pkg={pkg} />
+              ))}
             </div>
           )}
         </div>
@@ -162,15 +185,22 @@ export default async function HomePage() {
                 <Clock className="h-[18px] w-[18px] text-fg-muted" />
                 Recently published
               </h2>
-              <p className="mt-0.5 text-[13px] text-fg-dim">Fresh assets from the community</p>
+              <p className="mt-0.5 text-[13px] text-fg-dim">
+                Fresh assets from the community
+              </p>
             </div>
-            <Link href={`${routes.browse}?sort=newest`} className="inline-flex items-center gap-1 text-[13px] font-medium text-fg-muted transition-colors hover:text-foreground">
+            <Link
+              href={`${routes.browse}?sort=newest`}
+              className="inline-flex items-center gap-1 text-[13px] font-medium text-fg-muted transition-colors hover:text-foreground"
+            >
               See all recent <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {recent.map((pkg) => <PackageCard key={pkg.id} pkg={pkg} />)}
+            {recent.map((pkg) => (
+              <PackageCard key={pkg.id} pkg={pkg} />
+            ))}
           </div>
         </div>
       </section>
@@ -179,8 +209,12 @@ export default async function HomePage() {
       <section className="py-12">
         <div className="mx-auto max-w-[1240px] px-6">
           <div className="mb-6">
-            <h2 className="text-[20px] font-semibold tracking-[-0.015em]">Supported tools</h2>
-            <p className="mt-0.5 text-[13px] text-fg-dim">One manifest, every surface</p>
+            <h2 className="text-[20px] font-semibold tracking-[-0.015em]">
+              Supported tools
+            </h2>
+            <p className="mt-0.5 text-[13px] text-fg-dim">
+              One manifest, every surface
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
@@ -200,7 +234,9 @@ export default async function HomePage() {
                   {label[0]}
                 </span>
                 <div>
-                  <div className="text-[13.5px] font-medium leading-snug">{label}</div>
+                  <div className="text-[13.5px] font-medium leading-snug">
+                    {label}
+                  </div>
                 </div>
               </Link>
             ))}

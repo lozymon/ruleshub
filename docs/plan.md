@@ -511,11 +511,11 @@ Everything that must exist before writing application code.
 - [x] Create GitHub repository `ruleshub` (monorepo, public)
 - [x] Add `LICENSE` files — AGPL-3.0 at root, MIT in `packages/types` and `packages/cli`
 - [x] Add `CONTRIBUTING.md` — how to add new tool targets, PR guidelines
-- [ ] Register GitHub OAuth App — get `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET`
+- [x] Register GitHub OAuth App — get `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET`
   - Homepage URL: `https://ruleshub.dev`
   - Callback URL: `https://api.ruleshub.dev/v1/auth/github/callback`
   - Also register a second OAuth App for local dev with `http://localhost:3001/v1/auth/github/callback`
-- [ ] Set up branch protection: `main` requires PR + passing CI, no direct push
+- [x] Set up branch protection: `main` requires PR + passing CI, no direct push
 
 #### Branching Strategy
 
@@ -527,9 +527,9 @@ Everything that must exist before writing application code.
 
 #### Domain & DNS
 
-- [ ] Point `ruleshub.dev` → VPS IP (web)
-- [ ] Point `api.ruleshub.dev` → VPS IP (API)
-- [ ] Configure both in Coolify with automatic SSL (Let's Encrypt)
+- [x] Point `ruleshub.dev` → VPS IP (web)
+- [x] Point `api.ruleshub.dev` → VPS IP (API)
+- [x] Configure both in Coolify with automatic SSL (Let's Encrypt)
 
 #### Local Dev Environment
 
@@ -597,7 +597,7 @@ MINIO_BUCKET=ruleshub-packages
 - [x] `ci.yml` — runs on every PR: lint, typecheck, tests
 - [x] `deploy-staging.yml` — runs on merge to `develop`: triggers Coolify staging deploy
 - [x] `deploy-prod.yml` — runs on merge to `main`: triggers Coolify production deploy
-- [ ] Coolify deploy webhooks configured for both environments
+- [x] Coolify deploy webhooks configured for both environments
 
 #### Testing Strategy
 

@@ -549,7 +549,7 @@ services:
       POSTGRES_USER: ruleshub
       POSTGRES_PASSWORD: ruleshub
       POSTGRES_DB: ruleshub
-    ports: ['5432:5432']
+    ports: ["5432:5432"]
 
   minio:
     image: minio/minio
@@ -557,11 +557,11 @@ services:
     environment:
       MINIO_ROOT_USER: ruleshub
       MINIO_ROOT_PASSWORD: ruleshub_secret
-    ports: ['9000:9000', '9001:9001']
+    ports: ["9000:9000", "9001:9001"]
 
   adminer:
     image: adminer
-    ports: ['8080:8080']
+    ports: ["8080:8080"]
 ```
 
 #### Environment Variables
@@ -627,18 +627,18 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Package detail page — InstallBlock, StarButton, README/versions/sidebar layout
 - [x] Download endpoint
 - [x] Dashboard page — stat cards, packages table, chart placeholder
-- [ ] User profile page (`/users/[username]`) — stub exists, needs design overhaul
+- [x] User profile page (`/users/[username]`) — stub exists, needs design overhaul
 
 ### Phase 3 — Discovery & Community
 
 - [x] Stars and ratings
 - [x] Recommendations endpoint (`projectType` + `tool`)
 - [x] Featured / trending on homepage
-- [ ] `/tools/:tool` pages — stub exists, needs design overhaul
+- [x] `/tools/:tool` pages — stub exists, needs design overhaul
 - [x] Fork & remix — fork asset into own namespace with attribution
 - [x] Collections — create and share curated asset lists
 - [x] Comments & discussions per asset
-- [ ] Leaderboard page (`/leaderboard`) — stub exists, needs design overhaul
+- [x] Leaderboard page (`/leaderboard`) — stub exists, needs design overhaul
 - [ ] Weekly digest email signup + sending
 
 ### Phase 4 — CLI
@@ -665,15 +665,15 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Stub Pages Needing Design
 
-- [ ] `/users/[username]` — public profile page
-- [ ] `/tools/[tool]` — per-tool package listing
-- [ ] `/leaderboard` — top publishers and trending assets
+- [x] `/users/[username]` — public profile page
+- [x] `/tools/[tool]` — per-tool package listing
+- [x] `/leaderboard` — top publishers and trending assets
 
 ### Auth State (Browser)
 
-- [ ] Session token storage after GitHub OAuth callback
-- [ ] Auth-aware navbar (show avatar + logout when signed in)
-- [ ] Protected route redirects (`/dashboard`, `/publish`)
+- [x] Session token storage after GitHub OAuth callback
+- [x] Auth-aware navbar (show avatar + logout when signed in)
+- [x] Protected route redirects (`/dashboard`, `/publish`)
 
 ### Phase 6 — GitHub Integration
 

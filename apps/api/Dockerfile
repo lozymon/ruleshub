@@ -32,7 +32,9 @@ COPY --from=builder /app/packages/types ./packages/types
 COPY package.json pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/types/package.json ./packages/types/
+COPY apps/api/entrypoint.sh ./apps/api/entrypoint.sh
+RUN chmod +x ./apps/api/entrypoint.sh
 
 WORKDIR /app/apps/api
 EXPOSE 3001
-CMD ["node", "dist/main"]
+CMD ["sh", "entrypoint.sh"]

@@ -1,68 +1,112 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Check, ArrowRight, Upload, X } from 'lucide-react';
+import { Check, ArrowRight, Upload, X, AlertCircle } from 'lucide-react';
 import { routes } from '@/lib/routes';
-import { TOOL_LABELS, TOOL_INSTALL_PATHS } from '@ruleshub/types';
+import { TOOL_LABELS } from '@ruleshub/types';
 import type { SupportedTool } from '@ruleshub/types';
 import { TOOL_COLORS } from '@/lib/tool-colors';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { publishPackage } from '@/lib/api/packages';
 
 const ASSET_TYPES = [
-  { id: 'rule',     label: 'Rule' },
-  { id: 'command',  label: 'Command' },
+  { id: 'rule', label: 'Rule' },
+  { id: 'command', label: 'Command' },
   { id: 'workflow', label: 'Workflow' },
-  { id: 'agent',    label: 'Agent' },
-  { id: 'mcp',      label: 'MCP Server' },
-  { id: 'pack',     label: 'Pack' },
+  { id: 'agent', label: 'Agent' },
+  { id: 'mcp-server', label: 'MCP Server' },
+  { id: 'pack', label: 'Pack' },
 ] as const;
 
 const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
 
 const DEFAULT_TOOL_PATHS: Record<SupportedTool, string> = {
   'claude-code': 'CLAUDE.md',
-  'cursor':      '.cursor/rules/',
-  'copilot':     '.github/copilot-instructions.md',
-  'windsurf':    '.windsurf/rules/',
-  'cline':       '.clinerules',
-  'aider':       '.aiderrules',
-  'continue':    '.continue/rules/',
+  cursor: '.cursor/rules/',
+  copilot: '.github/copilot-instructions.md',
+  windsurf: '.windsurf/rules/',
+  cline: '.clinerules',
+  aider: '.aiderrules',
+  continue: '.continue/rules/',
 };
 
 interface FormState {
-  namespace:   string;
-  name:        string;
-  version:     string;
+  namespace: string;
+  name: string;
+  version: string;
   description: string;
-  type:        string;
-  tools:       Set<SupportedTool>;
-  file:        File | null;
-  dragging:    boolean;
+  license: string;
+  tags: string;
+  projectTypes: string;
+  type: string;
+  tools: Set<SupportedTool>;
+  file: File | null;
+  dragging: boolean;
 }
 
 function validate(form: FormState) {
   return [
-    { key: 'name',    ok: /^[a-z][a-z0-9-]*$/.test(form.name),          msg: `name: ${form.name || '—'} follows naming convention` },
-    { key: 'ns',      ok: form.namespace.length > 0,                     msg: `namespace: ${form.namespace || '—'} set` },
-    { key: 'version', ok: /^\d+\.\d+\.\d+$/.test(form.version),          msg: `version: ${form.version} is valid semver` },
-    { key: 'desc',    ok: form.description.length >= 20,                  msg: `description: ${form.description.length} chars (min 20)` },
-    { key: 'tools',   ok: form.tools.size > 0,                            msg: `tools: ${form.tools.size} targets selected` },
-    { key: 'file',    ok: form.file !== null,                             msg: form.file ? `source: ${form.file.name} (${(form.file.size / 1024).toFixed(1)} KB)` : 'source: no file uploaded' },
+    {
+      key: 'ns',
+      ok: form.namespace.length > 0,
+      msg: `namespace: ${form.namespace || '—'} set`,
+    },
+    {
+      key: 'name',
+      ok: /^[a-z][a-z0-9-]*$/.test(form.name),
+      msg: `name: ${form.name || '—'} follows naming convention`,
+    },
+    {
+      key: 'version',
+      ok: /^\d+\.\d+\.\d+$/.test(form.version),
+      msg: `version: ${form.version} is valid semver`,
+    },
+    {
+      key: 'desc',
+      ok: form.description.length >= 1,
+      msg: `description: ${form.description.length} chars`,
+    },
+    {
+      key: 'license',
+      ok: form.license.length > 0,
+      msg: `license: ${form.license || '—'} set`,
+    },
+    {
+      key: 'tools',
+      ok: form.tools.size > 0,
+      msg: `tools: ${form.tools.size} targets selected`,
+    },
+    {
+      key: 'file',
+      ok: form.file !== null,
+      msg: form.file
+        ? `source: ${form.file.name} (${(form.file.size / 1024).toFixed(1)} KB)`
+        : 'source: no file uploaded',
+    },
   ];
 }
 
 export default function PublishPage() {
+  const router = useRouter();
+  const { token } = useAuth();
   const [step, setStep] = useState(1);
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
-    namespace:   '',
-    name:        '',
-    version:     '0.1.0',
+    namespace: '',
+    name: '',
+    version: '0.1.0',
     description: '',
-    type:        'rule',
-    tools:       new Set(['claude-code'] as SupportedTool[]),
-    file:        null,
-    dragging:    false,
+    license: 'MIT',
+    tags: '',
+    projectTypes: '',
+    type: 'rule',
+    tools: new Set(['claude-code'] as SupportedTool[]),
+    file: null,
+    dragging: false,
   });
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -79,24 +123,76 @@ export default function PublishPage() {
   }
 
   const checks = validate(form);
-  const step1Valid = checks.slice(0, 5).every((c) => c.ok);
+  const step1Valid = checks.slice(0, 6).every((c) => c.ok);
   const step2Valid = form.file !== null;
+  const allValid = checks.every((c) => c.ok);
+
+  async function handlePublish() {
+    if (!allValid || !form.file || !token) return;
+    setPublishing(true);
+    setError(null);
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(form.file);
+
+      const manifest = {
+        name: `${form.namespace}/${form.name}`,
+        version: form.version,
+        type: form.type,
+        description: form.description,
+        license: form.license,
+        tags: form.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+        projectTypes: form.projectTypes
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+        targets: Object.fromEntries(
+          [...form.tools].map((tool) => [
+            tool,
+            { file: DEFAULT_TOOL_PATHS[tool] },
+          ]),
+        ),
+      };
+      zip.file('ruleshub.json', JSON.stringify(manifest, null, 2));
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const file = new File([blob], `${form.name}.zip`, {
+        type: 'application/zip',
+      });
+
+      await publishPackage(file, token);
+      router.push(routes.package(`${form.namespace}/${form.name}`));
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Publish failed. Please try again.',
+      );
+      setPublishing(false);
+    }
+  }
 
   const STEPS = [
     { n: 1, label: 'Manifest' },
-    { n: 2, label: 'Upload'   },
-    { n: 3, label: 'Preview'  },
+    { n: 2, label: 'Upload' },
+    { n: 3, label: 'Preview' },
   ];
 
   return (
     <div className="mx-auto max-w-[800px] px-6 py-10 pb-20">
-      <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Publish a package</h1>
-      <p className="mt-1 mb-7 text-fg-dim">Share rules, commands, workflows, agents, or MCP configs with the community.</p>
+      <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
+        Publish a package
+      </h1>
+      <p className="mt-1 mb-7 text-fg-dim">
+        Share rules, commands, workflows, agents, or MCP configs with the
+        community.
+      </p>
 
       {/* Stepper */}
       <div className="mb-8 flex border-b border-border">
         {STEPS.map(({ n, label }) => {
-          const done   = step > n;
+          const done = step > n;
           const active = step === n;
           return (
             <button
@@ -104,17 +200,23 @@ export default function PublishPage() {
               onClick={() => n < step && setStep(n)}
               className={cn(
                 'flex flex-1 items-center gap-2.5 border-b-2 py-3.5 text-[13px] transition-colors',
-                active ? 'border-primary text-foreground' :
-                done   ? 'border-transparent text-fg-muted cursor-pointer hover:text-foreground' :
-                         'border-transparent text-fg-dim cursor-default',
+                active
+                  ? 'border-primary text-foreground'
+                  : done
+                    ? 'border-transparent text-fg-muted cursor-pointer hover:text-foreground'
+                    : 'border-transparent text-fg-dim cursor-default',
               )}
             >
-              <span className={cn(
-                'flex h-[22px] w-[22px] items-center justify-center rounded-full border font-mono text-[11px] font-semibold',
-                active ? 'border-primary bg-[var(--rh-accent-tint)] text-primary' :
-                done   ? 'border-primary bg-primary text-white' :
-                         'border-border-strong text-fg-muted',
-              )}>
+              <span
+                className={cn(
+                  'flex h-[22px] w-[22px] items-center justify-center rounded-full border font-mono text-[11px] font-semibold',
+                  active
+                    ? 'border-primary bg-[var(--rh-accent-tint)] text-primary'
+                    : done
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-border-strong text-fg-muted',
+                )}
+              >
                 {done ? <Check className="h-3 w-3" strokeWidth={3} /> : n}
               </span>
               {label}
@@ -145,7 +247,7 @@ export default function PublishPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Field label="Version" hint="Semver (e.g. 1.0.0)">
               <input
                 className="form-input font-mono"
@@ -160,13 +262,26 @@ export default function PublishPage() {
                 onChange={(e) => update({ type: e.target.value })}
               >
                 {ASSET_TYPES.map(({ id, label }) => (
-                  <option key={id} value={id}>{label}</option>
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </Field>
+            <Field label="License" hint="SPDX identifier">
+              <input
+                className="form-input font-mono"
+                value={form.license}
+                onChange={(e) => update({ license: e.target.value })}
+                placeholder="MIT"
+              />
+            </Field>
           </div>
 
-          <Field label="Description" hint="One or two sentences explaining what it does.">
+          <Field
+            label="Description"
+            hint="One or two sentences explaining what it does."
+          >
             <textarea
               className="form-input min-h-[90px] resize-y pt-2"
               value={form.description}
@@ -175,7 +290,35 @@ export default function PublishPage() {
             />
           </Field>
 
-          <Field label="Tool targets" hint="Which tools should this package install for?">
+          <div className="grid grid-cols-2 gap-4">
+            <Field
+              label="Tags"
+              hint="Comma-separated (e.g. nestjs, typescript)"
+            >
+              <input
+                className="form-input"
+                value={form.tags}
+                onChange={(e) => update({ tags: e.target.value })}
+                placeholder="nestjs, typescript"
+              />
+            </Field>
+            <Field
+              label="Project types"
+              hint="Comma-separated (e.g. nestjs, node)"
+            >
+              <input
+                className="form-input"
+                value={form.projectTypes}
+                onChange={(e) => update({ projectTypes: e.target.value })}
+                placeholder="nestjs, node"
+              />
+            </Field>
+          </div>
+
+          <Field
+            label="Tool targets"
+            hint="Which tools should this package install for?"
+          >
             <div className="space-y-2">
               {TOOLS.map(([tool, label]) => {
                 const checked = form.tools.has(tool);
@@ -185,17 +328,28 @@ export default function PublishPage() {
                     onClick={() => toggleTool(tool)}
                     className={cn(
                       'flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition-colors',
-                      checked ? 'border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)]' : 'border-border bg-bg-elev hover:border-border-hover',
+                      checked
+                        ? 'border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)]'
+                        : 'border-border bg-bg-elev hover:border-border-hover',
                     )}
                   >
-                    <div className={cn(
-                      'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border',
-                      checked ? 'border-primary bg-primary' : 'border-border-strong',
-                    )}>
-                      {checked && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                    <div
+                      className={cn(
+                        'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border',
+                        checked
+                          ? 'border-primary bg-primary'
+                          : 'border-border-strong',
+                      )}
+                    >
+                      {checked && (
+                        <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                      )}
                     </div>
                     <div className="flex min-w-[140px] items-center gap-1.5 text-[13.5px] font-medium">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: TOOL_COLORS[tool] }} />
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ background: TOOL_COLORS[tool] }}
+                      />
                       {label}
                     </div>
                     <div className="flex-1 rounded-[4px] border border-border bg-background px-2 py-1 font-mono text-[12.5px] text-fg-muted">
@@ -208,7 +362,10 @@ export default function PublishPage() {
           </Field>
 
           <div className="flex justify-between pt-2">
-            <Link href={routes.dashboard} className="inline-flex h-[34px] items-center px-3 text-[13px] text-fg-muted transition-colors hover:text-foreground">
+            <Link
+              href={routes.dashboard}
+              className="inline-flex h-[34px] items-center px-3 text-[13px] text-fg-muted transition-colors hover:text-foreground"
+            >
               Cancel
             </Link>
             <button
@@ -234,16 +391,22 @@ export default function PublishPage() {
           />
 
           <div
-            onDragOver={(e) => { e.preventDefault(); update({ dragging: true }); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              update({ dragging: true });
+            }}
             onDragLeave={() => update({ dragging: false })}
             onDrop={(e) => {
               e.preventDefault();
               const f = e.dataTransfer.files?.[0];
-              if (f?.name.endsWith('.zip')) update({ file: f, dragging: false });
+              if (f?.name.endsWith('.zip'))
+                update({ file: f, dragging: false });
             }}
             className={cn(
               'rounded-[10px] border-2 border-dashed bg-bg-elev py-12 text-center transition-colors',
-              form.dragging ? 'border-primary bg-[var(--rh-accent-tint)]' : 'border-border-strong',
+              form.dragging
+                ? 'border-primary bg-[var(--rh-accent-tint)]'
+                : 'border-border-strong',
             )}
           >
             {form.file ? (
@@ -251,8 +414,12 @@ export default function PublishPage() {
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--rh-accent-tint)] text-primary">
                   <Check className="h-6 w-6" />
                 </div>
-                <h3 className="mb-1 text-[15px] font-medium">{form.file.name}</h3>
-                <p className="mb-4 text-[13px] text-fg-dim">{(form.file.size / 1024).toFixed(1)} KB</p>
+                <h3 className="mb-1 text-[15px] font-medium">
+                  {form.file.name}
+                </h3>
+                <p className="mb-4 text-[13px] text-fg-dim">
+                  {(form.file.size / 1024).toFixed(1)} KB
+                </p>
                 <button
                   onClick={() => update({ file: null })}
                   className="inline-flex h-[34px] items-center gap-1.5 rounded-md border border-border-strong px-3 text-[13px] font-medium text-foreground transition-colors hover:border-border-hover"
@@ -266,8 +433,12 @@ export default function PublishPage() {
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-bg-elev-2 text-fg-muted">
                   <Upload className="h-6 w-6" />
                 </div>
-                <h3 className="mb-1 text-[15px] font-medium">Drag and drop your .zip file</h3>
-                <p className="mb-5 text-[13px] text-fg-dim">or browse — up to 5 MB, .zip only</p>
+                <h3 className="mb-1 text-[15px] font-medium">
+                  Drag and drop your .zip file
+                </h3>
+                <p className="mb-5 text-[13px] text-fg-dim">
+                  or browse — up to 5 MB, .zip only
+                </p>
                 <button
                   onClick={() => fileRef.current?.click()}
                   className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-4 text-[13px] font-medium text-primary-foreground"
@@ -279,7 +450,10 @@ export default function PublishPage() {
           </div>
 
           <div className="flex justify-between">
-            <button onClick={() => setStep(1)} className="inline-flex h-[34px] items-center px-3 text-[13px] text-fg-muted transition-colors hover:text-foreground">
+            <button
+              onClick={() => setStep(1)}
+              className="inline-flex h-[34px] items-center px-3 text-[13px] text-fg-muted transition-colors hover:text-foreground"
+            >
               ← Back
             </button>
             <button
@@ -297,13 +471,22 @@ export default function PublishPage() {
       {step === 3 && (
         <div className="space-y-6">
           <div>
-            <h3 className="mb-3 text-[14px] font-semibold">Manifest validation</h3>
+            <h3 className="mb-3 text-[14px] font-semibold">
+              Manifest validation
+            </h3>
             <div className="rounded-lg border border-border bg-bg-elev p-4">
               <ul className="space-y-0 font-mono text-[12.5px]">
                 {checks.map(({ key, ok, msg }) => (
-                  <li key={key} className="flex items-center gap-2 border-b border-border py-1.5 text-fg-muted last:border-0">
+                  <li
+                    key={key}
+                    className="flex items-center gap-2 border-b border-border py-1.5 text-fg-muted last:border-0"
+                  >
                     <span className={ok ? 'text-success' : 'text-destructive'}>
-                      {ok ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                      {ok ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                     </span>
                     <span className={ok ? '' : 'text-destructive'}>{msg}</span>
                   </li>
@@ -313,44 +496,77 @@ export default function PublishPage() {
           </div>
 
           <div>
-            <h3 className="mb-3 text-[14px] font-semibold">Dry-run: files to write</h3>
+            <h3 className="mb-3 text-[14px] font-semibold">
+              Dry-run: files to write
+            </h3>
             <div className="overflow-hidden rounded-lg border border-border bg-bg-code font-mono text-[12.5px]">
               <div className="flex items-center gap-2 border-b border-border px-3.5 py-2.5 text-fg-muted">
                 <span className="text-fg-dim">$</span>
-                <span>ruleshub publish --dry-run {form.namespace}/{form.name}@{form.version}</span>
+                <span>
+                  ruleshub publish --dry-run {form.namespace}/{form.name}@
+                  {form.version}
+                </span>
               </div>
               <div className="p-4 space-y-1">
                 {[...form.tools].map((tool) => (
                   <div key={tool} className="flex items-center gap-3">
                     <span className="font-bold text-success">+</span>
-                    <span className="min-w-[90px]" style={{ color: TOOL_COLORS[tool] }}>[{tool}]</span>
-                    <span className="text-foreground">{DEFAULT_TOOL_PATHS[tool]}</span>
+                    <span
+                      className="min-w-[90px]"
+                      style={{ color: TOOL_COLORS[tool] }}
+                    >
+                      [{tool}]
+                    </span>
+                    <span className="text-foreground">
+                      {DEFAULT_TOOL_PATHS[tool]}
+                    </span>
                   </div>
                 ))}
                 <div className="mt-3 border-t border-border pt-3 text-fg-muted">
-                  <div>✓ Would publish {form.namespace}/{form.name}@{form.version}</div>
-                  <div>✓ {form.tools.size} tools targeted · {form.tools.size} files to write</div>
+                  <div>
+                    ✓ Would publish {form.namespace}/{form.name}@{form.version}
+                  </div>
+                  <div>
+                    ✓ {form.tools.size} tools targeted · {form.tools.size} files
+                    to write
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-[13px] text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              {error}
+            </div>
+          )}
+
           <div className="flex justify-between">
-            <button onClick={() => setStep(2)} className="inline-flex h-[34px] items-center px-3 text-[13px] text-fg-muted transition-colors hover:text-foreground">
+            <button
+              onClick={() => setStep(2)}
+              disabled={publishing}
+              className="inline-flex h-[34px] items-center px-3 text-[13px] text-fg-muted transition-colors hover:text-foreground disabled:opacity-50"
+            >
               ← Back
             </button>
-            <div className="flex gap-2">
-              <button className="inline-flex h-[34px] items-center gap-1.5 rounded-md border border-border-strong px-4 text-[13px] font-medium text-foreground transition-colors hover:border-border-hover">
-                Save as draft
-              </button>
-              <button
-                disabled={!checks.every((c) => c.ok)}
-                className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-4 text-[13px] font-medium text-primary-foreground disabled:opacity-50"
-              >
-                <Upload className="h-3.5 w-3.5" />
-                Publish package
-              </button>
-            </div>
+            <button
+              onClick={handlePublish}
+              disabled={!allValid || publishing}
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-4 text-[13px] font-medium text-primary-foreground disabled:opacity-50"
+            >
+              {publishing ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Publishing…
+                </>
+              ) : (
+                <>
+                  <Upload className="h-3.5 w-3.5" />
+                  Publish package
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -358,10 +574,20 @@ export default function PublishPage() {
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-medium text-foreground">{label}</label>
+      <label className="mb-1.5 block text-[13px] font-medium text-foreground">
+        {label}
+      </label>
       {hint && <div className="mb-1.5 text-[12px] text-fg-dim">{hint}</div>}
       {children}
     </div>

@@ -12,6 +12,7 @@ export const routes = {
   dashboard: "/dashboard",
   dashboardOrg: (orgname: string) => `/dashboard/org/${orgname}`,
   dashboardAnalytics: "/dashboard/analytics",
+  dashboardAdmin: "/dashboard/admin",
   login: "/login",
   tools: "/tools",
   tool: (tool: string) => `/tools/${tool}`,

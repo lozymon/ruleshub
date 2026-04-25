@@ -12,6 +12,9 @@ import { CommentsModule } from "./comments/comments.module";
 import { LeaderboardModule } from "./leaderboard/leaderboard.module";
 import { OrganisationsModule } from "./organisations/organisations.module";
 import { ApiKeysModule } from "./api-keys/api-keys.module";
+import { BadgesModule } from "./badges/badges.module";
+import { ImportsModule } from "./imports/imports.module";
+import { AdminModule } from "./admin/admin.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -32,6 +35,9 @@ import configuration from "./config/configuration";
     LeaderboardModule,
     OrganisationsModule,
     ApiKeysModule,
+    BadgesModule,
+    ImportsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

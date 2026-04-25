@@ -654,14 +654,16 @@ MINIO_BUCKET=ruleshub-packages
 
 - [x] Organisation accounts — team namespaces (`acmecorp/nestjs-rules`)
 - [x] Org dashboard — manage members and packages
-- [ ] Verified publisher badges — `owner.verified` field exists in DB/DTO; badge shown on package detail; no admin management UI yet
+- [x] Verified publisher badges — `ADMIN_USERNAMES` env var gates `PATCH /admin/users/:username/verify` and `PATCH /admin/orgs/:slug/verify`
+- [x] Admin dashboard (`/dashboard/admin`) — paginated user table with search, toggle verified + blocked; visible only to `ADMIN_USERNAMES`; `isAdmin` flag on `/auth/me` response
+- [x] User blocking — `blocked` flag on User prevents login and publishing; admin can set via dashboard
 - [x] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [ ] Version diff viewer — side-by-side diff between versions
-- [ ] Structured changelogs — per-version release notes field
+- [x] Structured changelogs — per-version release notes field
 - [ ] Dependency security alerts — notify dependents when a package is yanked or reported
 - [x] API keys — `RULESHUB_TOKEN` for CI/CD publishing without browser OAuth
 - [ ] Webhooks for consumers — subscribe to new version notifications
-- [ ] README badges — auto-generated version + downloads badge per asset
+- [x] README badges — auto-generated version + downloads badge per asset
 
 ### Stub Pages Needing Design
 
@@ -677,7 +679,7 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Phase 6 — GitHub Integration
 
-- [ ] Import from GitHub repo — detect `ruleshub.json`, auto-publish on new tags via webhook
+- [x] Import from GitHub repo — detect `ruleshub.json`, auto-publish on new tags via webhook
 - [ ] `ruleshub/install` GitHub Action — install assets in CI/CD pipelines
 
 ### Phase 7 — Monetisation

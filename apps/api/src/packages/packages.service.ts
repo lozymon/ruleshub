@@ -43,6 +43,7 @@ function toPackageDto(p: PackageWithIncludes) {
     ...p,
     fullName: `${p.namespace}/${p.name}`,
     latestVersion: p.versions[0] ?? null,
+    versions: p.versions,
     owner: p.owner
       ? {
           id: p.owner.id,
@@ -138,7 +139,7 @@ export class PackagesService {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
       include: {
-        versions: { orderBy: { publishedAt: "desc" }, take: 1 },
+        versions: { orderBy: { publishedAt: "desc" } },
         owner: true,
       },
     });
@@ -172,18 +173,34 @@ export class PackagesService {
   async publish(userId: string, fileBuffer: Buffer): Promise<PackageVersion> {
     const manifest = this.extractManifest(fileBuffer);
     const parsed = PackageManifestSchema.safeParse(manifest);
-    if (!parsed.success) {
-      throw new BadRequestException(parsed.error.flatten());
-    }
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
-    const [namespace, packageName] = parsed.data.name.split("/");
-
+    const [namespace] = parsed.data.name.split("/");
     await this.assertOwnership(userId, namespace);
 
+    return this.doPublish(userId, fileBuffer);
+  }
+
+  // Used by the GitHub import webhook — ownership already validated at import setup time
+  async publishFromWebhook(
+    ownerUserId: string,
+    fileBuffer: Buffer,
+  ): Promise<PackageVersion> {
+    return this.doPublish(ownerUserId, fileBuffer);
+  }
+
+  private async doPublish(
+    ownerUserId: string,
+    fileBuffer: Buffer,
+  ): Promise<PackageVersion> {
+    const manifest = this.extractManifest(fileBuffer);
+    const parsed = PackageManifestSchema.safeParse(manifest);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+
+    const [namespace, packageName] = parsed.data.name.split("/");
     const supportedTools = parsed.data.targets
       ? Object.keys(parsed.data.targets)
       : [];
-
     const hasReadme = this.extractHasReadme(fileBuffer);
 
     const storageKey = `packages/${namespace}/${packageName}/${parsed.data.version}.zip`;
@@ -210,7 +227,7 @@ export class PackagesService {
           supportedTools,
           hasReadme,
           ownerType: "user",
-          ownerUserId: userId,
+          ownerUserId,
         },
       });
 
@@ -232,6 +249,7 @@ export class PackagesService {
         data: {
           packageId: pkg.id,
           version: parsed.data.version,
+          changelog: parsed.data.changelog ?? null,
           manifestJson: parsed.data as unknown as Prisma.InputJsonValue,
           storageKey,
         },

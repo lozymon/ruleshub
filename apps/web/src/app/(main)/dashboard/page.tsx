@@ -15,14 +15,24 @@ import {
   Key,
   Copy,
   Check,
+  GitBranch,
+  RefreshCw,
+  Shield,
 } from "lucide-react";
 import { searchPackages, yankVersion } from "@/lib/api/packages";
 import { getMyOrgs, createOrg } from "@/lib/api/orgs";
 import { listApiKeys, createApiKey, revokeApiKey } from "@/lib/api/api-keys";
+import { createImport, listMyImports, deleteImport } from "@/lib/api/imports";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { routes } from "@/lib/routes";
 import { useAuth } from "@/context/auth-context";
-import type { ApiKeyDto, OrgDto, PackageDto } from "@ruleshub/types";
+import type {
+  ApiKeyDto,
+  GitHubImportCreatedDto,
+  GitHubImportDto,
+  OrgDto,
+  PackageDto,
+} from "@ruleshub/types";
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -142,6 +152,69 @@ export default function DashboardPage() {
     setTimeout(() => setCopiedKey(false), 2000);
   }
 
+  const [ghImports, setGhImports] = useState<GitHubImportDto[]>([]);
+  const [newRepoUrl, setNewRepoUrl] = useState("");
+  const [creatingImport, setCreatingImport] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [newImport, setNewImport] = useState<GitHubImportCreatedDto | null>(
+    null,
+  );
+  const [copiedWebhookUrl, setCopiedWebhookUrl] = useState(false);
+  const [copiedWebhookSecret, setCopiedWebhookSecret] = useState(false);
+
+  const fetchImports = useCallback(async () => {
+    if (!token) return;
+    const data = await listMyImports(token).catch(() => []);
+    setGhImports(data);
+  }, [token]);
+
+  async function handleCreateImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !newRepoUrl.trim()) return;
+    setCreatingImport(true);
+    setImportError("");
+    setNewImport(null);
+    try {
+      const created = await createImport(newRepoUrl.trim(), token);
+      setNewImport(created);
+      setNewRepoUrl("");
+      await fetchImports();
+    } catch (err) {
+      setImportError(
+        err instanceof Error ? err.message : "Failed to connect repository",
+      );
+    } finally {
+      setCreatingImport(false);
+    }
+  }
+
+  function handleDeleteImport(namespace: string, name: string) {
+    if (!token) return;
+    setPendingConfirm({
+      title: `Disconnect ${namespace}/${name}?`,
+      description:
+        "Auto-publishing from GitHub will stop. The package and its versions are not deleted.",
+      confirmLabel: "Disconnect",
+      onConfirm: async () => {
+        setPendingConfirm(null);
+        try {
+          await deleteImport(namespace, name, token);
+          await fetchImports();
+        } catch {
+          // ignore
+        }
+      },
+    });
+  }
+
+  function copyText(text: string, setter: (v: boolean) => void) {
+    navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
+  }
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+
   // Only redirect when auth has resolved, there is no user, AND no stored token.
   // A stored token with no user means the API was unreachable — don't log the user out.
   const redirected = useRef(false);
@@ -156,7 +229,8 @@ export default function DashboardPage() {
     fetchPackages();
     fetchOrgs();
     fetchApiKeys();
-  }, [fetchPackages, fetchOrgs, fetchApiKeys]);
+    fetchImports();
+  }, [fetchPackages, fetchOrgs, fetchApiKeys, fetchImports]);
 
   async function handleCreateOrg(e: React.FormEvent) {
     e.preventDefault();
@@ -223,13 +297,24 @@ export default function DashboardPage() {
             {user ? `Signed in as ${user.username}` : "Loading…"}
           </p>
         </div>
-        <Link
-          href={routes.publish}
-          className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Upload className="h-3.5 w-3.5" />
-          Publish new package
-        </Link>
+        <div className="flex items-center gap-2">
+          {user?.isAdmin && (
+            <Link
+              href={routes.dashboardAdmin}
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-md border border-border px-3.5 text-[13px] font-medium transition-colors hover:bg-bg-elev"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </Link>
+          )}
+          <Link
+            href={routes.publish}
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Publish new package
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -573,6 +658,151 @@ export default function DashboardPage() {
                         disabled={revokingKeyId === k.id}
                         title="Revoke key"
                         className="flex h-7 w-7 items-center justify-center rounded text-fg-muted transition-colors hover:bg-bg-elev hover:text-destructive disabled:opacity-40 ml-auto"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* GitHub Imports */}
+      <div className="mt-12">
+        <div className="mb-4 flex items-center gap-2">
+          <GitBranch className="h-4 w-4 text-fg-dim" />
+          <h2 className="text-[18px] font-semibold tracking-[-0.01em]">
+            GitHub Imports
+          </h2>
+        </div>
+        <p className="mb-4 text-[13px] text-fg-muted">
+          Connect a public GitHub repo that contains{" "}
+          <code className="font-mono">ruleshub.json</code>. A new version is
+          published automatically when you push a tag.
+        </p>
+
+        {/* Connect form */}
+        <form onSubmit={handleCreateImport} className="mb-4 flex gap-2">
+          <input
+            type="url"
+            placeholder="https://github.com/you/your-rules"
+            value={newRepoUrl}
+            onChange={(e) => setNewRepoUrl(e.target.value)}
+            className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 font-mono text-[13px] outline-none focus:border-primary"
+          />
+          <button
+            type="submit"
+            disabled={creatingImport || !newRepoUrl.trim()}
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            {creatingImport ? "Connecting…" : "Connect"}
+          </button>
+        </form>
+        {importError && (
+          <p className="mb-3 text-[12px] text-destructive">{importError}</p>
+        )}
+
+        {/* One-time setup instructions */}
+        {newImport && (
+          <div className="mb-4 rounded-[10px] border border-primary/30 bg-primary/5 p-4 text-[13px]">
+            <p className="mb-3 font-medium">
+              Connected! Add this webhook to your GitHub repo:
+            </p>
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-fg-dim">
+              Payload URL
+            </p>
+            <div className="mb-3 flex items-center gap-2 rounded-md border border-border bg-bg-elev px-3 py-2">
+              <code className="flex-1 truncate font-mono text-[12px]">
+                {apiBase}/imports/webhook/{newImport.id}
+              </code>
+              <button
+                onClick={() =>
+                  copyText(
+                    `${apiBase}/imports/webhook/${newImport.id}`,
+                    setCopiedWebhookUrl,
+                  )
+                }
+                className="shrink-0 text-fg-dim hover:text-foreground"
+              >
+                {copiedWebhookUrl ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-fg-dim">
+              Secret
+            </p>
+            <div className="mb-3 flex items-center gap-2 rounded-md border border-border bg-bg-elev px-3 py-2">
+              <code className="flex-1 truncate font-mono text-[12px]">
+                {newImport.webhookSecret}
+              </code>
+              <button
+                onClick={() =>
+                  copyText(newImport.webhookSecret, setCopiedWebhookSecret)
+                }
+                className="shrink-0 text-fg-dim hover:text-foreground"
+              >
+                {copiedWebhookSecret ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
+            <p className="text-[12px] text-fg-muted">
+              Set content type to{" "}
+              <code className="font-mono">application/json</code> and trigger on{" "}
+              <code className="font-mono">push</code> events. The secret is
+              shown only once — save it now.
+            </p>
+          </div>
+        )}
+
+        {/* Existing imports */}
+        {ghImports.length > 0 && (
+          <div className="overflow-hidden rounded-[10px] border border-border bg-bg-elev">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-bg-elev-2">
+                  {["Package", "Repository", "Last synced", ""].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-fg-dim"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ghImports.map((imp) => (
+                  <tr
+                    key={imp.id}
+                    className="border-b border-border last:border-0"
+                  >
+                    <td className="px-4 py-3.5 font-mono text-[13px]">
+                      {imp.packageFullName}
+                    </td>
+                    <td className="px-4 py-3.5 text-[13px] text-fg-muted">
+                      {imp.repoUrl.replace("https://github.com/", "")}
+                    </td>
+                    <td className="px-4 py-3.5 text-[13px] text-fg-dim">
+                      {imp.lastSyncedAt ? timeAgo(imp.lastSyncedAt) : "never"}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <button
+                        onClick={() => {
+                          const [ns, nm] = imp.packageFullName.split("/");
+                          handleDeleteImport(ns, nm);
+                        }}
+                        title="Disconnect"
+                        className="rounded p-1 text-fg-dim transition-colors hover:bg-bg-elev-2 hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

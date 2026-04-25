@@ -14,12 +14,14 @@ export interface UserDto {
   avatarUrl: string | null;
   bio: string | null;
   verified: boolean;
+  isAdmin: boolean;
   createdAt: string;
 }
 
 export interface PackageVersionDto {
   id: string;
   version: string;
+  changelog: string | null;
   downloads: number;
   yanked: boolean;
   publishedAt: string;
@@ -41,6 +43,7 @@ export interface PackageDto {
   isPrivate: boolean;
   owner: UserDto;
   latestVersion: PackageVersionDto | null;
+  versions: PackageVersionDto[];
   createdAt: string;
   updatedAt: string;
 }
@@ -70,6 +73,18 @@ export interface ApiKeyDto {
 
 export interface ApiKeyCreatedDto extends ApiKeyDto {
   key: string;
+}
+
+export interface GitHubImportDto {
+  id: string;
+  repoUrl: string;
+  packageFullName: string;
+  lastSyncedAt: string | null;
+  createdAt: string;
+}
+
+export interface GitHubImportCreatedDto extends GitHubImportDto {
+  webhookSecret: string;
 }
 
 export interface PackageSearchParams {

@@ -26,6 +26,7 @@ model User {
   avatarUrl  String?
   bio        String?
   verified   Boolean  @default(false)
+  blocked    Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -105,6 +106,7 @@ model PackageVersion {
   version      String
   manifestJson Json
   storageKey   String
+  changelog    String?
   downloads    Int      @default(0)
   yanked       Boolean  @default(false)
   publishedAt  DateTime @default(now())
@@ -123,13 +125,13 @@ model Star {
 }
 
 model GitHubImport {
-  id           String   @id @default(cuid())
-  package      Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  packageId    String   @unique
-  repoUrl      String
-  lastSyncedAt DateTime?
-  webhookId    String?
-  createdAt    DateTime @default(now())
+  id            String    @id @default(cuid())
+  package       Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  packageId     String    @unique
+  repoUrl       String
+  webhookSecret String
+  lastSyncedAt  DateTime?
+  createdAt     DateTime  @default(now())
 }
 
 model Collection {

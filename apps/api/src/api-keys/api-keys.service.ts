@@ -69,7 +69,7 @@ export class ApiKeysService {
       where: { keyHash },
       include: { user: true },
     });
-    if (!apiKey) return null;
+    if (!apiKey || apiKey.user.blocked) return null;
 
     await this.prisma.apiKey.update({
       where: { id: apiKey.id },

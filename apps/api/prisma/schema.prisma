@@ -124,13 +124,13 @@ model Star {
 }
 
 model GitHubImport {
-  id           String   @id @default(cuid())
-  package      Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  packageId    String   @unique
-  repoUrl      String
-  lastSyncedAt DateTime?
-  webhookId    String?
-  createdAt    DateTime @default(now())
+  id            String    @id @default(cuid())
+  package       Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  packageId     String    @unique
+  repoUrl       String
+  webhookSecret String
+  lastSyncedAt  DateTime?
+  createdAt     DateTime  @default(now())
 }
 
 model Collection {

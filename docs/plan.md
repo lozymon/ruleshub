@@ -677,7 +677,7 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Phase 6 — GitHub Integration
 
-- [ ] Import from GitHub repo — detect `ruleshub.json`, auto-publish on new tags via webhook
+- [x] Import from GitHub repo — detect `ruleshub.json`, auto-publish on new tags via webhook
 - [ ] `ruleshub/install` GitHub Action — install assets in CI/CD pipelines
 
 ### Phase 7 — Monetisation

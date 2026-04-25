@@ -74,6 +74,18 @@ export interface ApiKeyCreatedDto extends ApiKeyDto {
   key: string;
 }
 
+export interface GitHubImportDto {
+  id: string;
+  repoUrl: string;
+  packageFullName: string;
+  lastSyncedAt: string | null;
+  createdAt: string;
+}
+
+export interface GitHubImportCreatedDto extends GitHubImportDto {
+  webhookSecret: string;
+}
+
 export interface PackageSearchParams {
   q?: string;
   namespace?: string;

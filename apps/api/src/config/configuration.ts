@@ -1,6 +1,10 @@
 export default () => ({
-  port: parseInt(process.env.PORT ?? '3001', 10),
-  appUrl: process.env.APP_URL ?? 'http://localhost:3000',
+  port: parseInt(process.env.PORT ?? "3001", 10),
+  appUrl: process.env.APP_URL ?? "http://localhost:3000",
+  adminUsernames: (process.env.ADMIN_USERNAMES ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
   database: {
     url: process.env.DATABASE_URL,
   },
@@ -12,15 +16,15 @@ export default () => ({
     },
     jwt: {
       secret: process.env.JWT_SECRET,
-      expiresIn: '7d',
+      expiresIn: "7d",
     },
   },
   storage: {
-    endpoint: process.env.MINIO_ENDPOINT ?? 'localhost',
-    port: parseInt(process.env.MINIO_PORT ?? '9000', 10),
-    useSsl: process.env.MINIO_USE_SSL === 'true',
-    accessKey: process.env.MINIO_ACCESS_KEY ?? '',
-    secretKey: process.env.MINIO_SECRET_KEY ?? '',
-    bucket: process.env.MINIO_BUCKET ?? 'ruleshub-packages',
+    endpoint: process.env.MINIO_ENDPOINT ?? "localhost",
+    port: parseInt(process.env.MINIO_PORT ?? "9000", 10),
+    useSsl: process.env.MINIO_USE_SSL === "true",
+    accessKey: process.env.MINIO_ACCESS_KEY ?? "",
+    secretKey: process.env.MINIO_SECRET_KEY ?? "",
+    bucket: process.env.MINIO_BUCKET ?? "ruleshub-packages",
   },
 });

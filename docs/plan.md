@@ -654,7 +654,7 @@ MINIO_BUCKET=ruleshub-packages
 
 - [x] Organisation accounts — team namespaces (`acmecorp/nestjs-rules`)
 - [x] Org dashboard — manage members and packages
-- [ ] Verified publisher badges — `owner.verified` field exists in DB/DTO; badge shown on package detail; no admin management UI yet
+- [x] Verified publisher badges — `ADMIN_USERNAMES` env var gates `PATCH /admin/users/:username/verify` and `PATCH /admin/orgs/:slug/verify`
 - [x] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [ ] Version diff viewer — side-by-side diff between versions
 - [x] Structured changelogs — per-version release notes field

@@ -25,7 +25,7 @@ function timeAgo(iso: string) {
 }
 
 export default function AdminDashboardPage() {
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [users, setUsers] = useState<AdminUserDto[]>([]);
@@ -95,6 +95,8 @@ export default function AdminDashboardPage() {
       );
     }
   };
+
+  if (authLoading) return null;
 
   if (!user) {
     router.replace(routes.login);

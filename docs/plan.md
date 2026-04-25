@@ -652,8 +652,8 @@ MINIO_BUCKET=ruleshub-packages
 
 ### Phase 5 — Organisations & Trust
 
-- [ ] Organisation accounts — team namespaces (`acmecorp/nestjs-rules`)
-- [ ] Org dashboard — manage members and packages
+- [x] Organisation accounts — team namespaces (`acmecorp/nestjs-rules`)
+- [x] Org dashboard — manage members and packages
 - [ ] Verified publisher badges — `owner.verified` field exists in DB/DTO; badge shown on package detail; no admin management UI yet
 - [ ] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [ ] Version diff viewer — side-by-side diff between versions

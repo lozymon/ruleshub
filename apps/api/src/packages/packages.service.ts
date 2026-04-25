@@ -18,6 +18,22 @@ type PackageWithIncludes = Package & {
   owner: User | null;
 };
 
+function computeQualityScore(
+  pkg: Package,
+  versionCount: number,
+  hasReadme: boolean,
+): number {
+  let score = 0;
+  if (hasReadme) score += 30;
+  if (pkg.description.length >= 50) score += 15;
+  if (pkg.tags.length >= 1) score += 10;
+  if (pkg.projectTypes.length >= 1) score += 10;
+  if (pkg.supportedTools.length >= 1) score += 10;
+  if (versionCount >= 2) score += 15;
+  if (pkg.totalDownloads >= 10) score += 10;
+  return score;
+}
+
 export type PackageWithVersion = Package & {
   latestVersion: PackageVersion | null;
 };
@@ -168,6 +184,8 @@ export class PackagesService {
       ? Object.keys(parsed.data.targets)
       : [];
 
+    const hasReadme = this.extractHasReadme(fileBuffer);
+
     const storageKey = `packages/${namespace}/${packageName}/${parsed.data.version}.zip`;
     await this.storage.upload(storageKey, fileBuffer, "application/zip");
 
@@ -180,6 +198,7 @@ export class PackagesService {
           projectTypes: parsed.data.projectTypes,
           supportedTools,
           type: parsed.data.type,
+          hasReadme,
         },
         create: {
           namespace,
@@ -189,6 +208,7 @@ export class PackagesService {
           tags: parsed.data.tags,
           projectTypes: parsed.data.projectTypes,
           supportedTools,
+          hasReadme,
           ownerType: "user",
           ownerUserId: userId,
         },
@@ -208,7 +228,7 @@ export class PackagesService {
         );
       }
 
-      return tx.packageVersion.create({
+      const version = await tx.packageVersion.create({
         data: {
           packageId: pkg.id,
           version: parsed.data.version,
@@ -216,6 +236,17 @@ export class PackagesService {
           storageKey,
         },
       });
+
+      const versionCount = await tx.packageVersion.count({
+        where: { packageId: pkg.id },
+      });
+      const qualityScore = computeQualityScore(pkg, versionCount, hasReadme);
+      await tx.package.update({
+        where: { id: pkg.id },
+        data: { qualityScore },
+      });
+
+      return version;
     });
   }
 
@@ -307,6 +338,15 @@ export class PackagesService {
     } catch (e) {
       if (e instanceof BadRequestException) throw e;
       throw new BadRequestException("Invalid zip file");
+    }
+  }
+
+  private extractHasReadme(fileBuffer: Buffer): boolean {
+    try {
+      const zip = new AdmZip(fileBuffer);
+      return !!(zip.getEntry("README.md") ?? zip.getEntry("readme.md"));
+    } catch {
+      return false;
     }
   }
 

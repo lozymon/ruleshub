@@ -1,15 +1,28 @@
-import { config } from '../config';
+import { config } from "../config";
 
-type RequestOptions = Omit<RequestInit, 'body'> & {
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   token?: string;
 };
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const { body, token, ...rest } = options;
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...rest.headers,
   };
@@ -21,8 +34,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(error.message ?? 'Request failed');
+    const error = await response
+      .json()
+      .catch(() => ({ message: response.statusText }));
+    throw new ApiError(error.message ?? "Request failed", response.status);
+  }
+
+  if (
+    response.status === 204 ||
+    response.headers.get("content-length") === "0"
+  ) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -30,9 +52,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
 export const apiClient = {
   get: <T>(path: string, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'GET' }),
+    request<T>(path, { ...options, method: "GET" }),
   post: <T>(path: string, body: unknown, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'POST', body }),
+    request<T>(path, { ...options, method: "POST", body }),
+  patch: <T>(path: string, body: unknown, options?: RequestOptions) =>
+    request<T>(path, { ...options, method: "PATCH", body }),
   delete: <T>(path: string, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'DELETE' }),
+    request<T>(path, { ...options, method: "DELETE" }),
 };

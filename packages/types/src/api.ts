@@ -37,11 +37,39 @@ export interface PackageDto {
   supportedTools: SupportedTool[];
   totalDownloads: number;
   stars: number;
+  qualityScore: number;
   isPrivate: boolean;
   owner: UserDto;
   latestVersion: PackageVersionDto | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OrgDto {
+  id: string;
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+  verified: boolean;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface OrgMemberDto {
+  user: UserDto;
+  role: "owner" | "admin" | "member";
+}
+
+export interface ApiKeyDto {
+  id: string;
+  name: string;
+  prefix: string;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyCreatedDto extends ApiKeyDto {
+  key: string;
 }
 
 export interface PackageSearchParams {

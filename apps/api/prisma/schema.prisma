@@ -34,6 +34,7 @@ model User {
   stars        Star[]
   collections  Collection[]
   comments     Comment[]
+  apiKeys      ApiKey[]
 }
 
 model Organisation {
@@ -71,6 +72,8 @@ model Package {
   isPrivate      Boolean   @default(false)
   totalDownloads Int       @default(0)
   stars          Int       @default(0)
+  qualityScore   Int       @default(0)
+  hasReadme      Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -167,6 +170,19 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   @@index([packageId])
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  name       String
+  keyHash    String    @unique
+  prefix     String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model EmailSubscriber {

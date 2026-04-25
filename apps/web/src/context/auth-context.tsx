@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import type { UserDto } from '@ruleshub/types';
-import { authStorage } from '@/lib/auth-storage';
-import { getMe } from '@/lib/api/auth';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+import type { UserDto } from "@ruleshub/types";
+import { authStorage } from "@/lib/auth-storage";
+import { getMe } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
 
 interface AuthState {
   user: UserDto | null;
@@ -35,10 +42,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = authStorage.getToken();
-    if (!stored) { setLoading(false); return; }
+    if (!stored) {
+      setLoading(false);
+      return;
+    }
     getMe(stored)
-      .then((me) => { setToken(stored); setUser(me); })
-      .catch(() => { authStorage.clearToken(); })
+      .then((me) => {
+        setToken(stored);
+        setUser(me);
+      })
+      .catch((err) => {
+        // Only clear the token on 401 — network failures should not log the user out
+        if (err instanceof ApiError && err.status === 401) {
+          authStorage.clearToken();
+        } else {
+          setToken(stored);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -51,6 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }

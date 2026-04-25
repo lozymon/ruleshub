@@ -1,8 +1,10 @@
 import {
   Controller,
+  Get,
   Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -14,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
   ApiProperty,
 } from "@nestjs/swagger";
 import { IsBoolean } from "class-validator";
@@ -24,7 +27,13 @@ import { AdminService } from "./admin.service";
 class SetVerifiedDto {
   @ApiProperty({ example: true })
   @IsBoolean()
-  verified: boolean;
+  verified!: boolean;
+}
+
+class SetBlockedDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  blocked!: boolean;
 }
 
 @ApiTags("admin")
@@ -33,6 +42,33 @@ class SetVerifiedDto {
 @Controller("admin")
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  @Get("users")
+  @ApiOperation({ summary: "List all users (paginated)" })
+  @ApiQuery({ name: "page", required: false, example: 1 })
+  @ApiQuery({ name: "limit", required: false, example: 50 })
+  @ApiQuery({ name: "q", required: false, description: "Search by username" })
+  @ApiResponse({ status: 200 })
+  listUsers(
+    @Query("page") page = 1,
+    @Query("limit") limit = 50,
+    @Query("q") q?: string,
+  ) {
+    return this.adminService.listUsers(+page, +limit, q);
+  }
+
+  @Patch("users/:username/block")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Block or unblock a user" })
+  @ApiParam({ name: "username" })
+  @ApiBody({ type: SetBlockedDto })
+  @ApiResponse({ status: 204 })
+  setUserBlocked(
+    @Param("username") username: string,
+    @Body() dto: SetBlockedDto,
+  ) {
+    return this.adminService.setUserBlocked(username, dto.blocked);
+  }
 
   @Patch("users/:username/verify")
   @HttpCode(HttpStatus.NO_CONTENT)

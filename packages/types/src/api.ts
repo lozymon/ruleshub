@@ -14,6 +14,7 @@ export interface UserDto {
   avatarUrl: string | null;
   bio: string | null;
   verified: boolean;
+  isAdmin: boolean;
   createdAt: string;
 }
 

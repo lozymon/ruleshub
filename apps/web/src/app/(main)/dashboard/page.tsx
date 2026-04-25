@@ -17,6 +17,7 @@ import {
   Check,
   GitBranch,
   RefreshCw,
+  Shield,
 } from "lucide-react";
 import { searchPackages, yankVersion } from "@/lib/api/packages";
 import { getMyOrgs, createOrg } from "@/lib/api/orgs";
@@ -296,13 +297,24 @@ export default function DashboardPage() {
             {user ? `Signed in as ${user.username}` : "Loading…"}
           </p>
         </div>
-        <Link
-          href={routes.publish}
-          className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Upload className="h-3.5 w-3.5" />
-          Publish new package
-        </Link>
+        <div className="flex items-center gap-2">
+          {user?.isAdmin && (
+            <Link
+              href={routes.dashboardAdmin}
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-md border border-border px-3.5 text-[13px] font-medium transition-colors hover:bg-bg-elev"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </Link>
+          )}
+          <Link
+            href={routes.publish}
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Publish new package
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

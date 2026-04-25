@@ -657,7 +657,7 @@ MINIO_BUCKET=ruleshub-packages
 - [ ] Verified publisher badges — `owner.verified` field exists in DB/DTO; badge shown on package detail; no admin management UI yet
 - [x] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [ ] Version diff viewer — side-by-side diff between versions
-- [ ] Structured changelogs — per-version release notes field
+- [x] Structured changelogs — per-version release notes field
 - [ ] Dependency security alerts — notify dependents when a package is yanked or reported
 - [x] API keys — `RULESHUB_TOKEN` for CI/CD publishing without browser OAuth
 - [ ] Webhooks for consumers — subscribe to new version notifications

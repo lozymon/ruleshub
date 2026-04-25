@@ -43,6 +43,7 @@ function toPackageDto(p: PackageWithIncludes) {
     ...p,
     fullName: `${p.namespace}/${p.name}`,
     latestVersion: p.versions[0] ?? null,
+    versions: p.versions,
     owner: p.owner
       ? {
           id: p.owner.id,
@@ -138,7 +139,7 @@ export class PackagesService {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
       include: {
-        versions: { orderBy: { publishedAt: "desc" }, take: 1 },
+        versions: { orderBy: { publishedAt: "desc" } },
         owner: true,
       },
     });
@@ -232,6 +233,7 @@ export class PackagesService {
         data: {
           packageId: pkg.id,
           version: parsed.data.version,
+          changelog: parsed.data.changelog ?? null,
           manifestJson: parsed.data as unknown as Prisma.InputJsonValue,
           storageKey,
         },

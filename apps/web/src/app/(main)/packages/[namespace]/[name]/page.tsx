@@ -226,53 +226,63 @@ export default async function PackagePage({ params }: PackagePageProps) {
             </ul>
           </div>
 
-          {/* Versions (always visible below README for now) */}
+          {/* Versions */}
           <div className="mt-2 border-t border-border pt-6">
             <h3 className="mb-4 text-[14px] font-semibold">Versions</h3>
-            {pkg.latestVersion ? (
-              <div className="overflow-hidden rounded-[10px] border border-border bg-bg-elev">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-border bg-bg-elev-2">
-                      {["Version", "Released", "Downloads", ""].map((h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-fg-dim"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="px-4 py-3.5 font-mono text-[13px]">
-                        {pkg.latestVersion.version}
-                        <span className="ml-2 rounded-[3px] border border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)] px-1.5 py-0.5 font-mono text-[10px] text-primary">
-                          LATEST
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-[13px] text-fg-dim">
-                        {new Date(
-                          pkg.latestVersion.publishedAt,
-                        ).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3.5 font-mono text-[13px] text-fg-dim">
-                        {pkg.latestVersion.downloads.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <button className="rounded px-2 py-1 text-[12.5px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground">
-                          Install
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ) : (
+            {pkg.versions.length === 0 ? (
               <p className="text-[13px] text-fg-muted">
                 No versions published yet.
               </p>
+            ) : (
+              <div className="overflow-hidden rounded-[10px] border border-border bg-bg-elev">
+                {pkg.versions.map((v, i) => (
+                  <div
+                    key={v.id}
+                    className={
+                      i < pkg.versions.length - 1
+                        ? "border-b border-border"
+                        : ""
+                    }
+                  >
+                    <div className="flex items-center gap-3 px-4 py-3.5">
+                      <span className="flex-1 font-mono text-[13px]">
+                        {v.version}
+                        {i === 0 && (
+                          <span className="ml-2 rounded-[3px] border border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)] px-1.5 py-0.5 font-mono text-[10px] text-primary">
+                            LATEST
+                          </span>
+                        )}
+                        {v.yanked && (
+                          <span className="ml-2 rounded-[3px] border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 font-mono text-[10px] text-destructive">
+                            YANKED
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-mono text-[12px] text-fg-dim">
+                        {v.downloads.toLocaleString()} installs
+                      </span>
+                      <span className="text-[12px] text-fg-dim">
+                        {new Date(v.publishedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {v.changelog && (
+                      <details className="group px-4 pb-3">
+                        <summary className="cursor-pointer list-none text-[12px] text-fg-dim hover:text-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <span className="transition-transform group-open:rotate-90">
+                              ▶
+                            </span>
+                            Changelog
+                          </span>
+                        </summary>
+                        <p className="mt-2 whitespace-pre-wrap rounded-md border border-border bg-bg-elev-2 px-3 py-2.5 font-mono text-[12px] leading-relaxed text-fg-muted">
+                          {v.changelog}
+                        </p>
+                      </details>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

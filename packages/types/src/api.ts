@@ -20,6 +20,7 @@ export interface UserDto {
 export interface PackageVersionDto {
   id: string;
   version: string;
+  changelog: string | null;
   downloads: number;
   yanked: boolean;
   publishedAt: string;
@@ -41,6 +42,7 @@ export interface PackageDto {
   isPrivate: boolean;
   owner: UserDto;
   latestVersion: PackageVersionDto | null;
+  versions: PackageVersionDto[];
   createdAt: string;
   updatedAt: string;
 }

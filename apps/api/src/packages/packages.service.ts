@@ -203,6 +203,8 @@ export class PackagesService {
       : [];
     const hasReadme = this.extractHasReadme(fileBuffer);
 
+    const hasReadme = this.extractHasReadme(fileBuffer);
+
     const storageKey = `packages/${namespace}/${packageName}/${parsed.data.version}.zip`;
     await this.storage.upload(storageKey, fileBuffer, "application/zip");
 

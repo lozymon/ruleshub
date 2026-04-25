@@ -11,6 +11,7 @@ import { CollectionsModule } from "./collections/collections.module";
 import { CommentsModule } from "./comments/comments.module";
 import { LeaderboardModule } from "./leaderboard/leaderboard.module";
 import { OrganisationsModule } from "./organisations/organisations.module";
+import { ApiKeysModule } from "./api-keys/api-keys.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -30,6 +31,7 @@ import configuration from "./config/configuration";
     CommentsModule,
     LeaderboardModule,
     OrganisationsModule,
+    ApiKeysModule,
   ],
 })
 export class AppModule {}

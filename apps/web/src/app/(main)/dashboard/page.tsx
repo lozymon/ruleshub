@@ -12,12 +12,17 @@ import {
   Building2,
   Plus,
   ChevronRight,
+  Key,
+  Copy,
+  Check,
 } from "lucide-react";
 import { searchPackages, yankVersion } from "@/lib/api/packages";
 import { getMyOrgs, createOrg } from "@/lib/api/orgs";
+import { listApiKeys, createApiKey, revokeApiKey } from "@/lib/api/api-keys";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { routes } from "@/lib/routes";
 import { useAuth } from "@/context/auth-context";
-import type { OrgDto, PackageDto } from "@ruleshub/types";
+import type { ApiKeyDto, OrgDto, PackageDto } from "@ruleshub/types";
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -50,6 +55,12 @@ export default function DashboardPage() {
   const [packages, setPackages] = useState<PackageDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [yankingId, setYankingId] = useState<string | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   type OrgWithRole = OrgDto & { role: "owner" | "admin" | "member" };
   const [orgs, setOrgs] = useState<OrgWithRole[]>([]);
@@ -79,6 +90,58 @@ export default function DashboardPage() {
     setOrgs(data);
   }, [token]);
 
+  const [apiKeys, setApiKeys] = useState<ApiKeyDto[]>([]);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newKeySecret, setNewKeySecret] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [revokingKeyId, setRevokingKeyId] = useState<string | null>(null);
+
+  const fetchApiKeys = useCallback(async () => {
+    if (!token) return;
+    const data = await listApiKeys(token).catch(() => []);
+    setApiKeys(data);
+  }, [token]);
+
+  async function handleCreateKey(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !newKeyName.trim()) return;
+    setCreatingKey(true);
+    try {
+      const created = await createApiKey(newKeyName.trim(), token);
+      setNewKeySecret(created.key);
+      setNewKeyName("");
+      await fetchApiKeys();
+    } finally {
+      setCreatingKey(false);
+    }
+  }
+
+  function handleRevokeKey(id: string) {
+    if (!token) return;
+    setPendingConfirm({
+      title: "Revoke API key?",
+      description: "Any CI/CD using it will stop working.",
+      confirmLabel: "Revoke",
+      onConfirm: async () => {
+        setPendingConfirm(null);
+        setRevokingKeyId(id);
+        try {
+          await revokeApiKey(id, token);
+          await fetchApiKeys();
+        } finally {
+          setRevokingKeyId(null);
+        }
+      },
+    });
+  }
+
+  function copyKey(key: string) {
+    navigator.clipboard.writeText(key);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  }
+
   // Only redirect when auth has resolved, there is no user, AND no stored token.
   // A stored token with no user means the API was unreachable — don't log the user out.
   const redirected = useRef(false);
@@ -92,7 +155,8 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchPackages();
     fetchOrgs();
-  }, [fetchPackages, fetchOrgs]);
+    fetchApiKeys();
+  }, [fetchPackages, fetchOrgs, fetchApiKeys]);
 
   async function handleCreateOrg(e: React.FormEvent) {
     e.preventDefault();
@@ -121,28 +185,29 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleYank(pkg: PackageDto) {
+  function handleYank(pkg: PackageDto) {
     if (!token || !pkg.latestVersion) return;
-    if (
-      !window.confirm(
-        `Yank ${pkg.namespace}/${pkg.name}@${pkg.latestVersion.version}? This removes it from the registry.`,
-      )
-    )
-      return;
-    setYankingId(pkg.id);
-    try {
-      await yankVersion(
-        pkg.namespace,
-        pkg.name,
-        pkg.latestVersion.version,
-        token,
-      );
-      await fetchPackages();
-    } finally {
-      setYankingId(null);
-    }
+    setPendingConfirm({
+      title: `Yank ${pkg.namespace}/${pkg.name}@${pkg.latestVersion.version}?`,
+      description: "This removes it from the registry and cannot be undone.",
+      confirmLabel: "Yank",
+      onConfirm: async () => {
+        setPendingConfirm(null);
+        setYankingId(pkg.id);
+        try {
+          await yankVersion(
+            pkg.namespace,
+            pkg.name,
+            pkg.latestVersion!.version,
+            token,
+          );
+          await fetchPackages();
+        } finally {
+          setYankingId(null);
+        }
+      },
+    });
   }
-
   const totalDownloads = packages.reduce((a, p) => a + p.totalDownloads, 0);
   const totalStars = packages.reduce((a, p) => a + p.stars, 0);
 
@@ -395,6 +460,140 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* API Keys */}
+      <div className="mt-10">
+        <h3 className="mb-3 text-[15px] font-semibold">API Keys</h3>
+        <p className="mb-4 text-[13px] text-fg-dim">
+          Use these tokens to publish packages from CI/CD without a browser
+          login. Set{" "}
+          <code className="rounded bg-bg-elev px-1 font-mono text-[12px]">
+            RULESHUB_TOKEN=&lt;key&gt;
+          </code>{" "}
+          in your environment.
+        </p>
+
+        {/* New key revealed — show once */}
+        {newKeySecret && (
+          <div className="mb-4 rounded-[10px] border border-primary/30 bg-primary/5 p-4">
+            <p className="mb-2 text-[13px] font-medium text-primary">
+              Copy your key now — it won&apos;t be shown again.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 overflow-x-auto rounded-md border border-border bg-bg-elev px-3 py-2 font-mono text-[12px]">
+                {newKeySecret}
+              </code>
+              <button
+                onClick={() => copyKey(newKeySecret)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-bg-elev transition-colors hover:bg-bg-elev-2"
+                title="Copy to clipboard"
+              >
+                {copiedKey ? (
+                  <Check className="h-3.5 w-3.5 text-primary" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
+            <button
+              onClick={() => setNewKeySecret(null)}
+              className="mt-2 text-[12px] text-fg-dim underline-offset-2 hover:underline"
+            >
+              I&apos;ve saved it, dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Create form */}
+        <form onSubmit={handleCreateKey} className="mb-4 flex gap-2">
+          <input
+            type="text"
+            placeholder="Key name (e.g. GitHub Actions)"
+            value={newKeyName}
+            onChange={(e) => setNewKeyName(e.target.value)}
+            className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 text-[13px] outline-none focus:border-primary"
+          />
+          <button
+            type="submit"
+            disabled={creatingKey || !newKeyName.trim()}
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {creatingKey ? "Creating…" : "New key"}
+          </button>
+        </form>
+
+        {apiKeys.length === 0 ? (
+          <div className="rounded-[10px] border border-dashed border-border py-10 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-bg-elev">
+              <Key className="h-5 w-5 text-fg-dim" />
+            </div>
+            <p className="text-[13px] text-fg-dim">No API keys yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-[10px] border border-border bg-bg-elev">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-bg-elev-2">
+                  {["Name", "Prefix", "Last used", "Created", ""].map(
+                    (h, i) => (
+                      <th
+                        key={i}
+                        className={`px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-fg-dim ${i === 0 ? "text-left" : i < 4 ? "text-left" : "text-right"}`}
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {apiKeys.map((k) => (
+                  <tr
+                    key={k.id}
+                    className="border-b border-border transition-colors last:border-0 hover:bg-bg-elev-2"
+                  >
+                    <td className="px-4 py-3.5 text-[13px] font-medium">
+                      {k.name}
+                    </td>
+                    <td className="px-4 py-3.5 font-mono text-[12px] text-fg-dim">
+                      {k.prefix}…
+                    </td>
+                    <td className="px-4 py-3.5 text-[12.5px] text-fg-dim">
+                      {k.lastUsedAt
+                        ? new Date(k.lastUsedAt).toLocaleDateString()
+                        : "Never"}
+                    </td>
+                    <td className="px-4 py-3.5 text-[12.5px] text-fg-dim">
+                      {new Date(k.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <button
+                        onClick={() => handleRevokeKey(k.id)}
+                        disabled={revokingKeyId === k.id}
+                        title="Revoke key"
+                        className="flex h-7 w-7 items-center justify-center rounded text-fg-muted transition-colors hover:bg-bg-elev hover:text-destructive disabled:opacity-40 ml-auto"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!pendingConfirm}
+        title={pendingConfirm?.title ?? ""}
+        description={pendingConfirm?.description ?? ""}
+        confirmLabel={pendingConfirm?.confirmLabel ?? "Confirm"}
+        destructive
+        onConfirm={() => pendingConfirm?.onConfirm()}
+        onCancel={() => setPendingConfirm(null)}
+      />
     </div>
   );
 }

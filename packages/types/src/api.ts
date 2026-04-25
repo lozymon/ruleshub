@@ -59,6 +59,18 @@ export interface OrgMemberDto {
   role: "owner" | "admin" | "member";
 }
 
+export interface ApiKeyDto {
+  id: string;
+  name: string;
+  prefix: string;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyCreatedDto extends ApiKeyDto {
+  key: string;
+}
+
 export interface PackageSearchParams {
   q?: string;
   namespace?: string;

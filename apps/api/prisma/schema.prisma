@@ -34,6 +34,7 @@ model User {
   stars        Star[]
   collections  Collection[]
   comments     Comment[]
+  apiKeys      ApiKey[]
 }
 
 model Organisation {
@@ -167,6 +168,19 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   @@index([packageId])
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  name       String
+  keyHash    String    @unique
+  prefix     String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model EmailSubscriber {

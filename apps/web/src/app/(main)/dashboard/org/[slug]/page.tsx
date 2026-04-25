@@ -25,6 +25,7 @@ import {
   removeOrgMember,
   deleteOrg,
 } from "@/lib/api/orgs";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { routes } from "@/lib/routes";
 import { useAuth } from "@/context/auth-context";
 import type { OrgDto, OrgMemberDto, PackageDto } from "@ruleshub/types";
@@ -61,6 +62,12 @@ export default function OrgDashboardPage() {
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [actionTarget, setActionTarget] = useState<string | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const myRole = members.find((m) => m.user.username === user?.username)?.role;
   const canManage = myRole === "owner" || myRole === "admin";
@@ -115,32 +122,50 @@ export default function OrgDashboardPage() {
     }
   }
 
-  async function handleRemoveMember(username: string) {
+  function handleRemoveMember(username: string) {
     if (!token) return;
-    if (!window.confirm(`Remove ${username} from this organisation?`)) return;
-    setActionTarget(username);
-    try {
-      await removeOrgMember(slug, username, token);
-      await load();
-    } finally {
-      setActionTarget(null);
-    }
+    setPendingConfirm({
+      title: `Remove ${username}?`,
+      description: "They will lose access to this organisation immediately.",
+      confirmLabel: "Remove",
+      onConfirm: async () => {
+        setPendingConfirm(null);
+        setActionTarget(username);
+        try {
+          await removeOrgMember(slug, username, token);
+          await load();
+        } finally {
+          setActionTarget(null);
+        }
+      },
+    });
   }
 
-  async function handleDeleteOrg() {
+  function handleDeleteOrg() {
     if (!token || !org) return;
-    if (
-      !window.confirm(
-        `Delete "${org.displayName}"? This will remove all packages published under this organisation.`,
-      )
-    )
-      return;
-    try {
-      await deleteOrg(slug, token);
-      router.replace(routes.dashboard);
-    } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Failed to delete");
-    }
+    setPendingConfirm({
+      title: `Delete "${org.displayName}"?`,
+      description:
+        "This will permanently delete the organisation and all packages published under it.",
+      confirmLabel: "Delete organisation",
+      onConfirm: async () => {
+        setPendingConfirm(null);
+        try {
+          await deleteOrg(slug, token);
+          router.replace(routes.dashboard);
+        } catch (err) {
+          setPendingConfirm({
+            title: "Delete failed",
+            description:
+              err instanceof Error
+                ? err.message
+                : "Failed to delete organisation.",
+            confirmLabel: "OK",
+            onConfirm: () => setPendingConfirm(null),
+          });
+        }
+      },
+    });
   }
 
   const totalDownloads = packages.reduce((a, p) => a + p.totalDownloads, 0);
@@ -372,6 +397,16 @@ export default function OrgDashboardPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingConfirm}
+        title={pendingConfirm?.title ?? ""}
+        description={pendingConfirm?.description ?? ""}
+        confirmLabel={pendingConfirm?.confirmLabel ?? "Confirm"}
+        destructive
+        onConfirm={() => pendingConfirm?.onConfirm()}
+        onCancel={() => setPendingConfirm(null)}
+      />
     </div>
   );
 }

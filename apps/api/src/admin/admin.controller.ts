@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiProperty,
 } from "@nestjs/swagger";
 import { IsBoolean } from "class-validator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -25,8 +26,6 @@ class SetVerifiedDto {
   @IsBoolean()
   verified: boolean;
 }
-
-import { ApiProperty } from "@nestjs/swagger";
 
 @ApiTags("admin")
 @ApiBearerAuth()

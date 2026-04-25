@@ -1,36 +1,44 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Check, ArrowRight, Upload, X, AlertCircle } from 'lucide-react';
-import { routes } from '@/lib/routes';
-import { TOOL_LABELS } from '@ruleshub/types';
-import type { SupportedTool } from '@ruleshub/types';
-import { TOOL_COLORS } from '@/lib/tool-colors';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
-import { publishPackage } from '@/lib/api/packages';
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Check, ArrowRight, Upload, X, AlertCircle } from "lucide-react";
+import { routes } from "@/lib/routes";
+import { TOOL_LABELS } from "@ruleshub/types";
+import type { SupportedTool } from "@ruleshub/types";
+import { TOOL_COLORS } from "@/lib/tool-colors";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
+import { publishPackage } from "@/lib/api/packages";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ASSET_TYPES = [
-  { id: 'rule', label: 'Rule' },
-  { id: 'command', label: 'Command' },
-  { id: 'workflow', label: 'Workflow' },
-  { id: 'agent', label: 'Agent' },
-  { id: 'mcp-server', label: 'MCP Server' },
-  { id: 'pack', label: 'Pack' },
+  { id: "rule", label: "Rule" },
+  { id: "command", label: "Command" },
+  { id: "workflow", label: "Workflow" },
+  { id: "agent", label: "Agent" },
+  { id: "mcp-server", label: "MCP Server" },
+  { id: "pack", label: "Pack" },
 ] as const;
 
 const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
 
 const DEFAULT_TOOL_PATHS: Record<SupportedTool, string> = {
-  'claude-code': 'CLAUDE.md',
-  cursor: '.cursor/rules/',
-  copilot: '.github/copilot-instructions.md',
-  windsurf: '.windsurf/rules/',
-  cline: '.clinerules',
-  aider: '.aiderrules',
-  continue: '.continue/rules/',
+  "claude-code": "CLAUDE.md",
+  cursor: ".cursor/rules/",
+  copilot: ".github/copilot-instructions.md",
+  windsurf: ".windsurf/rules/",
+  cline: ".clinerules",
+  aider: ".aiderrules",
+  continue: ".continue/rules/",
 };
 
 interface FormState {
@@ -50,67 +58,73 @@ interface FormState {
 function validate(form: FormState) {
   return [
     {
-      key: 'ns',
+      key: "ns",
       ok: form.namespace.length > 0,
-      msg: `namespace: ${form.namespace || '—'} set`,
+      msg: `namespace: ${form.namespace || "—"} set`,
     },
     {
-      key: 'name',
+      key: "name",
       ok: /^[a-z][a-z0-9-]*$/.test(form.name),
-      msg: `name: ${form.name || '—'} follows naming convention`,
+      msg: `name: ${form.name || "—"} follows naming convention`,
     },
     {
-      key: 'version',
+      key: "version",
       ok: /^\d+\.\d+\.\d+$/.test(form.version),
       msg: `version: ${form.version} is valid semver`,
     },
     {
-      key: 'desc',
+      key: "desc",
       ok: form.description.length >= 1,
       msg: `description: ${form.description.length} chars`,
     },
     {
-      key: 'license',
+      key: "license",
       ok: form.license.length > 0,
-      msg: `license: ${form.license || '—'} set`,
+      msg: `license: ${form.license || "—"} set`,
     },
     {
-      key: 'tools',
+      key: "tools",
       ok: form.tools.size > 0,
       msg: `tools: ${form.tools.size} targets selected`,
     },
     {
-      key: 'file',
+      key: "file",
       ok: form.file !== null,
       msg: form.file
         ? `source: ${form.file.name} (${(form.file.size / 1024).toFixed(1)} KB)`
-        : 'source: no file uploaded',
+        : "source: no file uploaded",
     },
   ];
 }
 
 export default function PublishPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [step, setStep] = useState(1);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
-    namespace: '',
-    name: '',
-    version: '0.1.0',
-    description: '',
-    license: 'MIT',
-    tags: '',
-    projectTypes: '',
-    type: 'rule',
-    tools: new Set(['claude-code'] as SupportedTool[]),
+    namespace: "",
+    name: "",
+    version: "0.1.0",
+    description: "",
+    license: "MIT",
+    tags: "",
+    projectTypes: "",
+    type: "rule",
+    tools: new Set(["claude-code"] as SupportedTool[]),
     file: null,
     dragging: false,
   });
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function update(patch: Partial<Omit<FormState, 'tools'>>) {
+  useEffect(() => {
+    if (user?.username) {
+      setForm((f) => (f.namespace ? f : { ...f, namespace: user.username }));
+    }
+  }, [user?.username]);
+
+  function update(patch: Partial<Omit<FormState, "tools">>) {
     setForm((f) => ({ ...f, ...patch }));
   }
 
@@ -132,7 +146,7 @@ export default function PublishPage() {
     setPublishing(true);
     setError(null);
     try {
-      const JSZip = (await import('jszip')).default;
+      const JSZip = (await import("jszip")).default;
       const zip = await JSZip.loadAsync(form.file);
 
       const manifest = {
@@ -142,11 +156,11 @@ export default function PublishPage() {
         description: form.description,
         license: form.license,
         tags: form.tags
-          .split(',')
+          .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
         projectTypes: form.projectTypes
-          .split(',')
+          .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
         targets: Object.fromEntries(
@@ -156,31 +170,31 @@ export default function PublishPage() {
           ]),
         ),
       };
-      zip.file('ruleshub.json', JSON.stringify(manifest, null, 2));
+      zip.file("ruleshub.json", JSON.stringify(manifest, null, 2));
 
-      const blob = await zip.generateAsync({ type: 'blob' });
+      const blob = await zip.generateAsync({ type: "blob" });
       const file = new File([blob], `${form.name}.zip`, {
-        type: 'application/zip',
+        type: "application/zip",
       });
 
       await publishPackage(file, token);
       router.push(routes.package(`${form.namespace}/${form.name}`));
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Publish failed. Please try again.',
+        e instanceof Error ? e.message : "Publish failed. Please try again.",
       );
       setPublishing(false);
     }
   }
 
   const STEPS = [
-    { n: 1, label: 'Manifest' },
-    { n: 2, label: 'Upload' },
-    { n: 3, label: 'Preview' },
+    { n: 1, label: "Manifest" },
+    { n: 2, label: "Upload" },
+    { n: 3, label: "Preview" },
   ];
 
   return (
-    <div className="mx-auto max-w-[800px] px-6 py-10 pb-20">
+    <div className="mx-auto max-w-[1240px] px-6 py-10 pb-20">
       <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
         Publish a package
       </h1>
@@ -199,22 +213,22 @@ export default function PublishPage() {
               key={n}
               onClick={() => n < step && setStep(n)}
               className={cn(
-                'flex flex-1 items-center gap-2.5 border-b-2 py-3.5 text-[13px] transition-colors',
+                "flex flex-1 items-center gap-2.5 border-b-2 py-3.5 text-[13px] transition-colors",
                 active
-                  ? 'border-primary text-foreground'
+                  ? "border-primary text-foreground"
                   : done
-                    ? 'border-transparent text-fg-muted cursor-pointer hover:text-foreground'
-                    : 'border-transparent text-fg-dim cursor-default',
+                    ? "border-transparent text-fg-muted cursor-pointer hover:text-foreground"
+                    : "border-transparent text-fg-dim cursor-default",
               )}
             >
               <span
                 className={cn(
-                  'flex h-[22px] w-[22px] items-center justify-center rounded-full border font-mono text-[11px] font-semibold',
+                  "flex h-[22px] w-[22px] items-center justify-center rounded-full border font-mono text-[11px] font-semibold",
                   active
-                    ? 'border-primary bg-[var(--rh-accent-tint)] text-primary'
+                    ? "border-primary bg-[var(--rh-accent-tint)] text-primary"
                     : done
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-border-strong text-fg-muted',
+                      ? "border-primary bg-primary text-white"
+                      : "border-border-strong text-fg-muted",
                 )}
               >
                 {done ? <Check className="h-3 w-3" strokeWidth={3} /> : n}
@@ -230,16 +244,16 @@ export default function PublishPage() {
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Namespace" hint="Your username or verified org">
-              <input
-                className="form-input font-mono"
+              <Input
+                className="font-mono"
                 value={form.namespace}
                 onChange={(e) => update({ namespace: e.target.value })}
                 placeholder="username"
               />
             </Field>
             <Field label="Package name" hint="Lowercase, hyphen-separated">
-              <input
-                className="form-input font-mono"
+              <Input
+                className="font-mono"
                 value={form.name}
                 onChange={(e) => update({ name: e.target.value })}
                 placeholder="my-awesome-rules"
@@ -249,28 +263,32 @@ export default function PublishPage() {
 
           <div className="grid grid-cols-3 gap-4">
             <Field label="Version" hint="Semver (e.g. 1.0.0)">
-              <input
-                className="form-input font-mono"
+              <Input
+                className="font-mono"
                 value={form.version}
                 onChange={(e) => update({ version: e.target.value })}
               />
             </Field>
             <Field label="Asset type" hint="What kind of asset is this?">
-              <select
-                className="form-input"
+              <Select
                 value={form.type}
-                onChange={(e) => update({ type: e.target.value })}
+                onValueChange={(v) => v && update({ type: v })}
               >
-                {ASSET_TYPES.map(({ id, label }) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSET_TYPES.map(({ id, label }) => (
+                    <SelectItem key={id} value={id}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="License" hint="SPDX identifier">
-              <input
-                className="form-input font-mono"
+              <Input
+                className="font-mono"
                 value={form.license}
                 onChange={(e) => update({ license: e.target.value })}
                 placeholder="MIT"
@@ -283,7 +301,7 @@ export default function PublishPage() {
             hint="One or two sentences explaining what it does."
           >
             <textarea
-              className="form-input min-h-[90px] resize-y pt-2"
+              className="min-h-[90px] w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               value={form.description}
               onChange={(e) => update({ description: e.target.value })}
               placeholder="Strict conventions for…"
@@ -295,8 +313,7 @@ export default function PublishPage() {
               label="Tags"
               hint="Comma-separated (e.g. nestjs, typescript)"
             >
-              <input
-                className="form-input"
+              <Input
                 value={form.tags}
                 onChange={(e) => update({ tags: e.target.value })}
                 placeholder="nestjs, typescript"
@@ -306,8 +323,7 @@ export default function PublishPage() {
               label="Project types"
               hint="Comma-separated (e.g. nestjs, node)"
             >
-              <input
-                className="form-input"
+              <Input
                 value={form.projectTypes}
                 onChange={(e) => update({ projectTypes: e.target.value })}
                 placeholder="nestjs, node"
@@ -327,18 +343,18 @@ export default function PublishPage() {
                     key={tool}
                     onClick={() => toggleTool(tool)}
                     className={cn(
-                      'flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition-colors',
+                      "flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition-colors",
                       checked
-                        ? 'border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)]'
-                        : 'border-border bg-bg-elev hover:border-border-hover',
+                        ? "border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)]"
+                        : "border-border bg-bg-elev hover:border-border-hover",
                     )}
                   >
                     <div
                       className={cn(
-                        'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border',
+                        "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border",
                         checked
-                          ? 'border-primary bg-primary'
-                          : 'border-border-strong',
+                          ? "border-primary bg-primary"
+                          : "border-border-strong",
                       )}
                     >
                       {checked && (
@@ -347,12 +363,12 @@ export default function PublishPage() {
                     </div>
                     <div className="flex min-w-[140px] items-center gap-1.5 text-[13.5px] font-medium">
                       <span
-                        className="h-2 w-2 rounded-full shrink-0"
+                        className="h-2 w-2 shrink-0 rounded-full"
                         style={{ background: TOOL_COLORS[tool] }}
                       />
                       {label}
                     </div>
-                    <div className="flex-1 rounded-[4px] border border-border bg-background px-2 py-1 font-mono text-[12.5px] text-fg-muted">
+                    <div className="flex-1 rounded-[4px] bg-bg-elev-2 px-2 py-1 font-mono text-[12.5px] text-fg-dim">
                       {DEFAULT_TOOL_PATHS[tool]}
                     </div>
                   </div>
@@ -399,14 +415,14 @@ export default function PublishPage() {
             onDrop={(e) => {
               e.preventDefault();
               const f = e.dataTransfer.files?.[0];
-              if (f?.name.endsWith('.zip'))
+              if (f?.name.endsWith(".zip"))
                 update({ file: f, dragging: false });
             }}
             className={cn(
-              'rounded-[10px] border-2 border-dashed bg-bg-elev py-12 text-center transition-colors',
+              "rounded-[10px] border-2 border-dashed bg-bg-elev py-12 text-center transition-colors",
               form.dragging
-                ? 'border-primary bg-[var(--rh-accent-tint)]'
-                : 'border-border-strong',
+                ? "border-primary bg-[var(--rh-accent-tint)]"
+                : "border-border-strong",
             )}
           >
             {form.file ? (
@@ -481,14 +497,14 @@ export default function PublishPage() {
                     key={key}
                     className="flex items-center gap-2 border-b border-border py-1.5 text-fg-muted last:border-0"
                   >
-                    <span className={ok ? 'text-success' : 'text-destructive'}>
+                    <span className={ok ? "text-success" : "text-destructive"}>
                       {ok ? (
                         <Check className="h-3 w-3" />
                       ) : (
                         <X className="h-3 w-3" />
                       )}
                     </span>
-                    <span className={ok ? '' : 'text-destructive'}>{msg}</span>
+                    <span className={ok ? "" : "text-destructive"}>{msg}</span>
                   </li>
                 ))}
               </ul>
@@ -507,7 +523,7 @@ export default function PublishPage() {
                   {form.version}
                 </span>
               </div>
-              <div className="p-4 space-y-1">
+              <div className="space-y-1 p-4">
                 {[...form.tools].map((tool) => (
                   <div key={tool} className="flex items-center gap-3">
                     <span className="font-bold text-success">+</span>
@@ -588,8 +604,8 @@ function Field({
       <label className="mb-1.5 block text-[13px] font-medium text-foreground">
         {label}
       </label>
-      {hint && <div className="mb-1.5 text-[12px] text-fg-dim">{hint}</div>}
       {children}
+      {hint && <div className="mt-1.5 text-[12px] text-fg-dim">{hint}</div>}
     </div>
   );
 }

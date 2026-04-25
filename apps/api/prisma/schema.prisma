@@ -72,6 +72,8 @@ model Package {
   isPrivate      Boolean   @default(false)
   totalDownloads Int       @default(0)
   stars          Int       @default(0)
+  qualityScore   Int       @default(0)
+  hasReadme      Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

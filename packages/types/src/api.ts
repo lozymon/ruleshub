@@ -37,6 +37,7 @@ export interface PackageDto {
   supportedTools: SupportedTool[];
   totalDownloads: number;
   stars: number;
+  qualityScore: number;
   isPrivate: boolean;
   owner: UserDto;
   latestVersion: PackageVersionDto | null;

@@ -661,7 +661,7 @@ MINIO_BUCKET=ruleshub-packages
 - [ ] Dependency security alerts — notify dependents when a package is yanked or reported
 - [x] API keys — `RULESHUB_TOKEN` for CI/CD publishing without browser OAuth
 - [ ] Webhooks for consumers — subscribe to new version notifications
-- [ ] README badges — auto-generated version + downloads badge per asset
+- [x] README badges — auto-generated version + downloads badge per asset
 
 ### Stub Pages Needing Design
 

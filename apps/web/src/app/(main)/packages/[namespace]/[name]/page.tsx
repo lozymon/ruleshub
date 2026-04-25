@@ -15,6 +15,8 @@ import { InstallBlock } from "@/components/packages/install-block";
 import { StarButton } from "@/components/packages/star-button";
 import { ToolBadge } from "@/components/ui/tool-badge";
 import { QualityBadge } from "@/components/ui/quality-badge";
+import { BadgeSnippets } from "@/components/packages/badge-snippets";
+import { config } from "@/lib/config";
 import { routes } from "@/lib/routes";
 
 interface PackagePageProps {
@@ -351,6 +353,18 @@ export default async function PackagePage({ params }: PackagePageProps) {
                 <ToolBadge key={t} tool={t} />
               ))}
             </div>
+          </div>
+
+          {/* README Badges */}
+          <div className="rounded-lg border border-border bg-bg-elev p-4">
+            <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+              README badges
+            </h4>
+            <BadgeSnippets
+              versionUrl={`${config.apiUrl}/badges/${namespace}/${name}/version`}
+              downloadsUrl={`${config.apiUrl}/badges/${namespace}/${name}/downloads`}
+              fullName={pkg.fullName}
+            />
           </div>
         </aside>
       </div>

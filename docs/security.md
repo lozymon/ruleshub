@@ -56,10 +56,18 @@ Tracked vulnerabilities identified during pre-launch security review (2026-04-26
 
 ---
 
-## Design Notes (Not Currently Exploitable)
+## VULN-003 — Private Package Data Exposed via Download / Preview Endpoints
 
-### Private Package Endpoints Lack Auth Guards
+| Field        | Detail        |
+| ------------ | ------------- |
+| **Status**   | ✅ Fixed      |
+| **Severity** | High (latent) |
+| **Found**    | 2026-04-26    |
+| **Fixed**    | 2026-04-26    |
 
-**Location:** `GET /packages/:ns/:name/:ver/download` and `GET /packages/:ns/:name/:ver/preview`
+**Location:** `apps/api/src/packages/packages.service.ts` — `findVersion()`
 
-`isPrivate` exists in the schema but no API surface can set it to `true` today, so there is nothing to leak. **These endpoints must have `@UseGuards(JwtAuthGuard)` and an `isPrivate` check added before private package support ships.**
+**Description:**
+`GET .../download` and `GET .../preview` are unauthenticated and `findVersion` did not check `isPrivate`. Any caller who knew a private package's `namespace/name/version` could download or read its full contents. The field existed in the schema but no API surface could set it to `true` yet, so there was no immediate exposure — but the gate was absent.
+
+**Fix:** `findVersion` now treats `isPrivate: true` the same as not found, returning `404` to avoid leaking package existence. When Phase 7 (private packages) is built, replace this with a proper ownership check that grants access to the owner and authorised org members.

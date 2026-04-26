@@ -200,7 +200,7 @@ export class PackagesService {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
-    if (!pkg)
+    if (!pkg || pkg.isPrivate)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
     const pkgVersion = await this.prisma.packageVersion.findUnique({

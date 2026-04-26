@@ -1,5 +1,92 @@
 {
   "permissions": {
-    "allow": ["Bash(pnpm --filter web exec tsc --noEmit)"]
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm build)",
+      "Bash(pnpm dev)",
+      "Bash(pnpm start)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test)",
+      "Bash(pnpm --filter * build)",
+      "Bash(pnpm --filter * dev)",
+      "Bash(pnpm --filter * start)",
+      "Bash(pnpm --filter * lint)",
+      "Bash(pnpm --filter * typecheck)",
+      "Bash(pnpm --filter * test)",
+      "Bash(pnpm --filter * exec *)",
+      "Bash(pnpm --filter * add *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(find . *)",
+      "Bash(grep -r *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git rebase -i*)",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(pnpm publish*)",
+      "Bash(npm publish*)",
+      "Bash(curl * | *)",
+      "Bash(wget * | *)",
+      "Bash(cat .env*)",
+      "Bash(cat */.env*)",
+      "Read(**/.env*)",
+      "Read(**/*.env)",
+      "Bash(prisma migrate reset*)",
+      "Bash(prisma db push --force-reset*)",
+      "Bash(npx *)",
+      "Bash(node -e *)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Task finished'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(**/*.ts*)",
+            "command": "pnpm typecheck || exit 2",
+            "asyncRewake": true,
+            "statusMessage": "Typechecking..."
+          },
+          {
+            "type": "command",
+            "if": "Edit(**/schema.prisma)",
+            "command": "pnpm --filter api exec prisma generate",
+            "async": true,
+            "statusMessage": "Regenerating Prisma client..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Write(**/*.ts*)",
+            "command": "pnpm typecheck || exit 2",
+            "asyncRewake": true,
+            "statusMessage": "Typechecking..."
+          }
+        ]
+      }
+    ]
   }
 }

@@ -56,42 +56,42 @@
 
 /* ─── Dark (default) ──────────────────────────────────────── */
 :root {
-  --background: #0a0a0b;
+  --background: #181818;
   --foreground: #ededf0;
-  --card: #111114;
+  --card: #1e1e1e;
   --card-foreground: #ededf0;
-  --popover: #111114;
+  --popover: #1e1e1e;
   --popover-foreground: #ededf0;
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #17171c;
+  --secondary: #252526;
   --secondary-foreground: #ededf0;
-  --muted: #17171c;
+  --muted: #252526;
   --muted-foreground: #a1a1aa;
-  --accent: #17171c;
+  --accent: #252526;
   --accent-foreground: #ededf0;
   --destructive: #ef4444;
-  --border: #23232a;
-  --input: #23232a;
+  --border: #2d2d2d;
+  --input: #2d2d2d;
   --ring: #3b82f6;
-  --radius: 0.375rem;
+  --radius: 2px;
 
   /* sidebar */
-  --sidebar: #111114;
+  --sidebar: #1e1e1e;
   --sidebar-foreground: #ededf0;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #17171c;
+  --sidebar-accent: #252526;
   --sidebar-accent-foreground: #ededf0;
-  --sidebar-border: #23232a;
+  --sidebar-border: #2d2d2d;
   --sidebar-ring: #3b82f6;
 
   /* custom design vars */
-  --bg-elev: #111114;
-  --bg-elev-2: #17171c;
-  --bg-code: #17171c;
-  --border-strong: #2e2e37;
-  --border-hover: #3a3a45;
+  --bg-elev: #1e1e1e;
+  --bg-elev-2: #252526;
+  --bg-code: #1a1a1a;
+  --border-strong: #3c3c3c;
+  --border-hover: #4a4a4a;
   --fg-muted: #a1a1aa;
   --fg-dim: #71717a;
   --fg-faint: #52525b;
@@ -250,6 +250,26 @@
 }
 .pulse-dot {
   animation: pulse-dot 2s infinite;
+}
+
+/* ─── Code block title (rehype-pretty-code) ──────────────── */
+[data-rehype-pretty-code-title] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--bg-code) 70%, black);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  color: #a1a1aa;
+}
+[data-rehype-pretty-code-title] + pre {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: 0;
 }
 
 /* ─── Docs prose ──────────────────────────────────────────── */

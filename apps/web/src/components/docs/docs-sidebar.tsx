@@ -30,7 +30,7 @@ export function DocsSidebar({ onClose }: DocsSidebarProps) {
       )}
       {docNav.map((section) => (
         <div key={section.title} className="mb-6">
-          <p className="mb-1 px-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <p className="mb-1 px-2 text-[10.5px] font-semibold tracking-[0.08em] text-fg-dim uppercase">
             {section.title}
           </p>
           <ul className="space-y-0.5">
@@ -45,10 +45,10 @@ export function DocsSidebar({ onClose }: DocsSidebarProps) {
                       href={href}
                       onClick={onClose}
                       className={cn(
-                        "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                        "block border-l-2 px-2 py-1.5 text-[12.5px] transition-colors",
                         active
-                          ? "bg-accent text-accent-foreground font-medium"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                          ? "border-primary text-primary font-medium bg-[var(--rh-accent-tint)]"
+                          : "border-transparent text-fg-muted hover:text-foreground",
                       )}
                     >
                       {page.title}

@@ -29,7 +29,7 @@ function App() {
   const [theme, toggleTheme] = useTheme();
   const [search, setSearch] = useState('');
   const [tweaksOpen, setTweaksOpen] = useState(false);
-  const [variant, setVariant] = useState(() => localStorage.getItem('ruleshub:variant') || 'default');
+  const [variant, setVariant] = useState(() => localStorage.getItem('ruleshub:variant') || 'sharp');
   const [accent, setAccent] = useState(() => localStorage.getItem('ruleshub:accent') || 'blue');
 
   const user = { handle: 'shadcn', name: 'shadcn' };
@@ -64,16 +64,7 @@ function App() {
   else if (route.page === 'leaderboard') page = <LeaderboardPage navigate={navigate} />;
   else if (route.page === 'dashboard') page = <DashboardPage navigate={navigate} user={user} />;
   else if (route.page === 'publish') page = <PublishPage navigate={navigate} />;
-  else if (route.page === 'docs') page = (
-    <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>
-      <div className="empty-state" style={{ maxWidth: 520, margin: '0 auto' }}>
-        <div className="icon"><Icon name="book" size={22} /></div>
-        <h3>Docs coming soon</h3>
-        <p>The docs site is built separately at docs.ruleshub.dev</p>
-        <button className="btn btn-outline" onClick={() => navigate({ page: 'home' })}>Back to home</button>
-      </div>
-    </div>
-  );
+  else if (route.page === 'docs') page = <DocsPage navigate={navigate} route={route} />;
 
   return (
     <>

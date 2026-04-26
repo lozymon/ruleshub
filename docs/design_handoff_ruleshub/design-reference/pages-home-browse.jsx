@@ -44,32 +44,33 @@ const HomePage = ({ navigate, search }) => {
       </section>
 
       <section className="stats-bar">
-        <div className="container" style={{ display: 'contents' }}>
-          <div className="stat">
-            <div className="stat-num">12,847</div>
-            <div className="stat-label">Assets published</div>
-            <div className="stat-delta">↑ 142 this week</div>
-          </div>
-          <div className="stat">
-            <div className="stat-num">3.2M</div>
-            <div className="stat-label">Monthly installs</div>
-            <div className="stat-delta">↑ 18%</div>
-          </div>
-          <div className="stat">
-            <div className="stat-num">4,189</div>
-            <div className="stat-label">Publishers</div>
-            <div className="stat-delta">↑ 67 this week</div>
-          </div>
-          <div className="stat">
-            <div className="stat-num">7</div>
-            <div className="stat-label">Tools supported</div>
-            <div className="stat-delta">+ more coming</div>
+        <div className="container">
+          <div className="stats-bar-inner">
+            <div className="stat">
+              <div className="stat-num">{PACKAGES.length}</div>
+              <div className="stat-label">Assets published</div>
+            </div>
+            <div className="stat">
+              <div className="stat-num stat-num-empty">—</div>
+              <div className="stat-label">Monthly installs</div>
+            </div>
+            <div className="stat">
+              <div className="stat-num stat-num-empty">—</div>
+              <div className="stat-label">Publishers</div>
+            </div>
+            <div className="stat">
+              <div className="stat-num">{TOOLS.length}</div>
+              <div className="stat-label">Tools supported</div>
+              <div className="stat-delta">+ more coming</div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="container">
-        <ToolTabs active={toolFilter} onChange={setToolFilter} />
+      <div className="tool-tabs-bar">
+        <div className="container">
+          <ToolTabs active={toolFilter} onChange={setToolFilter} />
+        </div>
       </div>
 
       <section className="section">

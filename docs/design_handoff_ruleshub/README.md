@@ -1,292 +1,191 @@
-# Handoff: RulesHub — Next.js 15 + Tailwind + shadcn/ui
+# Handoff: RulesHub — AI Coding Tool Asset Registry
 
 ## Overview
-
-RulesHub is a package registry and marketplace for AI coding tool configuration — rules, commands, workflows, agents, and MCP server configs. Think npm, but for AI tool assets. Developers publish a package once and it works across Claude Code, Cursor, GitHub Copilot, Windsurf, Cline, Aider, and Continue.
-
-**Domain:** ruleshub.dev
-**Audience:** Intermediate → senior software developers
-**Tone:** Developer-focused, no marketing fluff — clean, fast, trustworthy
-
----
+RulesHub is a package registry (npm-style) for AI coding tool configuration assets — rules, slash commands, workflows, agents, MCP servers, packs, and skills — targeting Claude Code, Cursor, Copilot, Windsurf, Cline, Aider, and Continue. Users browse, install, publish, star, and review packages. The design covers 10 pages: Home, Browse, Package Detail, Profile, Tool, Leaderboard, Dashboard, Publish (3-step), Docs, and a 404-equivalent.
 
 ## About the Design Files
-
-The files in `design-reference/` are **design references created as a static HTML/React prototype** — they show intended look, layout, and behavior. They are **not production code** and should not be copy-pasted.
-
-Your task is to **recreate these designs in the target codebase**:
-
-- **Next.js 15 App Router**
-- **Tailwind CSS**
-- **shadcn/ui** components
-
-Use existing codebase conventions; map my custom primitives onto shadcn equivalents rather than lifting my CSS verbatim.
-
----
+The files in `design-reference/` are **HTML/CSS/JSX prototypes built for visual fidelity** — not production code. They use inline-Babel-compiled React in the browser, scoped global state, and JSX scripts loaded one-by-one. **Your task is to recreate these designs in the target codebase** using its established framework, routing, styling system, and component library. If no codebase exists, Next.js (App Router) + Tailwind + shadcn/ui is a strong fit since it's the natural target audience for this product.
 
 ## Fidelity
+**High-fidelity.** Final colors, typography, spacing, sharp corners, dark/light themes, hover/active/focus states, animations, and copy are all decided. Recreate pixel-close.
 
-**High-fidelity.** Final colors, spacing, typography, and interactions are locked. Recreate pixel-close using shadcn/ui and Tailwind — exact hex values, spacing scale, and type ramps are documented below.
+## Stack Suggestion
+- **Framework:** Next.js 15 App Router (or Remix). Server-render lists; CSR is fine for the prototype's interactions.
+- **Styling:** Tailwind v4 with CSS variables. Port `:root` / `[data-theme="light"]` / `[data-variant]` blocks from `styles.css` as Tailwind tokens.
+- **Components:** shadcn/ui for primitives (Button, Tabs, Dialog, DropdownMenu, Tooltip, Select, Input).
+- **Icons:** lucide-react (the prototype's `<Icon>` component is lucide-shaped — paths are similar but original).
+- **State:** URL params for routing (replace the localStorage-backed `useRouter` in `app.jsx`); React Query/SWR for data; `next-themes` for theme.
+- **Fonts:** Geist + Geist Mono (already used; load via `next/font`).
 
----
+## Design Tokens (from styles.css)
 
-## File Map (what's in `design-reference/`)
+### Dark theme (default) — VS Code-style neutral greys
+| Token | Value |
+|---|---|
+| `--bg` | `#181818` |
+| `--bg-elev` | `#1e1e1e` |
+| `--bg-elev-2` | `#252526` |
+| `--bg-code` | `#1a1a1a` |
+| `--border` | `#2d2d2d` |
+| `--border-strong` | `#3c3c3c` |
+| `--border-hover` | `#4a4a4a` |
+| `--fg` | `#ededf0` |
+| `--fg-muted` | `#a1a1aa` |
+| `--fg-dim` | `#71717a` |
+| `--fg-faint` | `#52525b` |
+| `--accent` | `#3b82f6` (blue) |
+| `--accent-hover` | `#60a5fa` |
+| `--accent-tint` | `rgba(59,130,246,0.12)` |
+| `--success` | `#10b981` |
+| `--danger` | `#ef4444` |
+| `--warn` | `#f59e0b` |
+| `--star` | `#f5c518` |
 
-| File                          | Purpose                                                             |
-| ----------------------------- | ------------------------------------------------------------------- |
-| `ruleshub.html`               | Entry point — loads all scripts                                     |
-| `styles.css`                  | Global styles + design tokens (source of truth for colors/spacing)  |
-| `data.jsx`                    | Mock package/user data + icon set + tool/type enums                 |
-| `components.jsx`              | Navbar, PackageCard, ToolBadge, Avatar, Verified, Sparkline, Footer |
-| `pages-home-browse.jsx`       | HomePage + BrowsePage                                               |
-| `pages-package.jsx`           | Package Detail page (tabs, install block, star button)              |
-| `pages-profile-tool-lb.jsx`   | Profile, Tool, Leaderboard pages                                    |
-| `pages-dashboard-publish.jsx` | Dashboard + multi-step Publish flow                                 |
-| `tweaks.jsx`                  | In-prototype variant switcher (not needed in production)            |
-| `app.jsx`                     | Router + theme state                                                |
+### Light theme overrides
+See `[data-theme="light"]` in `styles.css` (key: `--bg: #fafafa`, `--fg: #0a0a0b`, `--accent: #2563eb`).
 
----
-
-## Routes (App Router mapping)
-
-| URL                            | File                                                                 |
-| ------------------------------ | -------------------------------------------------------------------- |
-| `/`                            | `app/page.tsx` — HomePage                                            |
-| `/browse`                      | `app/browse/page.tsx` — supports `?tool=` and `?type=` search params |
-| `/packages/[namespace]/[name]` | `app/packages/[namespace]/[name]/page.tsx`                           |
-| `/users/[username]`            | `app/users/[username]/page.tsx`                                      |
-| `/tools/[tool]`                | `app/tools/[tool]/page.tsx`                                          |
-| `/leaderboard`                 | `app/leaderboard/page.tsx`                                           |
-| `/dashboard`                   | `app/dashboard/page.tsx` (auth required)                             |
-| `/publish`                     | `app/publish/page.tsx` (auth required)                               |
-| `/auth/callback`               | `app/auth/callback/route.ts` — GitHub OAuth redirect handler         |
-
----
-
-## Design Tokens
-
-### Colors (Dark — default)
-
-```css
---bg: #0a0a0b --bg-elev: #111114 /* cards */ --bg-elev-2: #17171c
-  /* nested surfaces */ --bg-code: #0d0d10 /* install blocks, file previews */
-  --border: #23232a --border-strong: #2e2e37 --border-hover: #3a3a45
-  --fg: #ededf0 --fg-muted: #a1a1aa --fg-dim: #71717a --fg-faint: #52525b
-  --accent: #3b82f6 /* blue-500 */ --accent-hover: #60a5fa /* blue-400 */
-  --accent-dim: #1d4ed8 --star: #f5c518 --success: #10b981 --danger: #ef4444
-  --warn: #f59e0b;
-```
-
-### Colors (Light)
-
-```css
---bg: #fafafa --bg-elev: #ffffff --bg-elev-2: #f4f4f5 --border: #e4e4e7
-  --border-strong: #d4d4d8 --fg: #0a0a0b --fg-muted: #52525b --fg-dim: #71717a
-  --fg-faint: #a1a1aa --accent: #2563eb;
-```
-
-Use Tailwind's `dark:` variant, driven by a class on `<html>`. Wire up `next-themes` to manage it.
-
-### Tool Brand Colors
-
-Used as the left dot in `ToolBadge` pills.
-
-```
-claude-code  #d97757
-cursor       #4a9eff
-copilot      #3fb950
-windsurf     #22d3ee
-cline        #a78bfa
-aider        #eab308
-continue     #8b8cf8
-```
+### Tool brand colors
+- Claude Code `#d97757`, Cursor `#4a9eff`, Copilot `#3fb950`, Windsurf `#22d3ee`, Cline `#a78bfa`, Aider `#eab308`, Continue `#8b8cf8`
 
 ### Typography
+- Sans: **Geist** (300, 400, 500, 600, 700)
+- Mono: **Geist Mono** (400, 500, 600)
+- Body: 14px / 1.5
+- Hero h1: 56px / 1.05 / -0.035em
+- Section title: 20px / 600 / -0.015em
+- Page title: 26–28px / 600 / -0.02em
 
-- **UI:** Geist (Google Fonts) — weights 400, 500, 600, 700
-- **Mono:** Geist Mono — weights 400, 500, 600
-- Ship via `next/font/google` and assign CSS variables `--font-sans` / `--font-mono`.
+### Shape — IMPORTANT
+Default variant is `shape-sharp` (added as a class on `<html>`): all cards, buttons, badges, and panels use **2px border-radius**. Rounded variant (6–10px) is selectable via the Tweaks panel. Recreate sharp by default.
 
-**Type ramp:**
+### Layout
+- Container max-width: **1240px**
+- Side padding: 24px
+- Navbar height: 56px sticky, blurred bg
+- Cards grid: `repeat(3, 1fr)` desktop, 2 tablet, 1 mobile, 16px gap
 
-| Usage                       | Size      | Weight  | Letter-spacing |
-| --------------------------- | --------- | ------- | -------------- |
-| Hero H1                     | 56px      | 600     | -0.035em       |
-| Page H1                     | 26-28px   | 600     | -0.02em        |
-| Section title               | 20px      | 600     | -0.015em       |
-| Card title (pkg name, mono) | 14px      | 500     | -0.01em        |
-| Body                        | 14px      | 400     | 0              |
-| Secondary                   | 13-13.5px | 400/500 | 0              |
-| Label (UPPERCASE)           | 11-12px   | 600     | 0.06-0.08em    |
-| Mono small                  | 12-12.5px | 500     | 0              |
+## Pages
 
-### Spacing / Radii
+### 1. Home (`HomePage` — pages-home-browse.jsx)
+- **Hero**: Pulsing-dot kicker pill, h1 with accent word, sub copy, three CTAs (Browse / Publish / inline `npx ruleshub install …` block). Background: radial gradient over a 48×48 grid mask.
+- **Stats bar**: 4 columns separated by vertical rules — **Assets published** (live `PACKAGES.length`), **Monthly installs** (`—` placeholder), **Publishers** (`—` placeholder), **Tools supported** (live `TOOLS.length` + "+ more coming" caption). Stats are constrained to the 1240px container; the divider line below is full-width.
+- **Tool tabs**: Horizontal scroll tabs ("All" + 7 tools, each with colored 8px dot + count badge). Tabs are container-constrained but the underline is full-width (wrapped in `.tool-tabs-bar`). Copilot is labelled "GitHub Copilot".
+- **Trending this week**: 6 cards.
+- **Recently published**: 6 cards.
+- **Supported tools grid**: Auto-fit cards, each linking to `/tool/{id}`.
 
-- Container max-width: **1240px**, 24px horizontal padding
-- Radii: `--radius: 6px` (inputs, buttons, badges), `--radius-lg: 10px` (cards, sidebar cards), `12-14px` for tool logo tiles
-- Card padding: 18px (list cards), 16px (sidebar cards)
-- Section vertical padding: 48px
-- Navbar height: 56px (sticky, `backdrop-blur`)
+### 2. Browse (`BrowsePage`)
+- Big search input (44px), 12,847 placeholder count.
+- Tool tabs above the split.
+- Two-column: 240px left filter rail (Asset type, Sort, Community filters) + cards grid.
+- 9 per page, paginated number buttons.
+- Empty state: dashed-border card with icon, heading, "Clear filters" CTA.
 
----
+### 3. Package Detail (`PackageDetailPage` — pages-package.jsx)
+- Breadcrumb (browse › ns › name).
+- Header: 56px square type icon, monospace title with `ns/name`, verified check, type pill, description, author chip + version + updated + downloads + tool badges, then right-aligned StarButton + Download + version dropdown.
+- **Install block**: Black-ish code panel, top tabs (npx / pnpm / bun / --tool), `$ ` prompt, syntax-tinted command, copy button (turns green on copy).
+- 2-col body: 1fr article + 280px sidebar.
+- Tabs: README, Versions (table with LATEST pill), Files (file tree + monospace viewer), Comments (threaded with avatars).
+- Sidebar cards: install trend sparkline (30d), Repository links, License, Included in packs.
 
-## Component Inventory → shadcn Map
+### 4. Profile (`ProfilePage`)
+- 96px gradient avatar (deterministic hue from handle), name + verified, @handle, bio, meta row (location, github, stars, installs).
+- Tabs: Packages / Starred / Activity.
 
-| Design component                                | shadcn primitive                             | Notes                                                                 |
-| ----------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------- |
-| Buttons (primary/outline/ghost, sm/md/lg, icon) | `Button` + variants                          | 34px height default; 40px `lg`; 28px `sm`; 34×34 icon                 |
-| Nav dropdown (avatar menu)                      | `DropdownMenu`                               |                                                                       |
-| Theme toggle                                    | `next-themes` + `Button`                     | icon-only                                                             |
-| Search input (navbar + browse)                  | `Input` with leading icon + `kbd`            | ⌘K hotkey opens `CommandDialog`                                       |
-| Tool filter tabs / package detail tabs          | `Tabs`                                       | bottom border-accent on active                                        |
-| Asset type filter sidebar                       | Plain buttons / `ToggleGroup`                |                                                                       |
-| Package Card                                    | `Card`                                       | see structure below                                                   |
-| Install command block                           | Custom                                       | 4 variants (npx/pnpm/bun/--tool) as `Tabs` inside a `Card`            |
-| Copy-to-clipboard button                        | `Button` + `use-clipboard`                   | success state swaps icon to check + green                             |
-| Version picker                                  | `DropdownMenu`                               |                                                                       |
-| Star button                                     | Custom                                       | uses `useOptimistic`; burst animation 500ms cubic-bezier(.5,1.8,.4,1) |
-| Versions table / Dashboard table                | `Table`                                      |                                                                       |
-| README tab                                      | Render MDX or remark → rehype                |                                                                       |
-| Files tab                                       | Split pane + `shiki` for syntax highlighting |                                                                       |
-| Comments tab                                    | Custom; use `Textarea` + `Avatar`            |
-| Leaderboard rows                                | Plain list                                   | top-3 rank color (gold/silver/bronze)                                 |
-| Publish stepper                                 | Custom; `Progress` or bordered step pills    |                                                                       |
-| File dropzone                                   | `react-dropzone` + custom styling            |                                                                       |
-| Tool target checkboxes                          | `Checkbox` rows with mono path text          |
-| Validation list                                 | Custom; green check / red X                  |
-| Dry-run output                                  | `pre` with monospace                         |                                                                       |
-| Empty states                                    | Custom; icon + heading + CTA                 |                                                                       |
-| Skeleton                                        | `Skeleton`                                   | shimmer animation                                                     |
-| Toasts (publish success, copy)                  | `sonner`                                     |                                                                       |
+### 5. Tool (`ToolPage`)
+- Hero with 72px square logo (tool color), name, count, type breakdown row.
+- Type filter pills, then cards grid.
 
-### Package Card anatomy
+### 6. Leaderboard (`LeaderboardPage`)
+- 3 columns: Top Publishers, Trending This Week, Most Starred. Each row: rank (#1/#2/#3 colored gold/silver/bronze), avatar/icon, name, secondary stat.
 
-```
-┌────────────────────────────────────────────┐
-│ [type icon 32×32]  ns/name ✓ [type pill]   │
-│                    updated 2d ago          │
-│                                            │
-│ Description — 2 lines, line-clamp-2        │
-│                                            │
-│ [● Claude Code] [● Cursor] [+2]            │
-│ ────────────────────────────────────       │
-│ ★ 2,847    ↓ 124.3k          v2.4.1       │
-└────────────────────────────────────────────┘
-```
+### 7. Dashboard (`DashboardPage`)
+- Header: "Welcome back, @handle" + Publish CTA.
+- 4 stat cards (downloads, stars, packages, weekly installs).
+- 2-col chart row: 30-day sparkline + top packages list.
+- "My packages" data table with row actions (edit/view/delete).
 
-- Bg: `--bg-elev`, 1px `--border`, radius 10px
-- Hover: `translateY(-1px)`, border → `--border-hover`, shadow `0 8px 24px -8px rgba(0,0,0,0.6)`, 180ms ease
-- Meta row: top border, monospace 12px, `star` + `download` + `version` (version right-aligned)
+### 8. Publish (`PublishPage`)
+3-step wizard with progress bar:
+1. **Manifest**: namespace, name, version, type, description, tool target rows (checkbox + tool dot + name + path field).
+2. **Upload**: zip drop-zone OR GitHub URL. Drop-zone shows accepted state with file size + count.
+3. **Preview**: validation list (✓/✗ rows, monospace), dry-run "files to write" terminal panel showing `+ [Tool] path  size`. Final "Publish package" button.
 
----
+### 9. Docs (`DocsPage` — pages-docs.jsx)
+- Constrained to **same 1240px container as Browse** (recently changed).
+- 3-column layout: 240px left nav (with docs-scoped search) + flexible article + 220px right "On this page" rail with scroll-spy.
+- Breadcrumb + Edit on GitHub + last-updated row above title.
+- Code blocks with filename header + copy.
+- Callouts: Note / Tip / Warning, color-coded left rule + icon.
+- Prev/Next nav at bottom.
+
+### 10. Navbar
+- Sticky, 56px, `backdrop-filter: blur(12px)`, semitransparent bg.
+- Logo (R square + "ruleshub" mono), nav links, search input (320px wide, ⌘K hint kbd), theme toggle, GitHub icon, sign-in or user dropdown.
+
+## Components to Build
+
+| Component | Source | Notes |
+|---|---|---|
+| `<PackageCard>` | components.jsx | Cards grid item. Hover lifts 1px + glow. |
+| `<ToolBadge>` | components.jsx | Inline tool chip (color dot + short name). |
+| `<Verified>` | components.jsx | Blue check disc. |
+| `<Avatar>` | components.jsx | Gradient circle, hue derived from handle. |
+| `<StarButton>` | pages-package.jsx | Toggles starred state, "burst" animation, count flips. |
+| `<InstallBlock>` | pages-package.jsx | Tabbed code block with copy. |
+| `<Sparkline>` | components.jsx | Pure SVG, fill + line, 260×72 default. |
+| `<ToolTabs>` | components.jsx | Horizontal scroll tabs with counts. |
+| `<TweaksPanel>` | tweaks.jsx | Floating dev panel — drop in production. |
 
 ## Interactions
 
-- **Navbar:** sticky with 12px backdrop-blur; ⌘K focuses search from anywhere
-- **Theme toggle:** persisted via `next-themes` (localStorage)
-- **Tool tabs:** filter cards in-page (no navigation) — except on Home, where clicking a tool card routes to `/tools/[tool]`
-- **Package Card click:** routes to detail
-- **Copy button:** 1500ms success state, icon swap check, text "Copied"
-- **Star button:** optimistic toggle; burst animation on transition to starred (scale 1 → 1.4 → 1.1, rotate 10°, 500ms)
-- **Publish stepper:** forward locked behind validation; back always available. Tools checkboxes show per-tool file path dynamically.
+- **Theme toggle** — persists to `ruleshub:theme`, sets `data-theme` on `<html>`.
+- **Sharp/rounded toggle** — sets/removes `shape-sharp` class on `<html>`. Default = sharp.
+- **Star button** — animated burst (0.5s scale + rotate), border + fill flip to gold.
+- **Copy install** — `navigator.clipboard`, button label flips to "Copied" + green for 1.5s.
+- **Tabs** — controlled by `useState`, no router param needed for sub-tabs.
+- **Browse filters** — debounce optional; current is immediate. Results memoized.
+- **Search** — homepage and browse both filter by `(name + ns + desc).toLowerCase().includes(query)`.
+- **Publish wizard** — gate Continue button on validation; final step shows file dry-run.
 
----
+## State Management
+For real implementation:
+- Page → URL (`/`, `/browse`, `/p/{ns}/{name}`, `/u/{handle}`, `/tool/{id}`, `/leaderboard`, `/dashboard`, `/publish`, `/docs/{slug}`).
+- Filters → search params (`?tool=cursor&type=rule&sort=trending`).
+- Theme + variant + accent → cookies for SSR.
+- Auth → GitHub OAuth.
+- Star action → optimistic update + POST to `/api/packages/{ns}/{name}/star`.
 
-## States
+## Sample Content
+The prototype seeds 18+ realistic packages (vercel/nextjs-app-router, microsoft/typescript-strict, anthropic/claude-test-runner, etc.) in `data.jsx`. Replace with real DB data — schema is `{ ns, name, type, tools[], desc, stars, downloads, version, verified, trending?, updated }`.
 
-Every page that loads data must implement:
-
-1. **Loading** — skeleton cards matching the real card shape (mock in `SkeletonCard` component)
-2. **Empty** — centered icon tile + heading + CTA (see `.empty-state` in `styles.css`)
-3. **Error** — friendly message + retry button (follow empty-state shape)
-
-### Star button states
-
-- Default → Hover → Starred (filled yellow `#f5c518`, border `--star`) → Bursting (one-shot animation class for 500ms)
-
----
-
-## Responsive
-
-| Breakpoint   | Cards |
-| ------------ | ----- |
-| `<640px`     | 1 col |
-| `640–1024px` | 2 col |
-| `≥1024px`    | 3 col |
-
-- Nav collapses to hamburger on `<720px` (use `Sheet`)
-- Browse sidebar filters move into a `Sheet` / drawer on mobile
-- Hero H1 scales down to ~40px on mobile
-
----
-
-## Auth Flow
-
-- GitHub OAuth — login button triggers `/api/auth/signin/github`
-- `/auth/callback` exchanges code → session → redirect to `/dashboard`
-- Session surfaces in server components via `auth()` helper; use NextAuth v5 or `better-auth`
-
----
-
-## Data Model (sketch)
-
-```ts
-type AssetType = 'rule' | 'command' | 'workflow' | 'agent' | 'mcp' | 'pack';
-type ToolId =
-  | 'claude-code'
-  | 'cursor'
-  | 'copilot'
-  | 'windsurf'
-  | 'cline'
-  | 'aider'
-  | 'continue';
-
-interface Package {
-  namespace: string;
-  name: string;
-  description: string;
-  type: AssetType;
-  tools: ToolId[];
-  version: string; // latest
-  stars: number;
-  downloads: number;
-  verified: boolean;
-  updatedAt: string; // ISO
-  repoUrl?: string;
-  license?: string;
-}
+## Files in this bundle
+```
+design-reference/
+  ruleshub.html              ← entry; loads all .jsx files in order
+  styles.css                 ← all design tokens + components
+  app.jsx                    ← router, theme, layout shell
+  data.jsx                   ← icons, mock packages/users, helpers
+  components.jsx             ← Navbar, PackageCard, Footer, Sparkline, etc.
+  pages-home-browse.jsx
+  pages-package.jsx
+  pages-profile-tool-lb.jsx
+  pages-dashboard-publish.jsx
+  pages-docs.jsx
+  tweaks.jsx                 ← in-prototype design knobs (skip for prod)
 ```
 
-See `data.jsx` for realistic example data to seed dev DB.
+Open `ruleshub.html` directly in a browser (no build step) to interact with the live prototype.
 
----
-
-## What NOT to build
-
-- No marketing sections (pricing, testimonials, feature lists)
-- No onboarding wizard — GitHub login is the entire onboarding
-- No custom per-page illustrations — one consistent empty-state pattern throughout
-- No analytics beyond the sparkline on package detail + dashboard chart
-
----
-
-## Assets
-
-- **Fonts:** Geist + Geist Mono via `next/font/google`
-- **Icons:** custom SVG set in `data.jsx` — replace with `lucide-react` (names map directly: `star`, `download`, `github`, `clock`, `flame`, `trophy`, `terminal`, etc.)
-- **Tool logos:** placeholders (colored tile with first letter). Real implementation should ship actual tool logos (SVG) — request from user.
-
----
-
-## Suggested Implementation Order
-
-1. **Scaffold:** `create-next-app`, install Tailwind, shadcn CLI init, install primitives listed above
-2. **Tokens:** wire CSS variables in `app/globals.css`, extend `tailwind.config.ts` with them
-3. **Layout + navbar + footer**
-4. **Home** (hero, stats, tool tabs, card grids) — read-only data
-5. **Browse + Package Card** (shared across many pages)
-6. **Package Detail** — tabs, install block, star button, sparkline
-7. **Profile, Tool, Leaderboard** (all reuse PackageCard)
-8. **Dashboard + Publish flow** (auth-gated)
-9. **Loading/empty/error states per route**
-10. **Mobile polish**
+## Build Order Suggestion
+1. Tokens + Geist + theme switch.
+2. Navbar + Footer + container.
+3. PackageCard + ToolBadge + Avatar + Verified.
+4. Home (hero + stats + cards).
+5. Browse (filters + pagination).
+6. Package Detail (tabs + install block + StarButton + sparkline).
+7. Profile + Tool + Leaderboard.
+8. Dashboard.
+9. Publish wizard (most stateful).
+10. Docs.

@@ -603,8 +603,8 @@ MINIO_BUCKET=ruleshub-packages
 #### Testing Strategy
 
 - [x] **API (NestJS)** — e2e tests with Supertest against a real test database (not mocks)
-- [ ] **Frontend (Next.js)** — component tests with Vitest + Testing Library
-- [ ] **Shared types** — unit tests for all Zod schema validations
+- [x] **Frontend (Next.js)** — component tests with Vitest + Testing Library
+- [x] **Shared types** — unit tests for all Zod schema validations
 - [ ] Test database spun up in CI via `docker-compose` service
 - [ ] Coverage thresholds: 80% on API business logic, no threshold on UI (test behaviour not markup)
 
@@ -857,3 +857,63 @@ Keep these stable and versioned from day one.
 - [x] Moderation — **reactive for v1** (report button + admin review, automated scanning in v2)
 - [x] Namespace — **`username/package-name`** (GitHub-style slash, e.g. `lozymon/nestjs-rules`)
 - [x] Tool support — **PR-based** (new tools added via GitHub PR to keep quality high)
+
+---
+
+## Design Sync — Handoff Implementation
+
+Changes required to align `apps/web` with the `docs/design_handoff_ruleshub` prototype.
+Reference files: `design-reference/styles.css`, `pages-*.jsx`, `components.jsx`.
+
+### Design Tokens & Global (`apps/web/src/app/globals.css`)
+
+- [x] **Background colours** — update dark theme to VS Code-style warmer greys: `--bg: #181818`, `--bg-elev: #1e1e1e`, `--bg-elev-2: #252526`. Current values are near-black (`#0a0a0b` / `#111114` / `#17171c`).
+- [x] **Sharp corners by default** — set `--radius: 2px` (design calls `shape-sharp` the default). All cards, buttons, badges, and panels use 2px border-radius. Rounded (6–10px) is an opt-in toggle, not the default.
+- [x] **Border colours** — align to design: `--border: #2d2d2d`, `--border-strong: #3c3c3c`, `--border-hover: #4a4a4a`.
+
+### Navbar (`apps/web/src/components/layout/navbar.tsx`)
+
+- [x] **Search width** — increase from `300px` to `320px` to match design spec.
+
+### Home Page (`apps/web/src/app/(main)/page.tsx`)
+
+- [x] **Hero subtitle size** — scale down from `text-[18px]` to `text-[14px]` (design uses body size, not a larger callout).
+- [x] **Tool tab count badges** — add a count badge next to each tool name in the horizontal tab bar (currently only "All" has a badge; each tool tab should show its asset count).
+- [x] **Stats bar full-width rule** — the horizontal divider _below_ the stats bar should span edge-to-edge; only the stat numbers stay constrained to the 1240px container. Mirror the `.tool-tabs-bar` pattern from the design.
+- [x] **Supported tools grid — asset count** — show `{n} assets` in monospace below each tool name. Currently only the tool name is displayed; the count is absent.
+- [x] **Supported tools grid columns** — switch from fixed `grid-cols-7` to `repeat(auto-fit, minmax(180px, 1fr))` to match the design's responsive auto-fit layout.
+
+### Browse Page (`apps/web/src/app/(main)/browse/page.tsx`)
+
+- [x] **Dedicated search input** — add a large `44px` search input at the top of the Browse page (above the tool tabs). The navbar search navigates to browse; this input filters results in-page via URL params.
+- [x] **Numbered pagination** — add page number buttons at the bottom of the cards grid (9 results per page). Currently the page has no pagination UI.
+- [x] **Tool tab count badges** — same as home: each tool tab on Browse should display its result count.
+
+### Docs Layout (`apps/web/src/components/docs/docs-layout-client.tsx`)
+
+- [x] **Container max-width** — change from `max-w-6xl` (1152px) to `max-w-[1240px]` to match the rest of the site.
+- [x] **Right-rail "On this page" TOC** — add a 220px sticky right column alongside the article with scroll-spy headings. Design is a 3-column layout: `240px sidebar | 1fr article | 220px TOC`. Currently only 2 columns exist.
+- [x] **Breadcrumb in article** — add `Docs › Section › Page` in monospace above the article title.
+- [x] **"Edit on GitHub" + last-updated row** — display right-aligned next to the breadcrumb in the article header.
+- [x] **Prev/Next navigation** — add bordered nav cards at the bottom of the article linking to the previous and next doc pages.
+- [x] **Callout components** — implement `<Callout kind="note|tip|warning">` with a coloured left rule, icon, and uppercase label. Used in existing doc content.
+- [x] **Code block headers** — ensure MDX code blocks render with a dark filename/lang header bar and a copy button (flip to "Copied ✓" for 1.5s).
+
+### Profile / User Page (`apps/web/src/app/(main)/users/[username]/page.tsx`)
+
+- [x] **Avatar size** — increase from `h-20 w-20` (80px) to 96px to match design spec.
+- [x] **Avatar gradient — deterministic hue** — derive the gradient hue from the username string so each user gets a unique colour. Currently always uses `from-primary to-primary/50` (blue for everyone).
+- [x] **Packages / Starred / Activity tabs** — add three tab views. Currently only an unlabelled packages grid is shown with no tabs.
+- [x] **Follow + settings buttons** — add a Follow button and a settings icon button to the top-right of the profile header.
+- [x] **Meta row** — extend the info row to show: location, GitHub link, total stars received, total installs. Currently only shows "Joined X months ago".
+
+### Leaderboard Page (`apps/web/src/app/(main)/leaderboard/page.tsx`)
+
+- [x] **Layout — 3 equal columns** — replace the current `320px sidebar + wide right` layout with three equal columns: Top Publishers · Trending This Week · Most Starred.
+- [x] **Trending and Most Starred — slim list rows** — render these as simple ranked list rows (rank number + icon + name + stat) instead of full `<PackageCard>` grids.
+- [x] **Section label** — rename "Most downloaded" to "Trending this week" to match the design.
+
+### Components
+
+- [x] **PackageCard hover state** — add `translateY(-1px)` lift and `box-shadow: var(--shadow-hover)` on hover. Verify the current card has neither.
+- [x] **Avatar gradient — deterministic hue** — extract the hue-from-handle logic into a shared `<Avatar>` component reused by PackageCard, profile, and leaderboard rows.

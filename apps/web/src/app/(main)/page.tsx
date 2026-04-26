@@ -13,21 +13,30 @@ const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
 
 export default async function HomePage() {
   const empty = { data: [], total: 0 };
-  const [{ data: trending, total }, { data: recent }] = await Promise.all([
-    searchPackages({ limit: 6, sort: "trending" }).catch(() => empty),
-    searchPackages({ limit: 6, sort: "newest" }).catch(() => empty),
-  ]);
+
+  const [{ data: trending, total }, { data: recent }, ...toolTotals] =
+    await Promise.all([
+      searchPackages({ limit: 6, sort: "trending" }).catch(() => empty),
+      searchPackages({ limit: 6, sort: "newest" }).catch(() => empty),
+      ...TOOLS.map(([tool]) =>
+        searchPackages({ tool, limit: 1 })
+          .then((r) => r.total)
+          .catch(() => 0),
+      ),
+    ]);
+
+  const toolCountMap = Object.fromEntries(
+    TOOLS.map(([tool], i) => [tool, toolTotals[i] as number]),
+  ) as Record<SupportedTool, number>;
 
   return (
     <>
       {/* ── Hero ────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border pb-12 pt-[72px]">
-        {/* Grid + radial glow */}
         <div className="hero-grid" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,var(--rh-accent-tint),transparent_70%)]" />
 
         <div className="relative mx-auto max-w-[1240px] px-6">
-          {/* Kicker pill */}
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)] px-2.5 py-1 font-mono text-[12px] text-[var(--rh-accent)]">
             <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-[var(--rh-accent)]" />
             CLI v0.1.0 now available
@@ -38,7 +47,7 @@ export default async function HomePage() {
             <span className="text-primary">AI coding tool</span> assets.
           </h1>
 
-          <p className="mb-7 max-w-[620px] text-[18px] leading-relaxed text-fg-muted">
+          <p className="mb-7 max-w-[620px] text-[14px] leading-relaxed text-fg-muted">
             Publish and install rules, commands, workflows, agents, and MCP
             servers for Claude Code, Cursor, Copilot, and more — one manifest,
             every tool.
@@ -47,17 +56,17 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
               href={routes.browse}
-              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-[18px] text-[14px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex h-10 items-center gap-1.5 rounded-sm bg-primary px-[18px] text-[14px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Browse assets <ArrowRight className="h-3.5 w-3.5" />
             </Link>
             <Link
               href={routes.publish}
-              className="inline-flex h-10 items-center rounded-md border border-border-strong px-[18px] text-[14px] font-medium text-foreground transition-colors hover:border-border-hover hover:bg-bg-elev"
+              className="inline-flex h-10 items-center rounded-sm border border-border-strong px-[18px] text-[14px] font-medium text-foreground transition-colors hover:border-border-hover hover:bg-bg-elev"
             >
               Publish yours →
             </Link>
-            <span className="inline-flex items-center gap-2.5 rounded-md border border-border bg-bg-elev px-3.5 py-2 font-mono text-[13px] text-fg-muted">
+            <span className="inline-flex items-center gap-2.5 rounded-sm border border-border bg-bg-elev px-3.5 py-2 font-mono text-[13px] text-fg-muted">
               <span className="text-fg-faint">$</span>
               <span className="text-foreground">
                 npx ruleshub install{" "}
@@ -122,10 +131,15 @@ export default async function HomePage() {
                 className="inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-[18px] py-3.5 text-[13px] font-medium whitespace-nowrap text-fg-muted transition-colors hover:text-foreground"
               >
                 <span
-                  className="h-2 w-2 rounded-full shrink-0"
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ background: toolColors[tool] }}
                 />
                 {label}
+                {toolCountMap[tool] > 0 && (
+                  <span className="rounded-[10px] bg-bg-elev-2 px-1.5 py-0.5 font-mono text-[11px] text-fg-dim">
+                    {toolCountMap[tool]}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -154,8 +168,8 @@ export default async function HomePage() {
           </div>
 
           {trending.length === 0 ? (
-            <div className="rounded-[10px] border border-dashed border-border py-16 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-bg-elev text-fg-dim">
+            <div className="rounded-sm border border-dashed border-border py-16 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-sm border border-border bg-bg-elev text-fg-dim">
                 <Flame className="h-5 w-5" />
               </div>
               <h3 className="mb-1.5 text-[16px] font-medium">No assets yet</h3>
@@ -217,15 +231,15 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+          <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
             {TOOLS.map(([tool, label]) => (
               <Link
                 key={tool}
                 href={routes.tool(tool)}
-                className="flex items-center gap-3 rounded-[10px] border border-border bg-bg-elev p-4 transition-colors hover:border-border-hover"
+                className="flex items-center gap-3 rounded-sm border border-border bg-bg-elev p-4 transition-colors hover:border-border-hover"
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-mono text-[14px] font-semibold"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm font-mono text-[14px] font-semibold"
                   style={{
                     background: `${toolColors[tool]}22`,
                     color: toolColors[tool],
@@ -236,6 +250,9 @@ export default async function HomePage() {
                 <div>
                   <div className="text-[13.5px] font-medium leading-snug">
                     {label}
+                  </div>
+                  <div className="font-mono text-[11.5px] text-fg-dim">
+                    {toolCountMap[tool] ?? 0} assets
                   </div>
                 </div>
               </Link>

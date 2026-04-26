@@ -36,6 +36,7 @@ model User {
   collections  Collection[]
   comments     Comment[]
   apiKeys      ApiKey[]
+  webhooks     Webhook[]
 }
 
 model Organisation {
@@ -92,11 +93,25 @@ model Package {
   githubImport     GitHubImport?
   collectionItems  CollectionItem[]
   comments         Comment[]
+  webhooks         Webhook[]
+  packDependencies PackageDependency[] @relation("PackDeps")
+  depOf            PackageDependency[] @relation("DepOf")
 
   @@unique([namespace, name])
   @@index([namespace])
   @@index([type])
   @@index([tags])
+}
+
+model PackageDependency {
+  packId       String
+  depId        String
+  versionRange String
+  pack         Package @relation("PackDeps", fields: [packId], references: [id], onDelete: Cascade)
+  dep          Package @relation("DepOf",   fields: [depId],  references: [id], onDelete: Restrict)
+
+  @@id([packId, depId])
+  @@index([depId])
 }
 
 model PackageVersion {
@@ -191,4 +206,35 @@ model EmailSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  packageId String
+  url       String
+  secret    String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  deliveries WebhookDelivery[]
+
+  @@unique([userId, packageId, url])
+  @@index([packageId])
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  webhook     Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  webhookId   String
+  event       String
+  payload     Json
+  statusCode  Int?
+  success     Boolean
+  attemptedAt DateTime @default(now())
+
+  @@index([webhookId])
 }

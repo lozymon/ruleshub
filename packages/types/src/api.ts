@@ -1,5 +1,5 @@
-import { AssetType } from "./manifest";
-import { SupportedTool } from "./tools";
+import { AssetType } from './manifest';
+import { SupportedTool } from './tools';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -27,6 +27,16 @@ export interface PackageVersionDto {
   publishedAt: string;
 }
 
+export interface PackageSummaryDto {
+  fullName: string;
+  namespace: string;
+  name: string;
+  type: AssetType;
+  description: string;
+  versionRange: string;
+  latestVersion: string | null;
+}
+
 export interface PackageDto {
   id: string;
   namespace: string;
@@ -44,6 +54,7 @@ export interface PackageDto {
   owner: UserDto;
   latestVersion: PackageVersionDto | null;
   versions: PackageVersionDto[];
+  includes: PackageSummaryDto[];
   createdAt: string;
   updatedAt: string;
 }
@@ -60,7 +71,7 @@ export interface OrgDto {
 
 export interface OrgMemberDto {
   user: UserDto;
-  role: "owner" | "admin" | "member";
+  role: 'owner' | 'admin' | 'member';
 }
 
 export interface ApiKeyDto {
@@ -94,8 +105,59 @@ export interface PackageSearchParams {
   tag?: string;
   projectType?: string;
   tool?: SupportedTool;
-  scope?: "individual" | "pack";
-  sort?: "trending" | "newest" | "mostDownloaded" | "mostStarred";
+  scope?: 'individual' | 'pack';
+  sort?: 'trending' | 'newest' | 'mostDownloaded' | 'mostStarred';
   page?: number;
   limit?: number;
+}
+
+export type WebhookEvent =
+  | 'package.version.published'
+  | 'package.version.yanked';
+
+export interface WebhookDto {
+  id: string;
+  url: string;
+  packageFullName: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface WebhookCreatedDto extends WebhookDto {
+  secret: string;
+}
+
+export interface WebhookDeliveryDto {
+  id: string;
+  event: WebhookEvent;
+  statusCode: number | null;
+  success: boolean;
+  attemptedAt: string;
+}
+
+export type DiffChangeKind = 'unchanged' | 'changed' | 'added' | 'removed';
+
+export interface DiffChange {
+  field: string;
+  kind: DiffChangeKind;
+  fromValue: unknown;
+  toValue: unknown;
+}
+
+export interface VersionDiffDto {
+  from: string;
+  to: string;
+  changes: DiffChange[];
+}
+
+export interface PackageFilePreviewDto {
+  tool: string | null;
+  path: string;
+  content: string;
+  isTarget: boolean;
+}
+
+export interface PackageVersionPreviewDto {
+  version: string;
+  previews: PackageFilePreviewDto[];
 }

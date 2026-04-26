@@ -1,0 +1,12 @@
+{
+  "name": "lozymon/nestjs-pr-review-workflow",
+  "version": "1.0.0",
+  "type": "workflow",
+  "description": "Multi-step workflow to review a pull request for NestJS rule violations before merging.",
+  "license": "MIT",
+  "tags": ["nestjs", "pr-review", "typescript"],
+  "projectTypes": ["nestjs", "node"],
+  "targets": {
+    "claude-code": { "file": "workflow.md" }
+  }
+}

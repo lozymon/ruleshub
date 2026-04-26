@@ -2,8 +2,10 @@ import {
   PackageDto,
   PackageSearchParams,
   PaginatedResponse,
-} from '@ruleshub/types';
-import { apiClient } from './client';
+  VersionDiffDto,
+  PackageVersionPreviewDto,
+} from "@ruleshub/types";
+import { apiClient } from "./client";
 
 export function searchPackages(
   params: PackageSearchParams = {},
@@ -13,7 +15,7 @@ export function searchPackages(
     if (value !== undefined && value !== null) query.set(key, String(value));
   }
   const qs = query.toString();
-  return apiClient.get(`/packages${qs ? `?${qs}` : ''}`);
+  return apiClient.get(`/packages${qs ? `?${qs}` : ""}`);
 }
 
 export function getPackage(
@@ -50,18 +52,44 @@ export function yankVersion(
   });
 }
 
+export function getPackageDiff(
+  namespace: string,
+  name: string,
+  from: string,
+  to: string,
+): Promise<VersionDiffDto> {
+  return apiClient.get(
+    `/packages/${namespace}/${name}/diff?from=${from}&to=${to}`,
+  );
+}
+
+export function getPackagePreview(
+  namespace: string,
+  name: string,
+  version: string,
+): Promise<PackageVersionPreviewDto> {
+  return apiClient.get(`/packages/${namespace}/${name}/${version}/preview`);
+}
+
 export async function publishPackage(
   file: File,
+  manifest: Record<string, unknown>,
   token: string,
 ): Promise<unknown> {
-  const { config } = await import('../config');
+  const { config } = await import("../config");
   const form = new FormData();
-  form.append('file', file);
+  form.append("file", file);
+  form.append("manifest", JSON.stringify(manifest));
   const r = await fetch(`${config.apiUrl}/packages`, {
-    method: 'POST',
+    method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   });
-  if (!r.ok) return Promise.reject(await r.json());
+  if (!r.ok) {
+    const body = await r.json().catch(() => ({ message: r.statusText }));
+    return Promise.reject(
+      new Error((body as { message?: string }).message ?? r.statusText),
+    );
+  }
   return r.json();
 }

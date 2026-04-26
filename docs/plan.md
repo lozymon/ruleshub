@@ -671,7 +671,7 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [x] Version diff viewer — side-by-side diff between versions
 - [x] Structured changelogs — per-version release notes field
-- [ ] Dependency security alerts — notify dependents when a package is yanked or reported
+- [x] Dependency security alerts — notify dependents when a package is yanked or reported
 - [x] API keys — `RULESHUB_TOKEN` for CI/CD publishing without browser OAuth
 - [x] Webhooks for consumers — subscribe to new version notifications
 - [x] README badges — auto-generated version + downloads badge per asset
@@ -765,22 +765,22 @@ docs/
 
 - [x] Add a `/docs` section inside `apps/web` using Next.js MDX (`@next/mdx`)
 - [x] Sidebar navigation auto-generated from the `docs/` folder structure
-- [ ] Full-text search powered by [Pagefind](https://pagefind.app) (static, zero infra cost)
-- [ ] Syntax-highlighted code blocks (Shiki, matches the existing site theme)
-- [ ] "Edit this page on GitHub" link on every page
+- [x] Full-text search powered by [Pagefind](https://pagefind.app) (static, zero infra cost)
+- [x] Syntax-highlighted code blocks (Shiki, matches the existing site theme)
+- [x] "Edit this page on GitHub" link on every page
 - [ ] Version badge in the header linking to latest CLI release on npm
-- [ ] SEO: `sitemap.xml` includes all `/docs/*` routes
-- [ ] Dark mode consistent with the rest of the site (no separate theme toggle needed)
-- [ ] Mobile-friendly: collapsible sidebar, sticky ToC on desktop
+- [x] SEO: `sitemap.xml` includes all `/docs/*` routes
+- [x] Dark mode consistent with the rest of the site (no separate theme toggle needed)
+- [x] Mobile-friendly: collapsible sidebar, sticky ToC on desktop
 
 #### Content Milestones
 
-- [ ] Getting Started + Concepts section — unblocks new users immediately
-- [ ] Manifest Reference — single authoritative source (replaces inline plan docs)
-- [ ] CLI Reference — one page per command, with flags table and examples
-- [ ] Tool Target Guides — one page per supported AI tool
-- [ ] API Reference — human-readable complement to Swagger/OpenAPI
-- [ ] Contributing Guide — onboards external contributors
+- [x] Getting Started + Concepts section — unblocks new users immediately
+- [x] Manifest Reference — single authoritative source (replaces inline plan docs)
+- [x] CLI Reference — one page per command, with flags table and examples
+- [x] Tool Target Guides — one page per supported AI tool
+- [x] API Reference — human-readable complement to Swagger/OpenAPI
+- [x] Contributing Guide — onboards external contributors
 
 ---
 
@@ -793,12 +793,12 @@ without reading the full docs first.
 
 A zero-config project generator: `npx create-ruleshub`
 
-- [ ] Interactive wizard: name → type → target tools → license → author
-- [ ] Generates a ready-to-publish folder with `ruleshub.json`, placeholder files per target, and a `README.md`
-- [ ] Templates for every asset type: `rule` · `command` · `workflow` · `agent` · `mcp-server` · `pack`
-- [ ] `--template <type>` flag for non-interactive use (CI/scripts)
-- [ ] Infers namespace from `git config user.name` / GitHub username
-- [ ] Prints next steps: `cd my-package && npx ruleshub validate && npx ruleshub publish`
+- [x] Interactive wizard: name → type → target tools → license → author
+- [x] Generates a ready-to-publish folder with `ruleshub.json`, placeholder files per target, and a `README.md`
+- [x] Templates for every asset type: `rule` · `command` · `workflow` · `agent` · `mcp-server` · `pack`
+- [x] `--template <type>` flag for non-interactive use (CI/scripts)
+- [x] Infers namespace from `git config user.name` / GitHub username
+- [x] Prints next steps: `cd my-package && npx ruleshub validate && npx ruleshub publish`
 
 #### `ruleshub validate` CLI command (extends `packages/cli`)
 
@@ -812,7 +812,7 @@ A zero-config project generator: `npx create-ruleshub`
 
 - [ ] Publish `ruleshub-schema` to [SchemaStore](https://www.schemastore.org/json/) — enables IDE autocompletion for any editor (VS Code, IntelliJ, Neovim + LSP)
 - [x] Schema hosted at `https://ruleshub.dev/schema/ruleshub.json` (stable URL)
-- [ ] Add `"$schema": "https://ruleshub.dev/schema/ruleshub.json"` to all sample manifests
+- [x] Add `"$schema": "https://ruleshub.dev/schema/ruleshub.json"` to all sample manifests
 - [ ] Schema served from `apps/api` and versioned (breaking changes bump schema URL)
 
 #### `packages/ruleshub-kit` — TypeScript authoring helpers
@@ -820,13 +820,13 @@ A zero-config project generator: `npx create-ruleshub`
 A lightweight utility library for programmatic manifest construction and validation —
 useful for tools, scripts, and IDE extensions that need to read or write `ruleshub.json`.
 
-- [ ] `parseManifest(json)` — parses and validates, returns typed `PackageManifest` or throws `ZodError`
-- [ ] `buildManifest(partial)` — typed builder with sensible defaults; returns a `PackageManifest`
-- [ ] `validateManifest(manifest)` — pure validation, returns `{ valid, errors }`
-- [ ] `getTargetFile(manifest, tool)` — resolves the file path for a given AI tool target
-- [ ] Re-exports the Zod schema and all types from `packages/types` — single import for consumers
-- [ ] MIT licensed (same as `packages/types` and `packages/cli`)
-- [ ] Fully tree-shakeable, zero runtime dependencies beyond `zod`
+- [x] `parseManifest(json)` — parses and validates, returns typed `PackageManifest` or throws `ZodError`
+- [x] `buildManifest(partial)` — typed builder with sensible defaults; returns a `PackageManifest`
+- [x] `validateManifest(manifest)` — pure validation, returns `{ valid, errors }`
+- [x] `getTargetFile(manifest, tool)` — resolves the file path for a given AI tool target
+- [x] Re-exports the Zod schema and all types from `packages/types` — single import for consumers
+- [x] MIT licensed (same as `packages/types` and `packages/cli`)
+- [x] Fully tree-shakeable, zero runtime dependencies beyond `zod`
 
 ---
 

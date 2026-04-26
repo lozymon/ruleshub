@@ -323,8 +323,20 @@
   background: none;
   border: none;
   padding: 0;
-  color: #ededf0;
   font-size: inherit;
+  /* colour is set per-token by Shiki — do not override */
+}
+
+/* rehype-pretty-code: show correct theme per colour scheme */
+.prose-docs code[data-theme*=" "],
+.prose-docs code[data-theme*=" "] span {
+  color: var(--shiki-light);
+}
+@media (prefers-color-scheme: dark) {
+  .prose-docs code[data-theme*=" "],
+  .prose-docs code[data-theme*=" "] span {
+    color: var(--shiki-dark);
+  }
 }
 .prose-docs table {
   width: 100%;

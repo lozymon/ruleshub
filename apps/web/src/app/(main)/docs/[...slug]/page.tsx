@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { readFileSync } from "fs";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
+import rehypePrettyCode from "rehype-pretty-code";
 import { contentMap } from "@/docs/content-map";
 import { flatPages } from "@/docs/nav";
 import type { Metadata } from "next";
@@ -34,7 +35,20 @@ export default async function DocsPage({ params }: Props) {
     <article className="prose-docs max-w-3xl">
       <MDXRemote
         source={source}
-        options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+        options={{
+          mdxOptions: {
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [
+              [
+                rehypePrettyCode,
+                {
+                  theme: { dark: "github-dark-dimmed", light: "github-light" },
+                  keepBackground: false,
+                },
+              ],
+            ],
+          },
+        }}
       />
     </article>
   );

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
   "name": "lozymon/nestjs-pr-review-workflow",
   "version": "1.0.0",
   "type": "workflow",

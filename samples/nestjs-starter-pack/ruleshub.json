@@ -1,4 +1,5 @@
 {
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
   "name": "lozymon/nestjs-starter-pack",
   "version": "1.0.0",
   "type": "pack",

@@ -549,7 +549,7 @@ services:
       POSTGRES_USER: ruleshub
       POSTGRES_PASSWORD: ruleshub
       POSTGRES_DB: ruleshub
-    ports: ["5432:5432"]
+    ports: ['5432:5432']
 
   minio:
     image: minio/minio
@@ -557,11 +557,11 @@ services:
     environment:
       MINIO_ROOT_USER: ruleshub
       MINIO_ROOT_PASSWORD: ruleshub_secret
-    ports: ["9000:9000", "9001:9001"]
+    ports: ['9000:9000', '9001:9001']
 
   adminer:
     image: adminer
-    ports: ["8080:8080"]
+    ports: ['8080:8080']
 ```
 
 #### Environment Variables

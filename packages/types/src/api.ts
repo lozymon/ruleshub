@@ -140,9 +140,10 @@ export interface VersionDiffDto {
 }
 
 export interface PackageFilePreviewDto {
-  tool: string;
+  tool: string | null;
   path: string;
   content: string;
+  isTarget: boolean;
 }
 
 export interface PackageVersionPreviewDto {

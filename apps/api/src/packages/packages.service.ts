@@ -324,9 +324,6 @@ export class PackagesService {
     }
 
     const manifest = PackageManifestSchema.safeParse(pkgVersion.manifestJson);
-    if (!manifest.success || !manifest.data.targets) {
-      return { version, previews: [] };
-    }
 
     const stream = await this.storage.download(pkgVersion.storageKey);
     const chunks: Buffer[] = [];
@@ -338,15 +335,31 @@ export class PackagesService {
     const zipBuffer = Buffer.concat(chunks);
     const zip = new AdmZip(zipBuffer);
 
-    const previews = Object.entries(manifest.data.targets).map(
-      ([tool, target]) => {
-        const entry = zip.getEntry(target.file);
-        const content = entry
-          ? entry.getData().toString("utf-8")
-          : `# File not found in package\n# Expected: ${target.file}`;
-        return { tool, path: target.file, content };
-      },
+    const targets =
+      manifest.success && manifest.data.targets ? manifest.data.targets : {};
+    const targetPaths = new Set(Object.values(targets).map((t) => t.file));
+    const toolByPath = Object.fromEntries(
+      Object.entries(targets).map(([tool, t]) => [t.file, tool]),
     );
+
+    // Target files first, then remaining files alphabetically (skip ruleshub.json)
+    const allEntries = zip
+      .getEntries()
+      .filter((e) => !e.isDirectory && e.entryName !== "ruleshub.json");
+
+    const targetEntries = allEntries.filter((e) =>
+      targetPaths.has(e.entryName),
+    );
+    const otherEntries = allEntries
+      .filter((e) => !targetPaths.has(e.entryName))
+      .sort((a, b) => a.entryName.localeCompare(b.entryName));
+
+    const previews = [...targetEntries, ...otherEntries].map((entry) => ({
+      tool: toolByPath[entry.entryName] ?? null,
+      path: entry.entryName,
+      content: entry.getData().toString("utf-8"),
+      isTarget: targetPaths.has(entry.entryName),
+    }));
 
     return { version, previews };
   }

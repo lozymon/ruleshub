@@ -38,6 +38,7 @@ describe("PackageManifestSchema", () => {
       "workflow",
       "agent",
       "mcp-server",
+      "skill",
     ] as const;
     for (const type of types) {
       const result = PackageManifestSchema.safeParse({ ...validRule, type });

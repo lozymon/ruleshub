@@ -264,6 +264,18 @@ export default async function PackagePage({ params }: PackagePageProps) {
                       <span className="text-[12px] text-fg-dim">
                         {new Date(v.publishedAt).toLocaleDateString()}
                       </span>
+                      {i > 0 && pkg.versions[0] && (
+                        <Link
+                          href={routes.packageDiff(
+                            `${namespace}/${name}`,
+                            v.version,
+                            pkg.versions[0].version,
+                          )}
+                          className="font-mono text-[11px] text-fg-dim transition-colors hover:text-primary"
+                        >
+                          diff →latest
+                        </Link>
+                      )}
                     </div>
                     {v.changelog && (
                       <details className="group px-4 pb-3">

@@ -2,8 +2,9 @@ import {
   PackageDto,
   PackageSearchParams,
   PaginatedResponse,
-} from '@ruleshub/types';
-import { apiClient } from './client';
+  VersionDiffDto,
+} from "@ruleshub/types";
+import { apiClient } from "./client";
 
 export function searchPackages(
   params: PackageSearchParams = {},
@@ -13,7 +14,7 @@ export function searchPackages(
     if (value !== undefined && value !== null) query.set(key, String(value));
   }
   const qs = query.toString();
-  return apiClient.get(`/packages${qs ? `?${qs}` : ''}`);
+  return apiClient.get(`/packages${qs ? `?${qs}` : ""}`);
 }
 
 export function getPackage(
@@ -50,15 +51,26 @@ export function yankVersion(
   });
 }
 
+export function getPackageDiff(
+  namespace: string,
+  name: string,
+  from: string,
+  to: string,
+): Promise<VersionDiffDto> {
+  return apiClient.get(
+    `/packages/${namespace}/${name}/diff?from=${from}&to=${to}`,
+  );
+}
+
 export async function publishPackage(
   file: File,
   token: string,
 ): Promise<unknown> {
-  const { config } = await import('../config');
+  const { config } = await import("../config");
   const form = new FormData();
-  form.append('file', file);
+  form.append("file", file);
   const r = await fetch(`${config.apiUrl}/packages`, {
-    method: 'POST',
+    method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   });

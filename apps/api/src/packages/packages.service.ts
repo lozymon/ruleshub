@@ -10,7 +10,11 @@ import AdmZip from "adm-zip";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { SearchPackagesDto } from "./dto/search-packages.dto";
-import { PackageManifestSchema } from "@ruleshub/types";
+import {
+  PackageManifestSchema,
+  VersionDiffDto,
+  DiffChange,
+} from "@ruleshub/types";
 import { Package, PackageVersion, User, Prisma } from "@prisma/client";
 
 type PackageWithIncludes = Package & {
@@ -366,6 +370,105 @@ export class PackagesService {
     } catch {
       return false;
     }
+  }
+
+  async diffVersions(
+    namespace: string,
+    name: string,
+    from: string,
+    to: string,
+  ): Promise<VersionDiffDto> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { namespace_name: { namespace, name } },
+    });
+    if (!pkg)
+      throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    const [fromVersion, toVersion] = await Promise.all([
+      this.prisma.packageVersion.findUnique({
+        where: { packageId_version: { packageId: pkg.id, version: from } },
+      }),
+      this.prisma.packageVersion.findUnique({
+        where: { packageId_version: { packageId: pkg.id, version: to } },
+      }),
+    ]);
+
+    if (!fromVersion) throw new NotFoundException(`Version ${from} not found`);
+    if (!toVersion) throw new NotFoundException(`Version ${to} not found`);
+
+    const fromManifest = fromVersion.manifestJson as Record<string, unknown>;
+    const toManifest = toVersion.manifestJson as Record<string, unknown>;
+
+    return { from, to, changes: this.buildDiff(fromManifest, toManifest) };
+  }
+
+  private buildDiff(
+    from: Record<string, unknown>,
+    to: Record<string, unknown>,
+  ): DiffChange[] {
+    const changes: DiffChange[] = [];
+
+    for (const field of ["type", "description", "license"] as const) {
+      const fv = from[field] ?? null;
+      const tv = to[field] ?? null;
+      changes.push({
+        field,
+        kind: fv === tv ? "unchanged" : "changed",
+        fromValue: fv,
+        toValue: tv,
+      });
+    }
+
+    for (const field of ["tags", "projectTypes"] as const) {
+      const fArr = (from[field] as string[]) ?? [];
+      const tArr = (to[field] as string[]) ?? [];
+      const unchanged =
+        fArr.length === tArr.length && fArr.every((v) => tArr.includes(v));
+      changes.push({
+        field,
+        kind: unchanged ? "unchanged" : "changed",
+        fromValue: fArr,
+        toValue: tArr,
+      });
+    }
+
+    const fromTargets =
+      (from["targets"] as Record<string, { file: string }>) ?? {};
+    const toTargets = (to["targets"] as Record<string, { file: string }>) ?? {};
+    const allTools = new Set([
+      ...Object.keys(fromTargets),
+      ...Object.keys(toTargets),
+    ]);
+
+    for (const tool of allTools) {
+      const fPath = fromTargets[tool]?.file ?? null;
+      const tPath = toTargets[tool]?.file ?? null;
+      const kind =
+        fPath === null
+          ? "added"
+          : tPath === null
+            ? "removed"
+            : fPath !== tPath
+              ? "changed"
+              : "unchanged";
+      changes.push({
+        field: `targets.${tool}`,
+        kind,
+        fromValue: fPath,
+        toValue: tPath,
+      });
+    }
+
+    const fCl = from["changelog"] ?? null;
+    const tCl = to["changelog"] ?? null;
+    changes.push({
+      field: "changelog",
+      kind: fCl === tCl ? "unchanged" : "changed",
+      fromValue: fCl,
+      toValue: tCl,
+    });
+
+    return changes;
   }
 
   private async assertOwnership(

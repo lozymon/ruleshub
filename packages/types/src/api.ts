@@ -99,3 +99,18 @@ export interface PackageSearchParams {
   page?: number;
   limit?: number;
 }
+
+export type DiffChangeKind = "unchanged" | "changed" | "added" | "removed";
+
+export interface DiffChange {
+  field: string;
+  kind: DiffChangeKind;
+  fromValue: unknown;
+  toValue: unknown;
+}
+
+export interface VersionDiffDto {
+  from: string;
+  to: string;
+  changes: DiffChange[];
+}

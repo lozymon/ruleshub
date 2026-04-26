@@ -5,6 +5,8 @@ export const routes = {
   packageVersion: (name: string, version: string) =>
     `/packages/${name}/${version}`,
   packageFork: (name: string) => `/packages/${name}/fork`,
+  packageDiff: (name: string, from: string, to: string) =>
+    `/packages/${name}/diff?from=${from}&to=${to}`,
   user: (username: string) => `/users/${username}`,
   org: (orgname: string) => `/orgs/${orgname}`,
   publish: "/publish",

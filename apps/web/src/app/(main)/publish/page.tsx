@@ -146,9 +146,6 @@ export default function PublishPage() {
     setPublishing(true);
     setError(null);
     try {
-      const JSZip = (await import("jszip")).default;
-      const zip = await JSZip.loadAsync(form.file);
-
       const manifest = {
         name: `${form.namespace}/${form.name}`,
         version: form.version,
@@ -170,14 +167,8 @@ export default function PublishPage() {
           ]),
         ),
       };
-      zip.file("ruleshub.json", JSON.stringify(manifest, null, 2));
 
-      const blob = await zip.generateAsync({ type: "blob" });
-      const file = new File([blob], `${form.name}.zip`, {
-        type: "application/zip",
-      });
-
-      await publishPackage(file, token);
+      await publishPackage(form.file, manifest, token);
       router.push(routes.package(`${form.namespace}/${form.name}`));
     } catch (e) {
       setError(

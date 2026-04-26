@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   Query,
+  Body,
   Req,
   UseGuards,
   UseInterceptors,
@@ -105,7 +106,13 @@ export class PackagesController {
   @ApiBody({
     schema: {
       type: "object",
-      properties: { file: { type: "string", format: "binary" } },
+      properties: {
+        file: { type: "string", format: "binary" },
+        manifest: {
+          type: "string",
+          description: "JSON-encoded ruleshub manifest",
+        },
+      },
     },
   })
   @ApiOperation({ summary: "Publish a new package or version" })
@@ -114,11 +121,19 @@ export class PackagesController {
   @ApiResponse({ status: 409, description: "Version already exists" })
   async publish(
     @Req() req: Request,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: { buffer: Buffer },
+    @Body("manifest") manifestJson: string,
   ) {
     if (!file) throw new BadRequestException("No file uploaded");
+    if (!manifestJson) throw new BadRequestException("No manifest provided");
+    let manifest: unknown;
+    try {
+      manifest = JSON.parse(manifestJson);
+    } catch {
+      throw new BadRequestException("Invalid manifest JSON");
+    }
     const user = req.user as User;
-    return this.packagesService.publish(user.id, file.buffer);
+    return this.packagesService.publish(user.id, file.buffer, manifest);
   }
 
   @Post(":namespace/:name/fork")

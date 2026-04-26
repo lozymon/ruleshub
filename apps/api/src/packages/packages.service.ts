@@ -1,12 +1,11 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   ForbiddenException,
   ConflictException,
   BadRequestException,
 } from "@nestjs/common";
-import AdmZip from "adm-zip";
+import AdmZip = require("adm-zip");
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { SearchPackagesDto } from "./dto/search-packages.dto";
@@ -14,6 +13,7 @@ import {
   PackageManifestSchema,
   VersionDiffDto,
   DiffChange,
+  type PackageManifest,
 } from "@ruleshub/types";
 import { Package, PackageVersion, User, Prisma } from "@prisma/client";
 import { WebhooksService } from "../webhooks/webhooks.service";
@@ -71,8 +71,6 @@ function toPackageDto(p: PackageWithIncludes) {
 
 @Injectable()
 export class PackagesService {
-  private readonly logger = new Logger(PackagesService.name);
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
@@ -176,15 +174,18 @@ export class PackagesService {
     return pkgVersion;
   }
 
-  async publish(userId: string, fileBuffer: Buffer): Promise<PackageVersion> {
-    const manifest = this.extractManifest(fileBuffer);
-    const parsed = PackageManifestSchema.safeParse(manifest);
+  async publish(
+    userId: string,
+    fileBuffer: Buffer,
+    manifestData: unknown,
+  ): Promise<PackageVersion> {
+    const parsed = PackageManifestSchema.safeParse(manifestData);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
     const [namespace] = parsed.data.name.split("/");
     await this.assertOwnership(userId, namespace);
 
-    return this.doPublish(userId, fileBuffer);
+    return this.doPublish(userId, fileBuffer, parsed.data);
   }
 
   // Used by the GitHub import webhook — ownership already validated at import setup time
@@ -192,44 +193,47 @@ export class PackagesService {
     ownerUserId: string,
     fileBuffer: Buffer,
   ): Promise<PackageVersion> {
-    return this.doPublish(ownerUserId, fileBuffer);
+    const manifest = this.extractManifest(fileBuffer);
+    const parsed = PackageManifestSchema.safeParse(manifest);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    return this.doPublish(ownerUserId, fileBuffer, parsed.data);
   }
 
   private async doPublish(
     ownerUserId: string,
     fileBuffer: Buffer,
+    manifest: PackageManifest,
   ): Promise<PackageVersion> {
-    const manifest = this.extractManifest(fileBuffer);
-    const parsed = PackageManifestSchema.safeParse(manifest);
-    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
-
-    const [namespace, packageName] = parsed.data.name.split("/");
-    const supportedTools = parsed.data.targets
-      ? Object.keys(parsed.data.targets)
+    const [namespace, packageName] = manifest.name.split("/");
+    const supportedTools = manifest.targets
+      ? Object.keys(manifest.targets)
       : [];
-    const hasReadme = this.extractHasReadme(fileBuffer);
 
-    const storageKey = `packages/${namespace}/${packageName}/${parsed.data.version}.zip`;
-    await this.storage.upload(storageKey, fileBuffer, "application/zip");
+    // Ensure ruleshub.json is present in the stored zip
+    const enrichedBuffer = this.injectManifest(fileBuffer, manifest);
+    const hasReadme = this.extractHasReadme(enrichedBuffer);
+
+    const storageKey = `packages/${namespace}/${packageName}/${manifest.version}.zip`;
+    await this.storage.upload(storageKey, enrichedBuffer, "application/zip");
 
     return this.prisma.$transaction(async (tx) => {
       const pkg = await tx.package.upsert({
         where: { namespace_name: { namespace, name: packageName } },
         update: {
-          description: parsed.data.description,
-          tags: parsed.data.tags,
-          projectTypes: parsed.data.projectTypes,
+          description: manifest.description,
+          tags: manifest.tags,
+          projectTypes: manifest.projectTypes,
           supportedTools,
-          type: parsed.data.type,
+          type: manifest.type,
           hasReadme,
         },
         create: {
           namespace,
           name: packageName,
-          type: parsed.data.type,
-          description: parsed.data.description,
-          tags: parsed.data.tags,
-          projectTypes: parsed.data.projectTypes,
+          type: manifest.type,
+          description: manifest.description,
+          tags: manifest.tags,
+          projectTypes: manifest.projectTypes,
           supportedTools,
           hasReadme,
           ownerType: "user",
@@ -241,22 +245,22 @@ export class PackagesService {
         where: {
           packageId_version: {
             packageId: pkg.id,
-            version: parsed.data.version,
+            version: manifest.version,
           },
         },
       });
       if (existing) {
         throw new ConflictException(
-          `Version ${parsed.data.version} already exists`,
+          `Version ${manifest.version} already exists`,
         );
       }
 
       const version = await tx.packageVersion.create({
         data: {
           packageId: pkg.id,
-          version: parsed.data.version,
-          changelog: parsed.data.changelog ?? null,
-          manifestJson: parsed.data as unknown as Prisma.InputJsonValue,
+          version: manifest.version,
+          changelog: manifest.changelog ?? null,
+          manifestJson: manifest as unknown as Prisma.InputJsonValue,
           storageKey,
         },
       });
@@ -369,6 +373,22 @@ export class PackagesService {
         `${namespace}/${name}`,
         version,
       );
+    }
+  }
+
+  private injectManifest(fileBuffer: Buffer, manifest: unknown): Buffer {
+    try {
+      const zip = new AdmZip(fileBuffer);
+      const existing = zip.getEntry("ruleshub.json");
+      if (existing) zip.deleteFile("ruleshub.json");
+      zip.addFile(
+        "ruleshub.json",
+        Buffer.from(JSON.stringify(manifest, null, 2), "utf-8"),
+      );
+      return zip.toBuffer();
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException("Invalid zip file");
     }
   }
 

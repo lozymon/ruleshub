@@ -64,16 +64,23 @@ export function getPackageDiff(
 
 export async function publishPackage(
   file: File,
+  manifest: Record<string, unknown>,
   token: string,
 ): Promise<unknown> {
   const { config } = await import("../config");
   const form = new FormData();
   form.append("file", file);
+  form.append("manifest", JSON.stringify(manifest));
   const r = await fetch(`${config.apiUrl}/packages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   });
-  if (!r.ok) return Promise.reject(await r.json());
+  if (!r.ok) {
+    const body = await r.json().catch(() => ({ message: r.statusText }));
+    return Promise.reject(
+      new Error((body as { message?: string }).message ?? r.statusText),
+    );
+  }
   return r.json();
 }

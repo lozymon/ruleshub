@@ -1,6 +1,7 @@
 "use client"; // reads DOM headings + IntersectionObserver scroll-spy
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface Heading {
   id: string;
@@ -9,6 +10,7 @@ interface Heading {
 }
 
 export function DocsToc() {
+  const pathname = usePathname();
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>("");
 
@@ -26,6 +28,7 @@ export function DocsToc() {
         level: Number(el.tagName[1]),
       })),
     );
+    setActiveId("");
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -36,12 +39,12 @@ export function DocsToc() {
     );
     nodes.forEach((h) => observer.observe(h));
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
   if (headings.length === 0) return null;
 
   return (
-    <aside className="hidden xl:block w-[220px] shrink-0 sticky top-[56px] h-[calc(100vh-56px)] overflow-y-auto py-8 pl-6">
+    <aside className="hidden lg:block w-[220px] shrink-0 sticky top-[56px] h-[calc(100vh-56px)] overflow-y-auto py-8 pl-6">
       <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim mb-3">
         On this page
       </div>

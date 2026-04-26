@@ -26,10 +26,10 @@ export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
     <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1240px]">
       {/* Desktop sidebar */}
       <div className="hidden md:block sticky top-[56px] h-[calc(100vh-56px)] w-[240px] shrink-0 overflow-y-auto border-r border-border">
-        <div className="px-4 pt-5 pb-2">
+        <div className="px-4 pt-5">
           <DocsSearch />
+          <DocsSidebar />
         </div>
-        <DocsSidebar />
       </div>
 
       {/* Mobile top bar */}
@@ -68,7 +68,7 @@ export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Article */}
-      <div className="min-w-0 flex-1 border-r border-border py-8 px-8 mt-12 md:mt-0">
+      <div className="min-w-0 flex-1 py-8 px-12 pb-20 mt-12 md:mt-0">
         {children}
       </div>
 

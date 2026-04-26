@@ -97,11 +97,13 @@ export function DocsSearch() {
       <button
         onClick={open}
         aria-label="Search documentation"
-        className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        className="relative flex h-8 w-full items-center rounded-[6px] border border-border bg-bg-elev text-left transition-colors hover:border-border-hover"
       >
-        <Search className="h-3.5 w-3.5" />
-        <span>Search docs</span>
-        <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium opacity-60">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-[13px] w-[13px] text-fg-dim" />
+        <span className="flex-1 pl-8 pr-10 text-[12.5px] text-fg-dim">
+          Search docs...
+        </span>
+        <kbd className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-fg-dim border border-border rounded-[3px] px-[5px] py-px">
           ⌘K
         </kbd>
       </button>

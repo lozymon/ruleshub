@@ -279,7 +279,7 @@
   color: var(--foreground);
 }
 .prose-docs h1 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 0.5em;

@@ -67,20 +67,6 @@ export function DocsToc() {
           );
         })}
       </nav>
-      <div className="mt-6 border-t border-border pt-4 space-y-1">
-        <a
-          href="#"
-          className="flex items-center gap-1.5 text-[12px] text-fg-muted py-1 hover:text-foreground transition-colors"
-        >
-          Was this helpful?
-        </a>
-        <a
-          href="#"
-          className="flex items-center gap-1.5 text-[12px] text-fg-muted py-1 hover:text-foreground transition-colors"
-        >
-          Report an issue
-        </a>
-      </div>
     </aside>
   );
 }

@@ -1,0 +1,93 @@
+# outdated & update
+
+Check installed packages for newer versions and update them.
+
+## outdated
+
+```bash
+npx ruleshub outdated [options]
+```
+
+Reads `.ruleshub/installed.json` and checks the registry for newer versions of each installed package.
+
+### Options
+
+| Flag     | Description            |
+| -------- | ---------------------- |
+| `--json` | Output results as JSON |
+
+### Examples
+
+```bash
+npx ruleshub outdated
+# 2 packages can be updated:
+#
+#   lozymon/nestjs-rules          1.0.0  →  1.2.0
+#   lozymon/nestjs-generate-module  1.0.0  →  1.1.0
+#
+# Run `ruleshub update` to update all, or `ruleshub update <name>` for one.
+
+# Already up to date
+npx ruleshub outdated
+# ✓ All packages are up to date.
+
+# Machine-readable output
+npx ruleshub outdated --json
+# [
+#   {"name":"lozymon/nestjs-rules","current":"1.0.0","latest":"1.2.0","outdated":true},
+#   {"name":"lozymon/nestjs-generate-module","current":"1.0.0","latest":"1.0.0","outdated":false}
+# ]
+```
+
+---
+
+## update
+
+```bash
+npx ruleshub update [name] [options]
+```
+
+Updates installed packages to their latest versions. Reads from `.ruleshub/installed.json` to know which tool each package was installed for.
+
+### Arguments
+
+| Argument | Description                                                         |
+| -------- | ------------------------------------------------------------------- |
+| `name`   | Package to update (optional). Omit to update all installed packages |
+
+### Options
+
+| Flag        | Description                                |
+| ----------- | ------------------------------------------ |
+| `--dry-run` | Preview updates without writing any files  |
+| `--force`   | Overwrite existing files without prompting |
+
+### Examples
+
+```bash
+# Update all installed packages
+npx ruleshub update
+
+# Update a single package
+npx ruleshub update lozymon/nestjs-rules
+
+# Preview updates without writing
+npx ruleshub update --dry-run
+```
+
+## Lock file
+
+Both commands rely on `.ruleshub/installed.json`, which is written by [`install`](/docs/cli/install) and updated by `update`. Commit this file to track which packages and versions your project uses.
+
+```json
+{
+  "packages": {
+    "lozymon/nestjs-rules": {
+      "version": "1.2.0",
+      "tool": "claude-code",
+      "files": ["CLAUDE.md"],
+      "installedAt": "2026-04-26T00:00:00.000Z"
+    }
+  }
+}
+```

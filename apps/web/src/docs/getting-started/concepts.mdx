@@ -1,0 +1,86 @@
+# Concepts
+
+## Asset types
+
+### Rule
+
+A rule is a single instruction file fed to an AI coding tool. It typically contains coding conventions, project structure guidance, or tool-specific behaviour instructions.
+
+```json
+{ "type": "rule" }
+```
+
+### Command
+
+A command is a custom slash command, skill, or prompt template. In Claude Code terms, this is a `.md` file placed in `.claude/commands/`.
+
+```json
+{ "type": "command" }
+```
+
+### Workflow
+
+A workflow is a multi-step agent playbook — a structured prompt that guides the AI through a complex task like reviewing a PR or scaffolding a feature.
+
+```json
+{ "type": "workflow" }
+```
+
+### Agent
+
+An agent is a custom agent configuration, including system prompt, tool access, and model settings.
+
+```json
+{ "type": "agent" }
+```
+
+### MCP Server
+
+An MCP server asset contains the configuration and install instructions for a Model Context Protocol server.
+
+```json
+{ "type": "mcp-server" }
+```
+
+### Pack
+
+A pack is a curated bundle of individual assets. Installing a pack installs each included asset individually. Packs have no files of their own — they only list dependencies.
+
+```json
+{
+  "type": "pack",
+  "includes": [
+    "lozymon/nestjs-rules@^1.0.0",
+    "lozymon/nestjs-generate-module@^1.0.0"
+  ]
+}
+```
+
+## Targets
+
+Every non-pack asset declares one or more **targets** — a map from tool name to the file that should be written for that tool:
+
+```json
+{
+  "targets": {
+    "claude-code": { "file": "targets/claude-code/CLAUDE.md" },
+    "cursor": { "file": "targets/cursor/.cursorrules" },
+    "copilot": { "file": "targets/copilot/copilot-instructions.md" }
+  }
+}
+```
+
+Supported tool keys: `claude-code` · `cursor` · `copilot` · `windsurf` · `cline` · `aider` · `continue`
+
+## Namespaces
+
+Every package is published under a namespace: `username/package-name` or `orgname/package-name`. This mirrors the GitHub convention and prevents name collisions.
+
+```
+lozymon/nestjs-rules
+acmecorp/internal-standards
+```
+
+## Versions
+
+RulesHub uses [semantic versioning](https://semver.org). Pack dependency ranges use the same syntax as npm (`^1.0.0`, `~1.2.0`, `>=2.0.0`).

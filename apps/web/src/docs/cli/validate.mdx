@@ -1,0 +1,67 @@
+# validate
+
+Validate a `ruleshub.json` manifest in the current (or given) directory.
+
+```bash
+npx ruleshub validate [dir] [options]
+```
+
+## Arguments
+
+| Argument | Description                                                         |
+| -------- | ------------------------------------------------------------------- |
+| `dir`    | Directory containing `ruleshub.json`. Defaults to current directory |
+
+## Options
+
+| Flag     | Description                                        |
+| -------- | -------------------------------------------------- |
+| `--json` | Output results as JSON (useful for editor tooling) |
+
+## What it checks
+
+- `name` follows `owner/package-name` format (lowercase, hyphens allowed)
+- `version` is valid semver
+- `type` is a known value: `rule` `command` `skill` `workflow` `agent` `mcp-server` `pack`
+- `description` is present
+- `license` is present
+- `targets` is present for non-pack assets, with at least one tool key
+- `includes` is present for pack assets
+- All files referenced in `targets[tool].file` exist on disk
+- `license` is a valid SPDX identifier
+
+## Examples
+
+```bash
+# Validate the current directory
+npx ruleshub validate
+# ✓ Valid manifest: lozymon/nestjs-rules@1.0.0
+
+# Validate a specific directory
+npx ruleshub validate ./my-package
+
+# Machine-readable output
+npx ruleshub validate --json
+# {"valid":true,"errors":[]}
+
+# On failure
+npx ruleshub validate --json
+# {"valid":false,"errors":[{"field":"version","message":"Invalid semver"}]}
+```
+
+## Exit codes
+
+| Code | Meaning           |
+| ---- | ----------------- |
+| `0`  | Manifest is valid |
+| `1`  | Validation failed |
+
+Exit code `1` makes it safe to use in CI pipelines — a failing validate will block the workflow.
+
+## Pre-publish gate
+
+`validate` runs automatically as the first step of [`publish`](/docs/cli/publish). If validation fails, publish stops immediately before uploading anything.
+
+## IDE autocompletion
+
+Adding `"$schema": "https://ruleshub.dev/schema/ruleshub.json"` to your manifest gives you inline autocompletion and error highlighting in VS Code, IntelliJ, Neovim, and any editor with JSON Schema support — catching errors before you even run validate.

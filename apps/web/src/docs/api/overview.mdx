@@ -1,0 +1,75 @@
+# API Overview
+
+The RulesHub REST API is the authoritative data source for all clients — the web app, the CLI, and any IDE extensions.
+
+## Base URL
+
+```
+https://api.ruleshub.dev/v1
+```
+
+## Versioning
+
+All endpoints are prefixed with `/v1`. Breaking changes will increment this version. The current version is stable.
+
+## Authentication
+
+Most read endpoints are public. Write endpoints and personal data require a Bearer token.
+
+```
+Authorization: Bearer rh_your_token_here
+```
+
+Get a token at [ruleshub.dev/dashboard](/dashboard) → **API Keys**, or use the GitHub OAuth flow (see [Authentication](/docs/api/auth)).
+
+## Response format
+
+All list endpoints return a paginated envelope:
+
+```json
+{
+  "data": [...],
+  "total": 142,
+  "page": 1,
+  "limit": 20
+}
+```
+
+## Error responses
+
+Errors follow a consistent shape:
+
+```json
+{
+  "statusCode": 404,
+  "message": "Package lozymon/unknown-pkg not found"
+}
+```
+
+| Status | Meaning                                    |
+| ------ | ------------------------------------------ |
+| `400`  | Bad request — invalid input or manifest    |
+| `401`  | Unauthenticated — token missing or invalid |
+| `403`  | Forbidden — you don't own this resource    |
+| `404`  | Not found                                  |
+| `409`  | Conflict — version already published       |
+
+## OpenAPI / Swagger
+
+Interactive API docs are available at:
+
+```
+https://api.ruleshub.dev/v1/docs
+```
+
+The Swagger UI lists every endpoint with request/response schemas and a live try-it-out interface.
+
+## Rate limits
+
+The API enforces per-IP rate limits on all endpoints. Responses include standard rate limit headers:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 97
+X-RateLimit-Reset: 1714089600
+```

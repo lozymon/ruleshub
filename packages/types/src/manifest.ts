@@ -8,6 +8,7 @@ export const AssetTypeSchema = z.enum([
   "agent",
   "mcp-server",
   "pack",
+  "skill",
 ]);
 
 export type AssetType = z.infer<typeof AssetTypeSchema>;

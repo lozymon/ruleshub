@@ -1,4 +1,5 @@
 {
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
   "name": "lozymon/nestjs-generate-module",
   "version": "1.0.0",
   "type": "command",

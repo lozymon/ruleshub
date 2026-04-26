@@ -1,0 +1,121 @@
+# Packages API
+
+Base path: `/v1/packages`
+
+## List / search packages
+
+```
+GET /v1/packages
+```
+
+Returns a paginated list of public packages. Supports full-text search and filtering.
+
+**Query parameters:**
+
+| Parameter     | Type   | Description                                                                           |
+| ------------- | ------ | ------------------------------------------------------------------------------------- |
+| `q`           | string | Search query (name, description, tags)                                                |
+| `type`        | string | Filter by asset type: `rule` `command` `skill` `workflow` `agent` `mcp-server` `pack` |
+| `tool`        | string | Filter by supported tool: `claude-code` `cursor` etc.                                 |
+| `tag`         | string | Filter by tag                                                                         |
+| `projectType` | string | Filter by project type: `nestjs` `react` etc.                                         |
+| `scope`       | string | `individual` (excludes packs) or `pack` (packs only)                                  |
+| `page`        | number | Page number, default `1`                                                              |
+| `limit`       | number | Results per page, default `20`, max `100`                                             |
+
+**Example:**
+
+```bash
+curl "https://api.ruleshub.dev/v1/packages?q=nestjs&tool=claude-code&type=rule"
+```
+
+---
+
+## Get a package
+
+```
+GET /v1/packages/:namespace/:name
+```
+
+Returns the package metadata including all published versions and the latest version's manifest.
+
+---
+
+## Get a specific version
+
+```
+GET /v1/packages/:namespace/:name/:version
+```
+
+Returns metadata and the manifest for a specific version.
+
+---
+
+## Get a download URL
+
+```
+GET /v1/packages/:namespace/:name/:version/download
+```
+
+Returns a signed URL to download the package zip. The URL is short-lived.
+
+```json
+{ "url": "https://storage.ruleshub.dev/packages/..." }
+```
+
+---
+
+## Get file preview
+
+```
+GET /v1/packages/:namespace/:name/:version/preview
+```
+
+Returns the decoded text content of all files in the zip, grouped by tool target. Used by the web UI to show file contents before installing.
+
+---
+
+## Get version diff
+
+```
+GET /v1/packages/:namespace/:name/diff?from=1.0.0&to=1.1.0
+```
+
+Returns a line-by-line diff between two versions of the package.
+
+---
+
+## Publish a package
+
+```
+POST /v1/packages
+```
+
+**Requires authentication.**
+
+Publishes a new package or a new version of an existing package. Accepts `multipart/form-data`:
+
+| Field      | Type   | Description                          |
+| ---------- | ------ | ------------------------------------ |
+| `file`     | file   | The package zip (max 5 MB)           |
+| `manifest` | string | JSON-encoded `ruleshub.json` content |
+
+---
+
+## Fork a package
+
+```
+POST /v1/packages/:namespace/:name/fork
+```
+
+**Requires authentication.** Forks the latest version of a package into the authenticated user's namespace.
+
+---
+
+## Yank a version
+
+```
+DELETE /v1/packages/:namespace/:name/:version
+```
+
+**Requires authentication.** Yanks a version you own. Yanked versions are hidden from search and cannot be newly installed.

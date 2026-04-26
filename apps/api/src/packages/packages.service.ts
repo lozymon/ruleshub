@@ -4,26 +4,27 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
-} from '@nestjs/common';
-import AdmZip = require('adm-zip');
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { SearchPackagesDto } from './dto/search-packages.dto';
+} from "@nestjs/common";
+import AdmZip = require("adm-zip");
+import { PrismaService } from "../prisma/prisma.service";
+import { StorageService } from "../storage/storage.service";
+import { SearchPackagesDto } from "./dto/search-packages.dto";
 import {
   PackageManifestSchema,
   VersionDiffDto,
   DiffChange,
   type PackageManifest,
   type PackageVersionPreviewDto,
-} from '@ruleshub/types';
+} from "@ruleshub/types";
 import {
   Package,
   PackageVersion,
   User,
   PackageDependency,
+  OrgRole,
   Prisma,
-} from '@prisma/client';
-import { WebhooksService } from '../webhooks/webhooks.service';
+} from "@prisma/client";
+import { WebhooksService } from "../webhooks/webhooks.service";
 
 type DepWithPackage = PackageDependency & {
   dep: Package & { versions: PackageVersion[] };
@@ -60,7 +61,7 @@ const packDepsInclude = {
     include: {
       dep: {
         include: {
-          versions: { orderBy: { publishedAt: 'desc' as const }, take: 1 },
+          versions: { orderBy: { publishedAt: "desc" as const }, take: 1 },
         },
       },
     },
@@ -93,7 +94,7 @@ function toPackageDto(p: PackageWithIncludes) {
           createdAt: p.owner.createdAt.toISOString(),
         }
       : {
-          id: '',
+          id: "",
           username: p.namespace,
           avatarUrl: null,
           bio: null,
@@ -128,11 +129,11 @@ export class PackagesService {
     const skip = (page - 1) * limit;
 
     const orderBy: Prisma.PackageOrderByWithRelationInput =
-      sort === 'newest'
-        ? { createdAt: 'desc' }
-        : sort === 'mostStarred'
-          ? { stars: 'desc' }
-          : { totalDownloads: 'desc' };
+      sort === "newest"
+        ? { createdAt: "desc" }
+        : sort === "mostStarred"
+          ? { stars: "desc" }
+          : { totalDownloads: "desc" };
 
     const where: Prisma.PackageWhereInput = {
       isPrivate: false,
@@ -141,12 +142,12 @@ export class PackagesService {
       ...(tag && { tags: { has: tag } }),
       ...(projectType && { projectTypes: { has: projectType } }),
       ...(tool && { supportedTools: { has: tool } }),
-      ...(scope === 'pack' && { type: 'pack' }),
-      ...(scope === 'individual' && { type: { not: 'pack' } }),
+      ...(scope === "pack" && { type: "pack" }),
+      ...(scope === "individual" && { type: { not: "pack" } }),
       ...(q && {
         OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { description: { contains: q, mode: 'insensitive' } },
+          { name: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
           { tags: { has: q } },
         ],
       }),
@@ -159,7 +160,7 @@ export class PackagesService {
         take: limit,
         orderBy,
         include: {
-          versions: { orderBy: { publishedAt: 'desc' }, take: 1 },
+          versions: { orderBy: { publishedAt: "desc" }, take: 1 },
           owner: true,
           ...packDepsInclude,
         },
@@ -179,7 +180,7 @@ export class PackagesService {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
       include: {
-        versions: { orderBy: { publishedAt: 'desc' } },
+        versions: { orderBy: { publishedAt: "desc" } },
         owner: true,
         ...packDepsInclude,
       },
@@ -199,7 +200,7 @@ export class PackagesService {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
-    if (!pkg)
+    if (!pkg || pkg.isPrivate)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
     const pkgVersion = await this.prisma.packageVersion.findUnique({
@@ -219,7 +220,7 @@ export class PackagesService {
     const parsed = PackageManifestSchema.safeParse(manifestData);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
-    const [namespace] = parsed.data.name.split('/');
+    const [namespace] = parsed.data.name.split("/");
     await this.assertOwnership(userId, namespace);
 
     return this.doPublish(userId, fileBuffer, parsed.data);
@@ -241,7 +242,7 @@ export class PackagesService {
     fileBuffer: Buffer,
     manifest: PackageManifest,
   ): Promise<PackageVersion> {
-    const [namespace, packageName] = manifest.name.split('/');
+    const [namespace, packageName] = manifest.name.split("/");
     const supportedTools = manifest.targets
       ? Object.keys(manifest.targets)
       : [];
@@ -251,7 +252,7 @@ export class PackagesService {
     const hasReadme = this.extractHasReadme(enrichedBuffer);
 
     const storageKey = `packages/${namespace}/${packageName}/${manifest.version}.zip`;
-    await this.storage.upload(storageKey, enrichedBuffer, 'application/zip');
+    await this.storage.upload(storageKey, enrichedBuffer, "application/zip");
 
     return this.prisma.$transaction(async (tx) => {
       const pkg = await tx.package.upsert({
@@ -273,7 +274,7 @@ export class PackagesService {
           projectTypes: manifest.projectTypes,
           supportedTools,
           hasReadme,
-          ownerType: 'user',
+          ownerType: "user",
           ownerUserId,
         },
       });
@@ -302,7 +303,7 @@ export class PackagesService {
         },
       });
 
-      if (manifest.type === 'pack' && manifest.includes?.length) {
+      if (manifest.type === "pack" && manifest.includes?.length) {
         const depIds = await this.resolveIncludes(manifest.includes);
         await tx.packageDependency.deleteMany({ where: { packId: pkg.id } });
         await tx.packageDependency.createMany({
@@ -324,7 +325,7 @@ export class PackagesService {
       });
 
       this.webhooks.fireForPackage(
-        'package.version.published',
+        "package.version.published",
         pkg.id,
         `${namespace}/${packageName}`,
         version.version,
@@ -339,11 +340,11 @@ export class PackagesService {
   ): Promise<{ depId: string; versionRange: string }[]> {
     return Promise.all(
       includes.map(async (entry) => {
-        const atIdx = entry.lastIndexOf('@');
+        const atIdx = entry.lastIndexOf("@");
         const hasVersion = atIdx > 0;
         const fullName = hasVersion ? entry.slice(0, atIdx) : entry;
-        const versionRange = hasVersion ? entry.slice(atIdx + 1) : '*';
-        const [ns, pkgName] = fullName.split('/');
+        const versionRange = hasVersion ? entry.slice(atIdx + 1) : "*";
+        const [ns, pkgName] = fullName.split("/");
         if (!ns || !pkgName) {
           throw new BadRequestException(
             `Invalid include entry "${entry}" — expected namespace/name or namespace/name@range`,
@@ -404,9 +405,9 @@ export class PackagesService {
     const stream = await this.storage.download(pkgVersion.storageKey);
     const chunks: Buffer[] = [];
     await new Promise<void>((resolve, reject) => {
-      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-      stream.on('end', resolve);
-      stream.on('error', reject);
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+      stream.on("end", resolve);
+      stream.on("error", reject);
     });
     const zipBuffer = Buffer.concat(chunks);
     const zip = new AdmZip(zipBuffer);
@@ -421,7 +422,7 @@ export class PackagesService {
     // Target files first, then remaining files alphabetically (skip ruleshub.json)
     const allEntries = zip
       .getEntries()
-      .filter((e) => !e.isDirectory && e.entryName !== 'ruleshub.json');
+      .filter((e) => !e.isDirectory && e.entryName !== "ruleshub.json");
 
     const targetEntries = allEntries.filter((e) =>
       targetPaths.has(e.entryName),
@@ -433,7 +434,7 @@ export class PackagesService {
     const previews = [...targetEntries, ...otherEntries].map((entry) => ({
       tool: toolByPath[entry.entryName] ?? null,
       path: entry.entryName,
-      content: entry.getData().toString('utf-8'),
+      content: entry.getData().toString("utf-8"),
       isTarget: targetPaths.has(entry.entryName),
     }));
 
@@ -446,7 +447,7 @@ export class PackagesService {
     name: string,
   ): Promise<Package> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new ForbiddenException('User not found');
+    if (!user) throw new ForbiddenException("User not found");
 
     const source = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
@@ -470,7 +471,7 @@ export class PackagesService {
         tags: source.tags,
         projectTypes: source.projectTypes,
         supportedTools: source.supportedTools,
-        ownerType: 'user',
+        ownerType: "user",
         ownerUserId: userId,
         forkedFromId: source.id,
       },
@@ -497,7 +498,7 @@ export class PackagesService {
 
     if (pkg) {
       this.webhooks.fireForPackage(
-        'package.version.yanked',
+        "package.version.yanked",
         pkg.id,
         `${namespace}/${name}`,
         version,
@@ -508,36 +509,36 @@ export class PackagesService {
   private injectManifest(fileBuffer: Buffer, manifest: unknown): Buffer {
     try {
       const zip = new AdmZip(fileBuffer);
-      const existing = zip.getEntry('ruleshub.json');
-      if (existing) zip.deleteFile('ruleshub.json');
+      const existing = zip.getEntry("ruleshub.json");
+      if (existing) zip.deleteFile("ruleshub.json");
       zip.addFile(
-        'ruleshub.json',
-        Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'),
+        "ruleshub.json",
+        Buffer.from(JSON.stringify(manifest, null, 2), "utf-8"),
       );
       return zip.toBuffer();
     } catch (e) {
       if (e instanceof BadRequestException) throw e;
-      throw new BadRequestException('Invalid zip file');
+      throw new BadRequestException("Invalid zip file");
     }
   }
 
   private extractManifest(fileBuffer: Buffer): unknown {
     try {
       const zip = new AdmZip(fileBuffer);
-      const entry = zip.getEntry('ruleshub.json');
+      const entry = zip.getEntry("ruleshub.json");
       if (!entry)
-        throw new BadRequestException('ruleshub.json not found in zip');
-      return JSON.parse(entry.getData().toString('utf-8'));
+        throw new BadRequestException("ruleshub.json not found in zip");
+      return JSON.parse(entry.getData().toString("utf-8"));
     } catch (e) {
       if (e instanceof BadRequestException) throw e;
-      throw new BadRequestException('Invalid zip file');
+      throw new BadRequestException("Invalid zip file");
     }
   }
 
   private extractHasReadme(fileBuffer: Buffer): boolean {
     try {
       const zip = new AdmZip(fileBuffer);
-      return !!(zip.getEntry('README.md') ?? zip.getEntry('readme.md'));
+      return !!(zip.getEntry("README.md") ?? zip.getEntry("readme.md"));
     } catch {
       return false;
     }
@@ -579,33 +580,33 @@ export class PackagesService {
   ): DiffChange[] {
     const changes: DiffChange[] = [];
 
-    for (const field of ['type', 'description', 'license'] as const) {
+    for (const field of ["type", "description", "license"] as const) {
       const fv = from[field] ?? null;
       const tv = to[field] ?? null;
       changes.push({
         field,
-        kind: fv === tv ? 'unchanged' : 'changed',
+        kind: fv === tv ? "unchanged" : "changed",
         fromValue: fv,
         toValue: tv,
       });
     }
 
-    for (const field of ['tags', 'projectTypes'] as const) {
+    for (const field of ["tags", "projectTypes"] as const) {
       const fArr = (from[field] as string[]) ?? [];
       const tArr = (to[field] as string[]) ?? [];
       const unchanged =
         fArr.length === tArr.length && fArr.every((v) => tArr.includes(v));
       changes.push({
         field,
-        kind: unchanged ? 'unchanged' : 'changed',
+        kind: unchanged ? "unchanged" : "changed",
         fromValue: fArr,
         toValue: tArr,
       });
     }
 
     const fromTargets =
-      (from['targets'] as Record<string, { file: string }>) ?? {};
-    const toTargets = (to['targets'] as Record<string, { file: string }>) ?? {};
+      (from["targets"] as Record<string, { file: string }>) ?? {};
+    const toTargets = (to["targets"] as Record<string, { file: string }>) ?? {};
     const allTools = new Set([
       ...Object.keys(fromTargets),
       ...Object.keys(toTargets),
@@ -616,12 +617,12 @@ export class PackagesService {
       const tPath = toTargets[tool]?.file ?? null;
       const kind =
         fPath === null
-          ? 'added'
+          ? "added"
           : tPath === null
-            ? 'removed'
+            ? "removed"
             : fPath !== tPath
-              ? 'changed'
-              : 'unchanged';
+              ? "changed"
+              : "unchanged";
       changes.push({
         field: `targets.${tool}`,
         kind,
@@ -630,11 +631,11 @@ export class PackagesService {
       });
     }
 
-    const fCl = from['changelog'] ?? null;
-    const tCl = to['changelog'] ?? null;
+    const fCl = from["changelog"] ?? null;
+    const tCl = to["changelog"] ?? null;
     changes.push({
-      field: 'changelog',
-      kind: fCl === tCl ? 'unchanged' : 'changed',
+      field: "changelog",
+      kind: fCl === tCl ? "unchanged" : "changed",
       fromValue: fCl,
       toValue: tCl,
     });
@@ -647,12 +648,16 @@ export class PackagesService {
     namespace: string,
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new ForbiddenException('User not found');
+    if (!user) throw new ForbiddenException("User not found");
 
     if (user.username === namespace) return;
 
     const orgMember = await this.prisma.orgMember.findFirst({
-      where: { userId, org: { slug: namespace } },
+      where: {
+        userId,
+        org: { slug: namespace },
+        role: { in: [OrgRole.owner, OrgRole.admin] },
+      },
     });
     if (!orgMember) {
       throw new ForbiddenException(

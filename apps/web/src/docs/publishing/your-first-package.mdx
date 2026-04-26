@@ -1,0 +1,80 @@
+# Your First Package
+
+This guide walks you through creating and publishing a package to RulesHub.
+
+## 1. Create the folder structure
+
+For a rule targeting Claude Code and Cursor:
+
+```
+my-rules/
+├── ruleshub.json
+├── README.md
+└── targets/
+    ├── claude-code/
+    │   └── CLAUDE.md
+    └── cursor/
+        └── .cursorrules
+```
+
+## 2. Write the manifest
+
+```json
+{
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
+  "name": "yourname/my-rules",
+  "version": "1.0.0",
+  "type": "rule",
+  "description": "My coding rules for AI tools",
+  "tags": ["typescript"],
+  "projectTypes": ["node"],
+  "license": "MIT",
+  "targets": {
+    "claude-code": { "file": "targets/claude-code/CLAUDE.md" },
+    "cursor": { "file": "targets/cursor/.cursorrules" }
+  }
+}
+```
+
+## 3. Validate locally
+
+```bash
+cd my-rules
+npx ruleshub validate
+# ✓ Valid manifest: yourname/my-rules@1.0.0
+```
+
+`validate` checks the schema, ensures all referenced target files exist, and exits with code 1 if anything is wrong — safe to run in CI.
+
+## 4. Get an API token
+
+Sign in at [ruleshub.dev/dashboard](/dashboard), go to **API Keys**, and create a token.
+
+## 5. Publish
+
+```bash
+npx ruleshub publish --token <your-token>
+# ✓ Published yourname/my-rules@1.0.0
+# View at https://ruleshub.dev/packages/yourname/my-rules
+```
+
+Or set the token as an environment variable so you don't have to pass it every time:
+
+```bash
+export RULESHUB_TOKEN=rh_...
+npx ruleshub publish
+```
+
+## 6. Publish a new version
+
+Bump `version` in `ruleshub.json` and publish again:
+
+```bash
+npx ruleshub publish
+```
+
+## Tips
+
+- Use `--dry-run` to preview the zip contents and size before publishing
+- Add a `changelog` field to `ruleshub.json` to write release notes per version
+- Keep target files focused — one concern per rule file is easier to install selectively

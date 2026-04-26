@@ -2,9 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 import type { Command } from "commander";
 import AdmZip from "adm-zip";
-import { PackageManifestSchema } from "@ruleshub/types";
 import { apiClient } from "../lib/api";
 import { logger } from "../lib/logger";
+import { validateManifest } from "../lib/validate";
 
 interface PublishOptions {
   token?: string;
@@ -27,21 +27,22 @@ export function registerPublish(program: Command) {
       }
 
       const manifestPath = path.resolve(process.cwd(), "ruleshub.json");
-      if (!fs.existsSync(manifestPath)) {
-        throw new Error("ruleshub.json not found in current directory");
+      const result = validateManifest(manifestPath);
+
+      if (!result.valid) {
+        const lines = result.errors
+          .map((e) => `  ${e.field}: ${e.message}`)
+          .join("\n");
+        throw new Error(`Invalid ruleshub.json:\n${lines}`);
       }
 
-      const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-      const parsed = PackageManifestSchema.safeParse(raw);
-      if (!parsed.success) {
-        const issues = parsed.error.flatten();
-        throw new Error(
-          `Invalid ruleshub.json:\n${JSON.stringify(issues, null, 2)}`,
-        );
-      }
-
-      const { name, version } = parsed.data;
+      const { name, version } = result.manifest!;
       logger.info(`Packaging ${name}@${version}…`);
+
+      const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as Record<
+        string,
+        unknown
+      >;
 
       const zip = new AdmZip();
       const ignored = new Set([
@@ -86,11 +87,7 @@ export function registerPublish(program: Command) {
       }
 
       logger.info("Publishing…");
-      await apiClient.publishPackage(
-        zipBuffer,
-        raw as Record<string, unknown>,
-        token!,
-      );
+      await apiClient.publishPackage(zipBuffer, raw, token!);
       logger.success(`Published ${name}@${version}`);
       logger.info(`View at https://ruleshub.dev/packages/${name}`);
     });

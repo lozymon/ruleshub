@@ -89,7 +89,7 @@
   /* custom design vars */
   --bg-elev: #111114;
   --bg-elev-2: #17171c;
-  --bg-code: #0d0d10;
+  --bg-code: #17171c;
   --border-strong: #2e2e37;
   --border-hover: #3a3a45;
   --fg-muted: #a1a1aa;
@@ -250,6 +250,111 @@
 }
 .pulse-dot {
   animation: pulse-dot 2s infinite;
+}
+
+/* ─── Docs prose ──────────────────────────────────────────── */
+.prose-docs {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+.prose-docs h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.prose-docs h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 2em 0 0.6em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 5rem;
+}
+.prose-docs h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 1.6em 0 0.4em;
+  scroll-margin-top: 5rem;
+}
+.prose-docs p,
+.prose-docs ul,
+.prose-docs ol {
+  margin: 0 0 1em;
+}
+.prose-docs ul,
+.prose-docs ol {
+  padding-left: 1.5em;
+}
+.prose-docs li {
+  margin-bottom: 4px;
+  color: var(--fg-muted);
+}
+.prose-docs a {
+  color: var(--rh-accent);
+  text-decoration: none;
+}
+.prose-docs a:hover {
+  text-decoration: underline;
+}
+.prose-docs code {
+  font-family: var(--font-geist-mono);
+  font-size: 0.875em;
+  background: var(--bg-elev);
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+.prose-docs pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 1.2em;
+}
+.prose-docs pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  /* colour is set per-token by Shiki — do not override */
+}
+
+.prose-docs table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 13.5px;
+}
+.prose-docs thead tr {
+  border-bottom: 1px solid var(--border-strong);
+}
+.prose-docs th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.prose-docs td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+.prose-docs tbody tr:last-child td {
+  border-bottom: none;
+}
+.prose-docs blockquote {
+  border-left: 3px solid var(--rh-accent);
+  margin: 0 0 1em;
+  padding: 0.5em 1em;
+  color: var(--fg-muted);
 }
 
 /* ─── README prose ────────────────────────────────────────── */

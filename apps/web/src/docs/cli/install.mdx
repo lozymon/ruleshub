@@ -1,0 +1,76 @@
+# install
+
+Install a package into the current project.
+
+```bash
+npx ruleshub install <name> [options]
+```
+
+## Arguments
+
+| Argument | Description                                            |
+| -------- | ------------------------------------------------------ |
+| `name`   | Package name in `owner/package-name` format (required) |
+
+## Options
+
+| Flag                  | Description                                                 |
+| --------------------- | ----------------------------------------------------------- |
+| `-t, --tool <tool>`   | Target AI tool. If omitted, uses the first available target |
+| `-v, --version <ver>` | Specific version to install. Defaults to latest             |
+| `--dry-run`           | Preview what would be written without touching any files    |
+| `--force`             | Overwrite existing files without prompting                  |
+
+## Supported tool values
+
+`claude-code` · `cursor` · `copilot` · `windsurf` · `cline` · `aider` · `continue`
+
+## Examples
+
+```bash
+# Install latest version for Claude Code
+npx ruleshub install lozymon/nestjs-rules --tool claude-code
+
+# Install a specific version
+npx ruleshub install lozymon/nestjs-rules --tool cursor --version 1.2.0
+
+# Preview without writing
+npx ruleshub install lozymon/nestjs-rules --tool claude-code --dry-run
+
+# Overwrite existing files
+npx ruleshub install lozymon/nestjs-rules --tool claude-code --force
+```
+
+## Installing packs
+
+When the target package is a `pack`, the CLI resolves and installs each included asset individually:
+
+```bash
+npx ruleshub install lozymon/nestjs-starter-pack --tool claude-code
+# Installing 3 packages from lozymon/nestjs-starter-pack…
+#   → lozymon/nestjs-rules
+#   → lozymon/nestjs-generate-module
+#   → lozymon/nestjs-pr-review-workflow
+# ✓ Installed lozymon/nestjs-starter-pack@1.0.0
+```
+
+## Where files are written
+
+| Tool          | Asset type | Destination                       |
+| ------------- | ---------- | --------------------------------- |
+| `claude-code` | `rule`     | `CLAUDE.md`                       |
+| `claude-code` | `command`  | `.claude/commands/<name>.md`      |
+| `claude-code` | `workflow` | `.claude/commands/<name>.md`      |
+| `claude-code` | `agent`    | `.claude/agents/<name>.md`        |
+| `cursor`      | any        | `.cursorrules`                    |
+| `copilot`     | any        | `.github/copilot-instructions.md` |
+| `windsurf`    | any        | `.windsurfrules`                  |
+| `cline`       | any        | `.clinerules`                     |
+
+## Conflict detection
+
+If the destination file already exists, the CLI warns before overwriting. Use `--force` to skip the prompt, or `--dry-run` to see what would change first.
+
+## Lock file
+
+Installed packages are recorded in `.ruleshub/installed.json`. This file is used by [`outdated`](/docs/cli/outdated) and [`update`](/docs/cli/outdated) to track versions.

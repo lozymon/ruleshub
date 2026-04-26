@@ -29,7 +29,8 @@ Two tiers — individual assets (installable on their own) and packs that bundle
 | Type           | Description                                                                     |
 | -------------- | ------------------------------------------------------------------------------- |
 | **Rule**       | A single instruction file fed to the AI (CLAUDE.md snippet, .cursorrules, etc.) |
-| **Command**    | A single custom slash command / skill / prompt                                  |
+| **Command**    | A single custom slash command / prompt                                          |
+| **Skill**      | A reusable Claude Code skill (triggered via slash commands)                     |
 | **Workflow**   | A single multi-step agent playbook                                              |
 | **Agent**      | A single custom agent configuration                                             |
 | **MCP Server** | A single MCP server config + install instructions                               |
@@ -185,7 +186,7 @@ Every published asset ships with a `ruleshub.json` at its root.
 }
 ```
 
-Valid `type` values: `rule` | `command` | `workflow` | `agent` | `mcp-server` | `pack`
+Valid `type` values: `rule` | `command` | `skill` | `workflow` | `agent` | `mcp-server` | `pack`
 
 The `targets` map is open-ended — new tools can be added without a manifest version bump.
 Packs have no `targets` of their own; they delegate to the individual assets they include.
@@ -549,7 +550,7 @@ services:
       POSTGRES_USER: ruleshub
       POSTGRES_PASSWORD: ruleshub
       POSTGRES_DB: ruleshub
-    ports: ['5432:5432']
+    ports: ["5432:5432"]
 
   minio:
     image: minio/minio
@@ -557,11 +558,11 @@ services:
     environment:
       MINIO_ROOT_USER: ruleshub
       MINIO_ROOT_PASSWORD: ruleshub_secret
-    ports: ['9000:9000', '9001:9001']
+    ports: ["9000:9000", "9001:9001"]
 
   adminer:
     image: adminer
-    ports: ['8080:8080']
+    ports: ["8080:8080"]
 ```
 
 #### Environment Variables
@@ -601,7 +602,7 @@ MINIO_BUCKET=ruleshub-packages
 
 #### Testing Strategy
 
-- [ ] **API (NestJS)** — e2e tests with Supertest against a real test database (not mocks)
+- [x] **API (NestJS)** — e2e tests with Supertest against a real test database (not mocks)
 - [ ] **Frontend (Next.js)** — component tests with Vitest + Testing Library
 - [ ] **Shared types** — unit tests for all Zod schema validations
 - [ ] Test database spun up in CI via `docker-compose` service
@@ -762,8 +763,8 @@ docs/
 
 #### Docs Site
 
-- [ ] Add a `/docs` section inside `apps/web` using Next.js MDX (`@next/mdx`)
-- [ ] Sidebar navigation auto-generated from the `docs/` folder structure
+- [x] Add a `/docs` section inside `apps/web` using Next.js MDX (`@next/mdx`)
+- [x] Sidebar navigation auto-generated from the `docs/` folder structure
 - [ ] Full-text search powered by [Pagefind](https://pagefind.app) (static, zero infra cost)
 - [ ] Syntax-highlighted code blocks (Shiki, matches the existing site theme)
 - [ ] "Edit this page on GitHub" link on every page
@@ -801,16 +802,16 @@ A zero-config project generator: `npx create-ruleshub`
 
 #### `ruleshub validate` CLI command (extends `packages/cli`)
 
-- [ ] `npx ruleshub validate` — validates `ruleshub.json` in the current directory
-- [ ] Checks: required fields, valid semver version, known `type`, known `targets` keys, referenced files exist, valid SPDX license identifier
-- [ ] Machine-readable output: `--json` flag returns structured errors for editor integrations
-- [ ] Exit code 1 on any error (CI-friendly)
-- [ ] Integrated into `npx ruleshub publish` as a pre-publish gate — publish fails if validate fails
+- [x] `npx ruleshub validate` — validates `ruleshub.json` in the current directory
+- [x] Checks: required fields, valid semver version, known `type`, known `targets` keys, referenced files exist, valid SPDX license identifier
+- [x] Machine-readable output: `--json` flag returns structured errors for editor integrations
+- [x] Exit code 1 on any error (CI-friendly)
+- [x] Integrated into `npx ruleshub publish` as a pre-publish gate — publish fails if validate fails
 
 #### JSON Schema for `ruleshub.json`
 
 - [ ] Publish `ruleshub-schema` to [SchemaStore](https://www.schemastore.org/json/) — enables IDE autocompletion for any editor (VS Code, IntelliJ, Neovim + LSP)
-- [ ] Schema hosted at `https://ruleshub.dev/schema/ruleshub.json` (stable URL)
+- [x] Schema hosted at `https://ruleshub.dev/schema/ruleshub.json` (stable URL)
 - [ ] Add `"$schema": "https://ruleshub.dev/schema/ruleshub.json"` to all sample manifests
 - [ ] Schema served from `apps/api` and versioned (breaking changes bump schema URL)
 

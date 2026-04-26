@@ -7,10 +7,26 @@ export class SearchPackagesDto {
   @ApiPropertyOptional() @IsOptional() @IsString() q?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() namespace?: string;
   @ApiPropertyOptional({
-    enum: ["rule", "command", "workflow", "agent", "mcp-server", "pack"],
+    enum: [
+      "rule",
+      "command",
+      "workflow",
+      "agent",
+      "mcp-server",
+      "pack",
+      "skill",
+    ],
   })
   @IsOptional()
-  @IsEnum(["rule", "command", "workflow", "agent", "mcp-server", "pack"])
+  @IsEnum([
+    "rule",
+    "command",
+    "workflow",
+    "agent",
+    "mcp-server",
+    "pack",
+    "skill",
+  ])
   type?: AssetType;
   @ApiPropertyOptional() @IsOptional() @IsString() tag?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() projectType?: string;

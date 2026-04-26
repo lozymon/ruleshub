@@ -1,0 +1,64 @@
+# Adding a Tool
+
+New AI tools are added via pull request. This page walks through the full checklist.
+
+## When to add a tool
+
+Open a PR if:
+
+- The tool has a stable, documented config file format
+- The tool has enough users that packages targeting it would be useful
+- You are willing to maintain the target definition if the tool's format changes
+
+## Checklist
+
+### 1. Add the tool key to `SupportedToolSchema`
+
+In `packages/types/src/manifest.ts`, add the new tool identifier to the `SupportedToolSchema` enum:
+
+```ts
+export const SupportedToolSchema = z.enum([
+  "claude-code",
+  "cursor",
+  "copilot",
+  "windsurf",
+  "cline",
+  "aider",
+  "continue",
+  "your-new-tool", // ← add here
+]);
+```
+
+### 2. Add install destination logic
+
+In `packages/cli/src/lib/writer.ts`, add a case to `getDestinationPath` mapping the new tool key to the correct output path:
+
+```ts
+case "your-new-tool":
+  return ".your-tool-config";
+```
+
+If the destination depends on the asset type (like Claude Code), add the nested logic here.
+
+### 3. Add to the browse sidebar filter
+
+In `apps/web/src/components/packages/browse-filters.tsx`, add the new tool to the tool filter list so users can browse by it.
+
+### 4. Add to the docs
+
+- Update `apps/web/src/docs/publishing/targets.mdx` — add a row to the supported tools table
+- Add an entry to `apps/web/src/docs/getting-started/introduction.mdx` — add to the config files table
+
+### 5. Add a sample target
+
+In the `samples/` directory, add a target file to one of the existing sample packages to demonstrate how the tool config looks in practice.
+
+### 6. Tests
+
+Add a test case to `packages/types/src/manifest.test.ts` verifying that a manifest with the new tool key validates correctly.
+
+## PR guidelines
+
+- Keep the PR scoped to the new tool — don't bundle unrelated changes
+- Include a link to the tool's official documentation for the config format
+- If the tool has multiple config file options, pick the most common one and note the alternative in a comment

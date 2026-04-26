@@ -172,12 +172,14 @@ export default async function PackagePage({ params }: PackagePageProps) {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_280px]">
         {/* Main content — tabs */}
-        <PackageTabs
-          namespace={namespace}
-          name={name}
-          pkg={pkg}
-          preview={preview}
-        />
+        <div className="min-w-0">
+          <PackageTabs
+            namespace={namespace}
+            name={name}
+            pkg={pkg}
+            preview={preview}
+          />
+        </div>
 
         {/* Sidebar */}
         <aside className="space-y-4 pt-[53px]">

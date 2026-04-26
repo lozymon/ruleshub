@@ -1,6 +1,7 @@
 "use client"; // needs useState for active tab
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import type { PackageFilePreviewDto } from "@ruleshub/types";
 import { TOOL_COLORS } from "@/lib/tool-colors";
 import type { SupportedTool } from "@ruleshub/types";
@@ -21,9 +22,10 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
   }
 
   const current = previews[active];
+  const isMarkdown = current?.path.endsWith(".md");
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* Tool tabs */}
       {previews.length > 1 && (
         <div className="mb-3 flex flex-wrap gap-1.5">
@@ -37,12 +39,11 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
                 className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors"
                 style={
                   isActive
-                    ? {
-                        borderColor: color,
-                        background: `${color}18`,
-                        color,
+                    ? { borderColor: color, background: `${color}18`, color }
+                    : {
+                        borderColor: "var(--border-strong)",
+                        color: "var(--fg-muted)",
                       }
-                    : undefined
                 }
               >
                 <span
@@ -56,9 +57,9 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
         </div>
       )}
 
-      {/* File path */}
       {current && (
         <>
+          {/* File path + char count */}
           <div className="mb-2 flex items-center justify-between">
             <span className="font-mono text-[12px] text-fg-dim">
               {current.path}
@@ -70,9 +71,15 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
 
           {/* Content */}
           <div className="overflow-hidden rounded-lg border border-border bg-bg-code">
-            <pre className="max-h-[480px] overflow-auto p-4 font-mono text-[12.5px] leading-relaxed text-foreground">
-              <code>{current.content}</code>
-            </pre>
+            {isMarkdown ? (
+              <div className="prose-readme max-h-[520px] overflow-y-auto p-5">
+                <ReactMarkdown>{current.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <pre className="max-h-[520px] overflow-auto p-4 font-mono text-[12.5px] leading-relaxed text-foreground">
+                <code>{current.content}</code>
+              </pre>
+            )}
           </div>
         </>
       )}

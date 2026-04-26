@@ -1,0 +1,74 @@
+# Manifest Reference
+
+Every RulesHub package must include a `ruleshub.json` at its root.
+
+## Full example (rule)
+
+```json
+{
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
+  "name": "lozymon/nestjs-rules",
+  "version": "1.0.0",
+  "type": "rule",
+  "description": "NestJS coding rules for AI tools",
+  "tags": ["nestjs", "typescript"],
+  "projectTypes": ["nestjs", "node"],
+  "license": "MIT",
+  "targets": {
+    "claude-code": { "file": "targets/claude-code/CLAUDE.md" },
+    "cursor": { "file": "targets/cursor/.cursorrules" },
+    "copilot": { "file": "targets/copilot/copilot-instructions.md" }
+  }
+}
+```
+
+## Full example (pack)
+
+```json
+{
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
+  "name": "lozymon/nestjs-starter-pack",
+  "version": "1.0.0",
+  "type": "pack",
+  "description": "Complete NestJS + Prisma starter pack",
+  "tags": ["nestjs", "typescript", "prisma"],
+  "projectTypes": ["nestjs"],
+  "license": "MIT",
+  "includes": [
+    "lozymon/nestjs-rules@^1.0.0",
+    "lozymon/nestjs-generate-module@^1.0.0",
+    "lozymon/nestjs-pr-review-workflow@^1.0.0"
+  ]
+}
+```
+
+## Field reference
+
+| Field          | Type       | Required | Description                                                     |
+| -------------- | ---------- | -------- | --------------------------------------------------------------- |
+| `name`         | `string`   | Yes      | Package name in `owner/package-name` format                     |
+| `version`      | `string`   | Yes      | Semantic version (`1.0.0`)                                      |
+| `type`         | `string`   | Yes      | One of: `rule` `command` `workflow` `agent` `mcp-server` `pack` |
+| `description`  | `string`   | Yes      | Short description, max 200 characters                           |
+| `license`      | `string`   | Yes      | SPDX license identifier (e.g. `MIT`, `Apache-2.0`)              |
+| `tags`         | `string[]` | No       | Searchable tags                                                 |
+| `projectTypes` | `string[]` | No       | Project types this asset targets (e.g. `nestjs`, `react`)       |
+| `targets`      | `object`   | Yes\*    | Map of tool → file path. Required for non-pack assets           |
+| `includes`     | `string[]` | Yes\*    | Dependency list. Required for packs                             |
+| `changelog`    | `string`   | No       | Release notes for this version, max 5000 characters             |
+
+\* `targets` is required when `type` is not `pack`. `includes` is required when `type` is `pack`.
+
+## `$schema` support
+
+Adding `"$schema": "https://ruleshub.dev/schema/ruleshub.json"` to your manifest enables autocompletion and inline validation in VS Code, IntelliJ, Neovim, and any editor with JSON Schema support.
+
+## Validation
+
+Run locally before publishing:
+
+```bash
+npx ruleshub validate
+```
+
+Validation is also run automatically as part of `npx ruleshub publish`.

@@ -1,0 +1,47 @@
+# Quick Start
+
+Install your first package in under a minute.
+
+## 1. Find a package
+
+Browse [ruleshub.dev/browse](/browse) or search by tool, type, or tag.
+
+## 2. Install via CLI
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool claude-code
+```
+
+The CLI writes the asset files into the correct paths for your chosen tool. For Claude Code that means `CLAUDE.md` and `.claude/commands/`.
+
+## 3. Install a pack
+
+Packs bundle multiple assets together. Installing a pack installs each included asset automatically:
+
+```bash
+npx ruleshub install lozymon/nestjs-starter-pack --tool claude-code
+# Installing 3 packages from lozymon/nestjs-starter-pack…
+# ✓ lozymon/nestjs-rules@1.0.0
+# ✓ lozymon/nestjs-generate-module@1.0.0
+# ✓ lozymon/nestjs-pr-review-workflow@1.0.0
+```
+
+## 4. Preview before writing
+
+Use `--dry-run` to see exactly what will be written without touching any files:
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool claude-code --dry-run
+```
+
+## 5. Keep assets up to date
+
+```bash
+npx ruleshub outdated   # list installed assets with newer versions available
+npx ruleshub update     # update all outdated assets
+```
+
+## What's next?
+
+- [Concepts](/docs/getting-started/concepts) — understand rules, commands, packs, and targets
+- [Publish your first package](/docs/publishing/your-first-package) — share your own rules

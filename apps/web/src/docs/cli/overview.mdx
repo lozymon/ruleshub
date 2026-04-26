@@ -1,0 +1,52 @@
+# CLI Overview
+
+The RulesHub CLI is available via `npx` — no global install required.
+
+```bash
+npx ruleshub <command> [options]
+```
+
+## Commands
+
+| Command    | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| `install`  | Install a package into your project                   |
+| `publish`  | Package and publish the current directory             |
+| `validate` | Validate a `ruleshub.json` manifest                   |
+| `outdated` | List installed packages with newer versions available |
+| `update`   | Update outdated packages                              |
+
+## Global flags
+
+| Flag          | Description                   |
+| ------------- | ----------------------------- |
+| `-q, --quiet` | Suppress non-essential output |
+| `--version`   | Print CLI version             |
+| `--help`      | Print help for any command    |
+
+## Authentication
+
+Commands that write to the registry (`publish`) require a token:
+
+```bash
+# Pass inline
+npx ruleshub publish --token rh_...
+
+# Or set as env var (recommended for CI)
+export RULESHUB_TOKEN=rh_...
+npx ruleshub publish
+```
+
+Get a token at [ruleshub.dev/dashboard](/dashboard) → **API Keys**.
+
+## Machine-readable output
+
+Read commands support `--json` for structured output — useful for scripts and IDE integrations:
+
+```bash
+npx ruleshub validate --json
+# {"valid":true,"errors":[]}
+
+npx ruleshub outdated --json
+# [{"name":"lozymon/nestjs-rules","installed":"1.0.0","latest":"1.2.0"}]
+```

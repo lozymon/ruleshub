@@ -23,4 +23,6 @@ export const routes = {
     `/collections/${username}/${slug}`,
   leaderboard: "/leaderboard",
   comingSoon: "/coming-soon",
+  docs: "/docs",
+  docsPage: (...slugs: string[]) => `/docs/${slugs.join("/")}`,
 } as const;

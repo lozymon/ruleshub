@@ -1,0 +1,38 @@
+# Introduction
+
+RulesHub is a provider-agnostic registry for AI coding tool assets. Publish a set of rules, commands, workflows, or agents once — and install them in Claude Code, Cursor, GitHub Copilot, Windsurf, Cline, Aider, or Continue.
+
+## Why RulesHub?
+
+Every AI coding tool has its own config format:
+
+| Tool           | Config file                       |
+| -------------- | --------------------------------- |
+| Claude Code    | `CLAUDE.md`, `.claude/commands/`  |
+| Cursor         | `.cursorrules`, `.cursor/rules/`  |
+| GitHub Copilot | `.github/copilot-instructions.md` |
+| Windsurf       | `.windsurfrules`                  |
+| Cline          | `.clinerules`                     |
+| Aider          | `.aider.conf.yml`                 |
+| Continue       | `.continue/`                      |
+
+RulesHub lets you publish a single package that targets all of these tools at once. Users install only what they need for their tool of choice.
+
+## What can I publish?
+
+| Type           | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
+| **Rule**       | An instruction file fed to the AI (CLAUDE.md snippet, etc.) |
+| **Command**    | A custom slash command / skill / prompt                     |
+| **Workflow**   | A multi-step agent playbook                                 |
+| **Agent**      | A custom agent configuration                                |
+| **MCP Server** | An MCP server config with install instructions              |
+| **Pack**       | A curated bundle of any of the above                        |
+
+## Open source
+
+RulesHub is fully open source. The web app and API are AGPL-3.0 licensed. The CLI and shared types are MIT licensed so they can be embedded in any tool or extension.
+
+```
+github.com/lozymon/ruleshub
+```

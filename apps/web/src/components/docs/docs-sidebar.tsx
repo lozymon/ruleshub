@@ -2,15 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { X } from "lucide-react";
 import { docNav } from "@/docs/nav";
 import { contentMap } from "@/docs/content-map";
 import { cn } from "@/lib/utils";
 
-export function DocsSidebar() {
+interface DocsSidebarProps {
+  onClose?: () => void;
+}
+
+export function DocsSidebar({ onClose }: DocsSidebarProps) {
   const pathname = usePathname();
 
   return (
     <nav className="w-56 shrink-0 py-8 pr-6">
+      {onClose && (
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-sm font-semibold">Docs</span>
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {docNav.map((section) => (
         <div key={section.title} className="mb-6">
           <p className="mb-1 px-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -26,6 +43,7 @@ export function DocsSidebar() {
                   {available ? (
                     <Link
                       href={href}
+                      onClick={onClose}
                       className={cn(
                         "block rounded-md px-2 py-1.5 text-sm transition-colors",
                         active

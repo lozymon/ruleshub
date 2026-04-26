@@ -100,6 +100,30 @@ export interface PackageSearchParams {
   limit?: number;
 }
 
+export type WebhookEvent =
+  | "package.version.published"
+  | "package.version.yanked";
+
+export interface WebhookDto {
+  id: string;
+  url: string;
+  packageFullName: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface WebhookCreatedDto extends WebhookDto {
+  secret: string;
+}
+
+export interface WebhookDeliveryDto {
+  id: string;
+  event: WebhookEvent;
+  statusCode: number | null;
+  success: boolean;
+  attemptedAt: string;
+}
+
 export type DiffChangeKind = "unchanged" | "changed" | "added" | "removed";
 
 export interface DiffChange {

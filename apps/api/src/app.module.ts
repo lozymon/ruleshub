@@ -15,6 +15,7 @@ import { ApiKeysModule } from "./api-keys/api-keys.module";
 import { BadgesModule } from "./badges/badges.module";
 import { ImportsModule } from "./imports/imports.module";
 import { AdminModule } from "./admin/admin.module";
+import { WebhooksModule } from "./webhooks/webhooks.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -38,6 +39,7 @@ import configuration from "./config/configuration";
     BadgesModule,
     ImportsModule,
     AdminModule,
+    WebhooksModule,
   ],
 })
 export class AppModule {}

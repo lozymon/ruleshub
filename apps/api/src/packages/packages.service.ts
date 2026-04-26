@@ -16,6 +16,7 @@ import {
   DiffChange,
 } from "@ruleshub/types";
 import { Package, PackageVersion, User, Prisma } from "@prisma/client";
+import { WebhooksService } from "../webhooks/webhooks.service";
 
 type PackageWithIncludes = Package & {
   versions: PackageVersion[];
@@ -75,6 +76,7 @@ export class PackagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   async search(params: SearchPackagesDto) {
@@ -268,6 +270,13 @@ export class PackagesService {
         data: { qualityScore },
       });
 
+      this.webhooks.fireForPackage(
+        "package.version.published",
+        pkg.id,
+        `${namespace}/${packageName}`,
+        version.version,
+      );
+
       return version;
     });
   }
@@ -344,10 +353,23 @@ export class PackagesService {
     await this.assertOwnership(userId, namespace);
 
     const pkgVersion = await this.findVersion(namespace, name, version);
+    const pkg = await this.prisma.package.findUnique({
+      where: { namespace_name: { namespace, name } },
+    });
+
     await this.prisma.packageVersion.update({
       where: { id: pkgVersion.id },
       data: { yanked: true },
     });
+
+    if (pkg) {
+      this.webhooks.fireForPackage(
+        "package.version.yanked",
+        pkg.id,
+        `${namespace}/${name}`,
+        version,
+      );
+    }
   }
 
   private extractManifest(fileBuffer: Buffer): unknown {

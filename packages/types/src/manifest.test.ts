@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { PackageManifestSchema } from "./manifest";
+import {
+  PackageManifestSchema,
+  AssetTypeSchema,
+  TargetConfigSchema,
+} from "./manifest";
 import { SupportedToolSchema } from "./tools";
 
 const validRule = {
@@ -186,6 +190,108 @@ describe("PackageManifestSchema", () => {
       targets: { "claude-code": { file: "" } },
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("PackageManifestSchema — missing required fields", () => {
+  const required = [
+    "name",
+    "version",
+    "type",
+    "description",
+    "license",
+  ] as const;
+  for (const field of required) {
+    it(`rejects when '${field}' is missing`, () => {
+      const { [field]: _, ...rest } = { ...validRule };
+      expect(PackageManifestSchema.safeParse(rest).success).toBe(false);
+    });
+  }
+});
+
+describe("PackageManifestSchema — additional edge cases", () => {
+  it("accepts a name with underscores", () => {
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, name: "my_org/my_pkg" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("accepts a pre-release semver version", () => {
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, version: "1.0.0-beta.1" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("rejects a non-pack asset with an empty targets object", () => {
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, targets: {} }).success,
+    ).toBe(false);
+  });
+
+  it("strips unknown fields like $schema silently", () => {
+    const result = PackageManifestSchema.safeParse({
+      ...validRule,
+      $schema: "https://ruleshub.dev/schema/ruleshub.json",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty("$schema");
+    }
+  });
+
+  it("accepts a pack that also declares targets", () => {
+    expect(
+      PackageManifestSchema.safeParse({
+        ...validPack,
+        targets: { "claude-code": { file: "CLAUDE.md" } },
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("AssetTypeSchema", () => {
+  const validTypes = [
+    "rule",
+    "command",
+    "skill",
+    "workflow",
+    "agent",
+    "mcp-server",
+    "pack",
+  ];
+
+  it("accepts all valid asset types", () => {
+    for (const type of validTypes) {
+      expect(
+        AssetTypeSchema.safeParse(type).success,
+        `'${type}' should be valid`,
+      ).toBe(true);
+    }
+  });
+
+  it("rejects unknown asset types", () => {
+    expect(AssetTypeSchema.safeParse("plugin").success).toBe(false);
+    expect(AssetTypeSchema.safeParse("").success).toBe(false);
+    expect(AssetTypeSchema.safeParse("Rule").success).toBe(false);
+  });
+});
+
+describe("TargetConfigSchema", () => {
+  it("accepts a valid file path", () => {
+    expect(
+      TargetConfigSchema.safeParse({ file: "targets/claude-code/CLAUDE.md" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("rejects an empty file path", () => {
+    expect(TargetConfigSchema.safeParse({ file: "" }).success).toBe(false);
+  });
+
+  it("rejects a missing file field", () => {
+    expect(TargetConfigSchema.safeParse({}).success).toBe(false);
   });
 });
 

@@ -11,6 +11,7 @@ import { TOOL_COLORS } from "@/lib/tool-colors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import { publishPackage } from "@/lib/api/packages";
+import { getMyOrgs } from "@/lib/api/orgs";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -104,6 +105,7 @@ export default function PublishPage() {
   const [step, setStep] = useState(1);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [namespaceOptions, setNamespaceOptions] = useState<string[]>([]);
   const [form, setForm] = useState<FormState>({
     namespace: "",
     name: "",
@@ -120,10 +122,17 @@ export default function PublishPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (user?.username) {
-      setForm((f) => (f.namespace ? f : { ...f, namespace: user.username }));
-    }
-  }, [user?.username]);
+    if (!user?.username || !token) return;
+    const username = user.username;
+    setForm((f) => (f.namespace ? f : { ...f, namespace: username }));
+    getMyOrgs(token)
+      .then((orgs) => {
+        setNamespaceOptions([username, ...orgs.map((o) => o.slug)]);
+      })
+      .catch(() => {
+        setNamespaceOptions([username]);
+      });
+  }, [user?.username, token]);
 
   function update(patch: Partial<Omit<FormState, "tools">>) {
     setForm((f) => ({ ...f, ...patch }));
@@ -236,12 +245,21 @@ export default function PublishPage() {
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Namespace" hint="Your username or verified org">
-              <Input
-                className="font-mono"
+              <Select
                 value={form.namespace}
-                onChange={(e) => update({ namespace: e.target.value })}
-                placeholder="username"
-              />
+                onValueChange={(v) => v && update({ namespace: v })}
+              >
+                <SelectTrigger className="w-full font-mono">
+                  <SelectValue placeholder="Select namespace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {namespaceOptions.map((ns) => (
+                    <SelectItem key={ns} value={ns} className="font-mono">
+                      {ns}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Package name" hint="Lowercase, hyphen-separated">
               <Input

@@ -327,16 +327,14 @@
   /* colour is set per-token by Shiki — do not override */
 }
 
-/* rehype-pretty-code: show correct theme per colour scheme */
+/* rehype-pretty-code: dark is default (class="dark" on <html> via next-themes) */
 .prose-docs code[data-theme*=" "],
 .prose-docs code[data-theme*=" "] span {
-  color: var(--shiki-light);
+  color: var(--shiki-dark);
 }
-@media (prefers-color-scheme: dark) {
-  .prose-docs code[data-theme*=" "],
-  .prose-docs code[data-theme*=" "] span {
-    color: var(--shiki-dark);
-  }
+.light .prose-docs code[data-theme*=" "],
+.light .prose-docs code[data-theme*=" "] span {
+  color: var(--shiki-light);
 }
 .prose-docs table {
   width: 100%;

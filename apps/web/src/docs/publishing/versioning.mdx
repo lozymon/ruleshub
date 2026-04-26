@@ -1,0 +1,67 @@
+# Versioning
+
+RulesHub uses [semantic versioning](https://semver.org) (semver). Every published version is immutable — you cannot overwrite or edit a version once it is published.
+
+## Semver conventions
+
+| Change type                             | Bump  | Example         |
+| --------------------------------------- | ----- | --------------- |
+| New tool target, new optional field     | Patch | `1.0.0 → 1.0.1` |
+| New asset added to a pack               | Minor | `1.0.0 → 1.1.0` |
+| Instructions rewritten, breaking change | Major | `1.0.0 → 2.0.0` |
+
+For AI coding tool assets, a "breaking change" typically means the rules now require a different project structure or contradict previous guidance.
+
+## Publishing a new version
+
+1. Update `version` in `ruleshub.json`
+2. Optionally add a `changelog` field with release notes
+3. Run `npx ruleshub publish`
+
+```json
+{
+  "name": "lozymon/nestjs-rules",
+  "version": "1.1.0",
+  "changelog": "Added Prisma service rules and updated error handling conventions."
+}
+```
+
+```bash
+npx ruleshub publish
+# ✓ Published lozymon/nestjs-rules@1.1.0
+```
+
+## Changelogs
+
+The `changelog` field in `ruleshub.json` holds the release notes for that specific version. It is displayed on the package detail page under the **Versions** tab.
+
+```json
+{
+  "changelog": "## What's new\n\n- Added rules for Prisma transactions\n- Clarified error handling conventions\n- Removed outdated decorator guidance"
+}
+```
+
+Changelogs support Markdown. Keep them concise — one or two bullet points per version is enough.
+
+## Yanking a version
+
+If a published version contains an error or a security issue, you can yank it from your dashboard. Yanked versions:
+
+- Are hidden from browse and search results
+- Cannot be newly installed
+- Remain accessible to users who already have them installed (the zip is not deleted)
+- Are shown with a warning on the package detail page
+
+Yank from **Dashboard → your package → Versions → Yank**.
+
+## Version immutability
+
+You cannot edit, replace, or delete the contents of a published version. This guarantees that anyone who installed `lozymon/nestjs-rules@1.0.0` will always get exactly what was published as `1.0.0`. Use yanking for critical issues and publish a new patch version for fixes.
+
+## Pre-release versions
+
+RulesHub accepts pre-release semver versions (`1.0.0-beta.1`, `2.0.0-rc.1`). Pre-release versions are not returned as `latestVersion` — users must explicitly request them with `--version`.
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --version 2.0.0-rc.1 --tool claude-code
+```

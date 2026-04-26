@@ -1,0 +1,74 @@
+# Packs
+
+A pack is a curated bundle of individual assets. Installing a pack installs each included asset automatically — users get everything they need in one command.
+
+## When to use a pack
+
+Use a pack when your assets are designed to be used together. For example, a "NestJS starter pack" might bundle a rules file, a code-generation command, and a PR review workflow. Each asset can still be installed individually — the pack just makes it easier to get everything at once.
+
+## Manifest structure
+
+Packs use `type: "pack"` and list their dependencies in `includes` instead of `targets`:
+
+```json
+{
+  "$schema": "https://ruleshub.dev/schema/ruleshub.json",
+  "name": "lozymon/nestjs-starter-pack",
+  "version": "1.0.0",
+  "type": "pack",
+  "description": "Complete NestJS + Prisma starter pack for AI coding tools",
+  "tags": ["nestjs", "typescript", "prisma"],
+  "projectTypes": ["nestjs"],
+  "license": "MIT",
+  "includes": [
+    "lozymon/nestjs-rules@^1.0.0",
+    "lozymon/nestjs-generate-module@^1.0.0",
+    "lozymon/nestjs-pr-review-workflow@^2.0.0"
+  ]
+}
+```
+
+Packs have no `targets` of their own — they delegate entirely to the assets they include.
+
+## Version ranges in `includes`
+
+`includes` entries use the same semver range syntax as npm:
+
+| Range     | Meaning                             |
+| --------- | ----------------------------------- |
+| `^1.0.0`  | Compatible with 1.x.x (recommended) |
+| `~1.2.0`  | Patch-level updates only (1.2.x)    |
+| `1.0.0`   | Exact version pin                   |
+| `>=2.0.0` | Any version 2.0.0 or higher         |
+
+## Validation
+
+When you publish a pack, the registry validates that every package listed in `includes` exists. Publishing fails if any dependency is missing — this prevents broken packs from reaching users.
+
+```bash
+npx ruleshub validate
+# ✓ Valid manifest: lozymon/nestjs-starter-pack@1.0.0
+```
+
+## Installing a pack
+
+```bash
+npx ruleshub install lozymon/nestjs-starter-pack --tool claude-code
+# Installing 3 packages from lozymon/nestjs-starter-pack@1.0.0…
+#   → lozymon/nestjs-rules
+#   → lozymon/nestjs-generate-module
+#   → lozymon/nestjs-pr-review-workflow
+# ✓ Installed lozymon/nestjs-starter-pack@1.0.0
+```
+
+Each asset is installed individually using the tool specified. The tool flag is forwarded to every asset in the pack.
+
+## Pack versioning
+
+Version your pack independently from its dependencies. When a dependency releases a breaking change, bump the pack's version to reflect that the `includes` ranges have changed.
+
+## Tips
+
+- Keep packs focused — a "React rules" pack shouldn't include unrelated Python tooling
+- Use `^` ranges so users automatically get patch and minor fixes in dependencies
+- Write a clear `README.md` explaining what each included asset does and why they work well together

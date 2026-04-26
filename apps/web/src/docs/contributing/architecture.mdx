@@ -1,0 +1,97 @@
+# Architecture
+
+High-level overview of the RulesHub monorepo — how the pieces fit together and why.
+
+## Monorepo layout
+
+```
+ruleshub/
+├── apps/
+│   ├── api/          # NestJS REST API  (AGPL-3.0)
+│   └── web/          # Next.js 15 frontend  (AGPL-3.0)
+├── packages/
+│   ├── types/        # Shared TypeScript types + Zod schemas  (MIT)
+│   └── cli/          # npx ruleshub CLI  (MIT)
+├── samples/          # Example packages used for seeding and testing
+├── docs/             # Project-level planning and security docs
+├── docker-compose.yml
+├── pnpm-workspace.yaml
+└── turbo.json
+```
+
+**AGPL-3.0** on `apps/` means anyone who runs a modified version as a service must publish their source. **MIT** on `packages/` means the CLI and types can be embedded in any third-party tool or extension without restriction.
+
+## Data flow
+
+```
+Browser / CLI
+     │
+     ▼
+apps/web  (Next.js 15)
+  - Server Components fetch from apps/api
+  - Never contains business logic
+  - Shared types via packages/types
+     │
+     ▼
+apps/api  (NestJS)
+  - REST API — all business logic lives here
+  - Prisma ORM → PostgreSQL
+  - MinIO for package zip storage
+  - GitHub OAuth + API key auth
+```
+
+The web app is a pure consumer of the API — it has no direct database access and contains no business logic. This means IDE extensions and the CLI can use the exact same API surface.
+
+## `packages/types`
+
+The single source of truth for all shared shapes:
+
+- **`PackageManifestSchema`** — Zod schema for `ruleshub.json`, used by the API (validation on publish), the CLI (validate command), and the web (form validation)
+- **`SupportedToolSchema`** — enum of valid tool keys
+- **API response types** — `PackageDto`, `PackageVersionDto`, etc. — shared between the web app and CLI so both stay in sync with the API
+
+Always import from `@ruleshub/types` — never duplicate these types in app code.
+
+## `apps/api` module structure
+
+Each feature is a self-contained NestJS module:
+
+```
+src/
+├── auth/          # GitHub OAuth + JWT + API keys
+├── packages/      # Core CRUD, publish, download, diff
+├── users/         # Public profiles
+├── organisations/ # Org accounts and membership
+├── stars/         # Star/unstar
+├── collections/   # Curated lists
+├── comments/      # Per-asset threads
+├── recommendations/ # Project-type based suggestions
+├── webhooks/      # Consumer webhook subscriptions
+├── badges/        # SVG badge generation
+├── imports/       # GitHub repo auto-import
+├── leaderboard/   # Top publishers and assets
+├── admin/         # Admin-only user/org management
+├── api-keys/      # API key management
+└── storage/       # MinIO abstraction layer
+```
+
+## Storage
+
+Package zips are stored in MinIO (self-hosted S3-compatible storage). The `StorageService` in `apps/api/src/storage/` abstracts the underlying provider — swapping to AWS S3 or Cloudflare R2 requires changing only this service.
+
+Object keys follow the pattern: `packages/{namespace}/{name}/{version}.zip`
+
+## Authentication
+
+Two mechanisms, both producing a `userId` for downstream services:
+
+1. **GitHub OAuth** — browser flow via Passport.js, issues a JWT session cookie
+2. **API keys** — `Authorization: Bearer rh_...` header, validated by `ApiKeyGuard`
+
+Every protected controller route has an explicit `@UseGuards(JwtAuthGuard)` or `@UseGuards(ApiKeyGuard)` — there are no global auth defaults.
+
+## CI/CD
+
+- **PR → `develop`**: lint, typecheck, e2e tests via GitHub Actions
+- **Merge → `develop`**: auto-deploy to staging (Coolify webhook)
+- **Merge → `main`**: auto-deploy to production (Coolify webhook)

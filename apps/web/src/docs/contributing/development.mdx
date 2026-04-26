@@ -1,0 +1,114 @@
+# Development Setup
+
+Get the full RulesHub stack running locally.
+
+## Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+- Docker + Docker Compose
+
+## 1. Clone the repo
+
+```bash
+git clone https://github.com/lozymon/ruleshub.git
+cd ruleshub
+```
+
+## 2. Install dependencies
+
+```bash
+pnpm install
+```
+
+## 3. Start infrastructure
+
+Docker Compose starts PostgreSQL, MinIO, Adminer, and the MinIO console:
+
+```bash
+docker compose up -d
+```
+
+| Service       | URL              | Purpose                         |
+| ------------- | ---------------- | ------------------------------- |
+| PostgreSQL    | `localhost:5432` | Primary database                |
+| MinIO         | `localhost:9000` | Package storage (S3-compatible) |
+| MinIO Console | `localhost:9001` | Storage GUI (dev only)          |
+| Adminer       | `localhost:8080` | Database GUI (dev only)         |
+
+## 4. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Fill in the GitHub OAuth credentials (see below). All other values work as-is for local dev.
+
+### GitHub OAuth App
+
+Register a local OAuth App at [github.com/settings/developers](https://github.com/settings/developers):
+
+- **Homepage URL:** `http://localhost:3000`
+- **Callback URL:** `http://localhost:3001/v1/auth/github/callback`
+
+Copy the client ID and secret into `.env`:
+
+```env
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+```
+
+## 5. Run migrations
+
+```bash
+pnpm --filter @ruleshub/api prisma migrate dev
+```
+
+## 6. Seed sample data (optional)
+
+```bash
+pnpm --filter @ruleshub/api prisma db seed
+```
+
+## 7. Start the dev servers
+
+```bash
+pnpm dev
+```
+
+This starts all apps and packages via Turborepo in watch mode:
+
+| App | URL                     |
+| --- | ----------------------- |
+| Web | `http://localhost:3000` |
+| API | `http://localhost:3001` |
+
+## Running tests
+
+```bash
+# All packages
+pnpm test
+
+# API e2e only (requires Docker)
+pnpm --filter @ruleshub/api test:e2e
+
+# Types unit tests only
+pnpm --filter @ruleshub/types test
+```
+
+## Branching
+
+| Branch      | Purpose                              |
+| ----------- | ------------------------------------ |
+| `main`      | Production — auto-deploys on merge   |
+| `develop`   | Staging — auto-deploys on merge      |
+| `feature/*` | Feature branches — PR into `develop` |
+| `fix/*`     | Bug fix branches — PR into `develop` |
+
+## Commit format
+
+```
+type(scope): short description
+```
+
+Types: `feat` `fix` `chore` `refactor` `test` `docs`

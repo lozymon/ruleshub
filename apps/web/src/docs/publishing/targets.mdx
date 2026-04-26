@@ -1,0 +1,64 @@
+# Tool Targets
+
+Every non-pack asset declares a `targets` map — one entry per AI tool it supports. The key is the tool identifier and the value points to the file inside your package zip that should be written for that tool.
+
+```json
+{
+  "targets": {
+    "claude-code": { "file": "targets/claude-code/CLAUDE.md" },
+    "cursor": { "file": "targets/cursor/.cursorrules" },
+    "copilot": { "file": "targets/copilot/copilot-instructions.md" }
+  }
+}
+```
+
+You only need to include the tools you want to support. A package targeting only Claude Code is perfectly valid.
+
+## Supported tools
+
+| Key           | Tool           | File written to                   |
+| ------------- | -------------- | --------------------------------- |
+| `claude-code` | Claude Code    | Depends on asset type (see below) |
+| `cursor`      | Cursor         | `.cursorrules`                    |
+| `copilot`     | GitHub Copilot | `.github/copilot-instructions.md` |
+| `windsurf`    | Windsurf       | `.windsurfrules`                  |
+| `cline`       | Cline          | `.clinerules`                     |
+| `aider`       | Aider          | `.aider.conf.yml`                 |
+| `continue`    | Continue       | `.continue/config.json`           |
+
+## Claude Code destinations by asset type
+
+Claude Code writes to different paths depending on the asset type declared in your manifest:
+
+| Asset type | Written to                       |
+| ---------- | -------------------------------- |
+| `rule`     | `CLAUDE.md`                      |
+| `command`  | `.claude/commands/<filename>.md` |
+| `skill`    | `.claude/commands/<filename>.md` |
+| `workflow` | `.claude/commands/<filename>.md` |
+| `agent`    | `.claude/agents/<filename>.md`   |
+
+## Recommended folder structure
+
+Keep each tool's file in its own subdirectory so the source layout mirrors what gets installed:
+
+```
+my-package/
+├── ruleshub.json
+├── README.md
+└── targets/
+    ├── claude-code/
+    │   └── CLAUDE.md
+    ├── cursor/
+    │   └── .cursorrules
+    └── copilot/
+        └── copilot-instructions.md
+```
+
+## Writing for multiple tools
+
+The same conceptual content often needs slightly different phrasing per tool. Claude Code rules use natural language instructions; Cursor rules use a more directive format. Write each target file specifically for its tool rather than copying the same content verbatim.
+
+## Adding a new tool
+
+New tools are added via pull request to the RulesHub repository. See [Adding a Tool](/docs/contributing/adding-a-tool) for the checklist.

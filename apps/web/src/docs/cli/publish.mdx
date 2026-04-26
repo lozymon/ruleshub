@@ -1,0 +1,78 @@
+# publish
+
+Package and publish the current directory to RulesHub.
+
+```bash
+npx ruleshub publish [options]
+```
+
+Run this from inside the directory that contains your `ruleshub.json`.
+
+## Options
+
+| Flag              | Description                                             |
+| ----------------- | ------------------------------------------------------- |
+| `--token <token>` | API token. Can also be set via `RULESHUB_TOKEN` env var |
+| `--dry-run`       | Validate and preview the package without publishing     |
+
+## Authentication
+
+You need a token to publish. Get one at [ruleshub.dev/dashboard](/dashboard) → **API Keys**.
+
+```bash
+# Pass inline
+npx ruleshub publish --token rh_...
+
+# Or set as env var (recommended for CI)
+export RULESHUB_TOKEN=rh_...
+npx ruleshub publish
+```
+
+## What it does
+
+1. Validates `ruleshub.json` (same checks as [`validate`](/docs/cli/validate))
+2. Zips the current directory, skipping `.git`, `node_modules`, `dist`, `.turbo`, `.DS_Store`
+3. Checks the zip is under the 5 MB size limit
+4. Uploads the zip and manifest to the registry
+
+## Examples
+
+```bash
+# Publish with a token
+npx ruleshub publish --token rh_abc123
+
+# Preview what would be published without uploading
+npx ruleshub publish --dry-run
+```
+
+## Publishing a new version
+
+Bump `version` in `ruleshub.json` and run `publish` again. Each version is immutable once published — you cannot overwrite an existing version.
+
+```bash
+# 1. Edit ruleshub.json — bump version from 1.0.0 to 1.1.0
+# 2. Publish
+npx ruleshub publish
+# ✓ Published yourname/my-rules@1.1.0
+```
+
+## CI/CD
+
+Set `RULESHUB_TOKEN` as a secret in your CI environment and add a publish step:
+
+```yaml
+- name: Publish to RulesHub
+  run: npx ruleshub publish
+  env:
+    RULESHUB_TOKEN: ${{ secrets.RULESHUB_TOKEN }}
+```
+
+## Ignored files
+
+The following are always excluded from the zip regardless of what is in the directory:
+
+- `.git/`
+- `node_modules/`
+- `dist/`
+- `.turbo/`
+- `.DS_Store`

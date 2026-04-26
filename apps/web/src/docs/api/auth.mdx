@@ -1,0 +1,84 @@
+# Authentication
+
+RulesHub supports two authentication methods: GitHub OAuth (for browser sessions) and API keys (for CLI and CI/CD).
+
+## GitHub OAuth
+
+Used by the web app to sign users in.
+
+```
+GET /v1/auth/github
+```
+
+Redirects the browser to GitHub's OAuth consent page.
+
+```
+GET /v1/auth/github/callback
+```
+
+GitHub redirects here after the user approves. The API sets a session cookie and redirects back to the web app.
+
+```
+POST /v1/auth/logout
+```
+
+Clears the session.
+
+```
+GET /v1/auth/me
+```
+
+Returns the currently authenticated user. Used by the web app to populate the navbar.
+
+```json
+{
+  "id": "clx...",
+  "username": "lozymon",
+  "avatarUrl": "https://avatars.githubusercontent.com/u/...",
+  "verified": false,
+  "isAdmin": false
+}
+```
+
+Returns `401` if not authenticated.
+
+---
+
+## API Keys
+
+Used by the CLI and CI/CD pipelines. API keys are long-lived tokens that authenticate as your user account.
+
+### Creating a key
+
+1. Sign in at [ruleshub.dev/dashboard](/dashboard)
+2. Go to **API Keys**
+3. Click **Create key** and give it a name
+4. Copy the token — it is only shown once
+
+Tokens start with `rh_`.
+
+### Using a key
+
+Pass the token in the `Authorization` header:
+
+```
+Authorization: Bearer rh_your_token_here
+```
+
+Or via the CLI:
+
+```bash
+npx ruleshub publish --token rh_your_token_here
+
+# Recommended: set as env var
+export RULESHUB_TOKEN=rh_your_token_here
+npx ruleshub publish
+```
+
+### Revoking a key
+
+Go to **Dashboard → API Keys** and click **Revoke** next to the key. Revoked keys stop working immediately.
+
+### Key scopes
+
+All API keys currently have full write access to your account (publish, yank, manage webhooks). Scoped keys are planned for a future release.

@@ -12,6 +12,7 @@ function toPackageDto(p: PackageWithIncludes) {
     ...p,
     fullName: `${p.namespace}/${p.name}`,
     latestVersion: p.versions[0] ?? null,
+    includes: [],
     owner: p.owner
       ? {
           id: p.owner.id,

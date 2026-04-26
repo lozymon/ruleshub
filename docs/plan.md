@@ -79,7 +79,7 @@ New tools can be added over time without breaking the manifest format.
 - [ ] Private packages — paid tier for org-internal assets
 - [ ] Collections — community-curated lists of assets ("Best security rules", "Top React packs")
 - [ ] Comments & discussions — per-asset comment threads
-- [ ] Leaderboard — top contributors, most starred publishers, trending this week
+- [x] Leaderboard — top contributors, most starred publishers, trending this week
 - [ ] Weekly digest email — top new assets and most downloaded sent to subscribers
 - [ ] Quality score — auto-calculated per asset (has README, changelog, download count, update frequency)
 - [x] Version diff viewer — see what changed between versions before updating

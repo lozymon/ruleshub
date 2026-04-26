@@ -84,6 +84,21 @@ export class PackagesController {
     return this.packagesService.findVersion(namespace, name, version);
   }
 
+  @Get(":namespace/:name/:version/preview")
+  @ApiOperation({ summary: "Get file contents preview for all tool targets" })
+  @ApiResponse({ status: 200, description: "File previews per tool" })
+  @ApiResponse({ status: 404 })
+  @ApiParam({ name: "namespace" })
+  @ApiParam({ name: "name" })
+  @ApiParam({ name: "version" })
+  preview(
+    @Param("namespace") namespace: string,
+    @Param("name") name: string,
+    @Param("version") version: string,
+  ) {
+    return this.packagesService.getFilePreview(namespace, name, version);
+  }
+
   @Get(":namespace/:name/:version/download")
   @ApiOperation({ summary: "Get a signed download URL for a package version" })
   @ApiResponse({ status: 200, description: "Signed download URL" })

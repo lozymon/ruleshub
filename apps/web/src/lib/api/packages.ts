@@ -3,6 +3,7 @@ import {
   PackageSearchParams,
   PaginatedResponse,
   VersionDiffDto,
+  PackageVersionPreviewDto,
 } from "@ruleshub/types";
 import { apiClient } from "./client";
 
@@ -60,6 +61,14 @@ export function getPackageDiff(
   return apiClient.get(
     `/packages/${namespace}/${name}/diff?from=${from}&to=${to}`,
   );
+}
+
+export function getPackagePreview(
+  namespace: string,
+  name: string,
+  version: string,
+): Promise<PackageVersionPreviewDto> {
+  return apiClient.get(`/packages/${namespace}/${name}/${version}/preview`);
 }
 
 export async function publishPackage(

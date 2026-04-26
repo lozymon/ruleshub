@@ -10,12 +10,13 @@ import {
   FileText,
   MessageSquare,
 } from "lucide-react";
-import { getPackage } from "@/lib/api/packages";
+import { getPackage, getPackagePreview } from "@/lib/api/packages";
 import { InstallBlock } from "@/components/packages/install-block";
 import { StarButton } from "@/components/packages/star-button";
 import { ToolBadge } from "@/components/ui/tool-badge";
 import { QualityBadge } from "@/components/ui/quality-badge";
 import { BadgeSnippets } from "@/components/packages/badge-snippets";
+import { FilePreviewTabs } from "@/components/packages/file-preview-tabs";
 import { config } from "@/lib/config";
 import { routes } from "@/lib/routes";
 
@@ -52,7 +53,12 @@ export default async function PackagePage({ params }: PackagePageProps) {
     notFound();
   }
 
-  const version = pkg.latestVersion?.version ?? null;
+  const latestVersion = pkg.latestVersion?.version ?? null;
+  const preview = latestVersion
+    ? await getPackagePreview(namespace, name, latestVersion).catch(() => null)
+    : null;
+
+  const version = latestVersion;
   const downloads =
     pkg.totalDownloads >= 1_000_000
       ? `${(pkg.totalDownloads / 1_000_000).toFixed(1)}M`
@@ -225,6 +231,14 @@ export default async function PackagePage({ params }: PackagePageProps) {
               ))}
             </ul>
           </div>
+
+          {/* Files preview */}
+          {preview && preview.previews.length > 0 && (
+            <div className="mt-2 border-t border-border pt-6">
+              <h3 className="mb-4 text-[14px] font-semibold">Files</h3>
+              <FilePreviewTabs previews={preview.previews} />
+            </div>
+          )}
 
           {/* Versions */}
           <div className="mt-2 border-t border-border pt-6">

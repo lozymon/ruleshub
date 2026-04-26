@@ -138,3 +138,14 @@ export interface VersionDiffDto {
   to: string;
   changes: DiffChange[];
 }
+
+export interface PackageFilePreviewDto {
+  tool: string;
+  path: string;
+  content: string;
+}
+
+export interface PackageVersionPreviewDto {
+  version: string;
+  previews: PackageFilePreviewDto[];
+}

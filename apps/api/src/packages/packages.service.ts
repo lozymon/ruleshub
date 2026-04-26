@@ -14,6 +14,7 @@ import {
   VersionDiffDto,
   DiffChange,
   type PackageManifest,
+  type PackageVersionPreviewDto,
 } from "@ruleshub/types";
 import { Package, PackageVersion, User, Prisma } from "@prisma/client";
 import { WebhooksService } from "../webhooks/webhooks.service";
@@ -309,6 +310,45 @@ export class PackagesService {
 
     const url = await this.storage.getSignedUrl(pkgVersion.storageKey);
     return { url };
+  }
+
+  async getFilePreview(
+    namespace: string,
+    name: string,
+    version: string,
+  ): Promise<PackageVersionPreviewDto> {
+    const pkgVersion = await this.findVersion(namespace, name, version);
+
+    if (pkgVersion.yanked) {
+      throw new BadRequestException(`Version ${version} has been yanked`);
+    }
+
+    const manifest = PackageManifestSchema.safeParse(pkgVersion.manifestJson);
+    if (!manifest.success || !manifest.data.targets) {
+      return { version, previews: [] };
+    }
+
+    const stream = await this.storage.download(pkgVersion.storageKey);
+    const chunks: Buffer[] = [];
+    await new Promise<void>((resolve, reject) => {
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
+    const zipBuffer = Buffer.concat(chunks);
+    const zip = new AdmZip(zipBuffer);
+
+    const previews = Object.entries(manifest.data.targets).map(
+      ([tool, target]) => {
+        const entry = zip.getEntry(target.file);
+        const content = entry
+          ? entry.getData().toString("utf-8")
+          : `# File not found in package\n# Expected: ${target.file}`;
+        return { tool, path: target.file, content };
+      },
+    );
+
+    return { version, previews };
   }
 
   async fork(

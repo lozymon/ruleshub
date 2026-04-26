@@ -16,12 +16,23 @@ import {
   type PackageManifest,
   type PackageVersionPreviewDto,
 } from "@ruleshub/types";
-import { Package, PackageVersion, User, Prisma } from "@prisma/client";
+import {
+  Package,
+  PackageVersion,
+  User,
+  PackageDependency,
+  Prisma,
+} from "@prisma/client";
 import { WebhooksService } from "../webhooks/webhooks.service";
+
+type DepWithPackage = PackageDependency & {
+  dep: Package & { versions: PackageVersion[] };
+};
 
 type PackageWithIncludes = Package & {
   versions: PackageVersion[];
   owner: User | null;
+  packDependencies: DepWithPackage[];
 };
 
 function computeQualityScore(
@@ -44,12 +55,33 @@ export type PackageWithVersion = Package & {
   latestVersion: PackageVersion | null;
 };
 
+const packDepsInclude = {
+  packDependencies: {
+    include: {
+      dep: {
+        include: {
+          versions: { orderBy: { publishedAt: "desc" as const }, take: 1 },
+        },
+      },
+    },
+  },
+} as const;
+
 function toPackageDto(p: PackageWithIncludes) {
   return {
     ...p,
     fullName: `${p.namespace}/${p.name}`,
     latestVersion: p.versions[0] ?? null,
     versions: p.versions,
+    includes: p.packDependencies.map((d) => ({
+      fullName: `${d.dep.namespace}/${d.dep.name}`,
+      namespace: d.dep.namespace,
+      name: d.dep.name,
+      type: d.dep.type,
+      description: d.dep.description,
+      versionRange: d.versionRange,
+      latestVersion: d.dep.versions[0]?.version ?? null,
+    })),
     owner: p.owner
       ? {
           id: p.owner.id,
@@ -57,7 +89,8 @@ function toPackageDto(p: PackageWithIncludes) {
           avatarUrl: p.owner.avatarUrl,
           bio: p.owner.bio,
           verified: p.owner.verified,
-          createdAt: p.owner.createdAt,
+          isAdmin: false,
+          createdAt: p.owner.createdAt.toISOString(),
         }
       : {
           id: "",
@@ -65,7 +98,8 @@ function toPackageDto(p: PackageWithIncludes) {
           avatarUrl: null,
           bio: null,
           verified: false,
-          createdAt: p.createdAt,
+          isAdmin: false,
+          createdAt: p.createdAt.toISOString(),
         },
   };
 }
@@ -127,6 +161,7 @@ export class PackagesService {
         include: {
           versions: { orderBy: { publishedAt: "desc" }, take: 1 },
           owner: true,
+          ...packDepsInclude,
         },
       }),
       this.prisma.package.count({ where }),
@@ -146,6 +181,7 @@ export class PackagesService {
       include: {
         versions: { orderBy: { publishedAt: "desc" } },
         owner: true,
+        ...packDepsInclude,
       },
     });
 
@@ -266,6 +302,18 @@ export class PackagesService {
         },
       });
 
+      if (manifest.type === "pack" && manifest.includes?.length) {
+        const depIds = await this.resolveIncludes(manifest.includes);
+        await tx.packageDependency.deleteMany({ where: { packId: pkg.id } });
+        await tx.packageDependency.createMany({
+          data: depIds.map(({ depId, versionRange }) => ({
+            packId: pkg.id,
+            depId,
+            versionRange,
+          })),
+        });
+      }
+
       const versionCount = await tx.packageVersion.count({
         where: { packageId: pkg.id },
       });
@@ -284,6 +332,34 @@ export class PackagesService {
 
       return version;
     });
+  }
+
+  private async resolveIncludes(
+    includes: string[],
+  ): Promise<{ depId: string; versionRange: string }[]> {
+    return Promise.all(
+      includes.map(async (entry) => {
+        const atIdx = entry.lastIndexOf("@");
+        const hasVersion = atIdx > 0;
+        const fullName = hasVersion ? entry.slice(0, atIdx) : entry;
+        const versionRange = hasVersion ? entry.slice(atIdx + 1) : "*";
+        const [ns, pkgName] = fullName.split("/");
+        if (!ns || !pkgName) {
+          throw new BadRequestException(
+            `Invalid include entry "${entry}" — expected namespace/name or namespace/name@range`,
+          );
+        }
+        const dep = await this.prisma.package.findUnique({
+          where: { namespace_name: { namespace: ns, name: pkgName } },
+        });
+        if (!dep) {
+          throw new BadRequestException(
+            `Included package "${fullName}" not found — publish it first`,
+          );
+        }
+        return { depId: dep.id, versionRange };
+      }),
+    );
   }
 
   async getDownloadUrl(

@@ -1,0 +1,14 @@
+{
+  "name": "lozymon/nestjs-starter-pack",
+  "version": "1.0.0",
+  "type": "pack",
+  "description": "Complete NestJS starter pack — coding rules, module scaffold command, and PR review workflow bundled together.",
+  "license": "MIT",
+  "tags": ["nestjs", "typescript", "prisma", "starter"],
+  "projectTypes": ["nestjs", "node"],
+  "includes": [
+    "lozymon/nestjs-rules@^1.0.0",
+    "lozymon/nestjs-generate-module@^1.0.0",
+    "lozymon/nestjs-pr-review-workflow@^1.0.0"
+  ]
+}

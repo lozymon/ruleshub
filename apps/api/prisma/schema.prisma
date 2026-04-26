@@ -94,11 +94,24 @@ model Package {
   collectionItems  CollectionItem[]
   comments         Comment[]
   webhooks         Webhook[]
+  packDependencies PackageDependency[] @relation("PackDeps")
+  depOf            PackageDependency[] @relation("DepOf")
 
   @@unique([namespace, name])
   @@index([namespace])
   @@index([type])
   @@index([tags])
+}
+
+model PackageDependency {
+  packId       String
+  depId        String
+  versionRange String
+  pack         Package @relation("PackDeps", fields: [packId], references: [id], onDelete: Cascade)
+  dep          Package @relation("DepOf",   fields: [depId],  references: [id], onDelete: Restrict)
+
+  @@id([packId, depId])
+  @@index([depId])
 }
 
 model PackageVersion {

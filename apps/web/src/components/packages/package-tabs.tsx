@@ -2,16 +2,34 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, History, FileText, MessageSquare } from "lucide-react";
+import {
+  BookOpen,
+  History,
+  FileText,
+  MessageSquare,
+  Package,
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { PackageDto, PackageVersionPreviewDto } from "@ruleshub/types";
 import { FilePreviewTabs } from "./file-preview-tabs";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
-type TabId = "readme" | "versions" | "files" | "comments";
+type TabId = "readme" | "versions" | "files" | "contents" | "comments";
 
-const TABS = [
+const TYPE_ICONS: Record<string, string> = {
+  rule: "📄",
+  command: ">_",
+  workflow: "⇢",
+  agent: "◉",
+  "mcp-server": "⬡",
+  pack: "▣",
+};
+
+const ALL_TABS = [
   { id: "readme" as TabId, label: "README", Icon: BookOpen },
+  { id: "contents" as TabId, label: "Contents", Icon: Package },
   { id: "versions" as TabId, label: "Versions", Icon: History },
   { id: "files" as TabId, label: "Files", Icon: FileText },
   { id: "comments" as TabId, label: "Comments", Icon: MessageSquare },
@@ -33,56 +51,113 @@ export function PackageTabs({
   const [active, setActive] = useState<TabId>("readme");
 
   const hasFiles = (preview?.previews.length ?? 0) > 0;
+  const isPack = pkg.type === "pack";
+  const readmeContent =
+    preview?.previews.find((p) => p.path.toLowerCase() === "readme.md")
+      ?.content ?? null;
+
+  const visibleTabs = ALL_TABS.filter((t) => {
+    if (t.id === "files" && !hasFiles) return false;
+    if (t.id === "contents" && !isPack) return false;
+    return true;
+  });
 
   return (
     <div>
       {/* Tab bar */}
       <div className="flex border-b border-border">
-        {TABS.map(({ id, label, Icon }) => {
-          if (id === "files" && !hasFiles) return null;
-          return (
-            <button
-              key={id}
-              onClick={() => setActive(id)}
-              className={cn(
-                "inline-flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors",
-                active === id
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-fg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </button>
-          );
-        })}
+        {visibleTabs.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActive(id)}
+            className={cn(
+              "inline-flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors",
+              active === id
+                ? "border-primary text-foreground"
+                : "border-transparent text-fg-muted hover:text-foreground",
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* README */}
       {active === "readme" && (
         <div className="prose-readme py-6">
-          <h1>
-            {namespace}/{name}
-          </h1>
-          <p>{pkg.description}</p>
-          <h2>Installation</h2>
-          <pre>
-            <code>{`npx ruleshub install ${namespace}/${name}`}</code>
-          </pre>
-          <p>
-            The CLI writes the appropriate files per detected tool — Claude Code
-            receives a <code>CLAUDE.md</code> delta, Cursor gets{" "}
-            <code>.cursor/rules/*.mdc</code>, and Copilot gets{" "}
-            <code>.github/copilot-instructions.md</code>.
-          </p>
-          <h2>Supported tools</h2>
-          <ul>
-            {pkg.supportedTools.map((t) => (
-              <li key={t}>
-                <code>{t}</code>
-              </li>
-            ))}
-          </ul>
+          {readmeContent ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {readmeContent}
+            </ReactMarkdown>
+          ) : (
+            <>
+              <h1>
+                {namespace}/{name}
+              </h1>
+              <p>{pkg.description}</p>
+              <h2>Installation</h2>
+              <pre>
+                <code>{`npx ruleshub install ${namespace}/${name}`}</code>
+              </pre>
+              <p>
+                The CLI writes the appropriate files per detected tool — Claude
+                Code receives a <code>CLAUDE.md</code> delta, Cursor gets{" "}
+                <code>.cursor/rules/*.mdc</code>, and Copilot gets{" "}
+                <code>.github/copilot-instructions.md</code>.
+              </p>
+              <h2>Supported tools</h2>
+              <ul>
+                {pkg.supportedTools.map((t) => (
+                  <li key={t}>
+                    <code>{t}</code>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Contents — packs only */}
+      {active === "contents" && (
+        <div className="py-6">
+          {pkg.includes.length === 0 ? (
+            <p className="text-[13px] text-fg-muted">No contents listed.</p>
+          ) : (
+            <div className="overflow-hidden rounded-[10px] border border-border bg-bg-elev">
+              {pkg.includes.map((dep, i) => (
+                <Link
+                  key={dep.fullName}
+                  href={routes.package(dep.fullName)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-bg-elev-2",
+                    i < pkg.includes.length - 1 ? "border-b border-border" : "",
+                  )}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-bg-elev-2 text-[12px] text-fg-muted">
+                    {TYPE_ICONS[dep.type] ?? "□"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-mono text-[13px] font-medium text-foreground">
+                      {dep.fullName}
+                    </div>
+                    <div className="mt-0.5 truncate text-[12px] text-fg-muted">
+                      {dep.description}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-[3px] border border-border bg-bg-elev-2 px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">
+                      {dep.type}
+                    </span>
+                    <span className="font-mono text-[11px] text-fg-faint">
+                      {dep.versionRange}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

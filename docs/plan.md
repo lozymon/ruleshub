@@ -629,6 +629,15 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Dashboard page — stat cards, packages table, chart placeholder
 - [x] User profile page (`/users/[username]`) — stub exists, needs design overhaul
 
+#### Pack system (dependency infrastructure)
+
+- [x] `PackageDependency` DB table — join table linking packs to their included assets with version ranges
+- [x] Publish resolves `includes` → `PackageDependency` rows; fail the transaction if any referenced package does not exist
+- [x] `PackageSummaryDto` type + `includes: PackageSummaryDto[]` on `PackageDto` — resolved dep metadata returned on every pack
+- [x] Browse card — show pack contents summary ("2 rules · 1 command · 1 workflow") instead of bare `pack` type badge
+- [x] Package detail — "Contents" tab listing each included asset as a linked mini-card (type icon, name, description, version)
+- [x] Samples split — `nestjs-rules` (rule) · `nestjs-generate-module` (command) · `nestjs-pr-review-workflow` (workflow) · `nestjs-starter-pack` (pack referencing all three)
+
 ### Phase 3 — Discovery & Community
 
 - [x] Stars and ratings
@@ -649,6 +658,7 @@ MINIO_BUCKET=ruleshub-packages
 - [x] `npx ruleshub update` — update outdated assets
 - [x] Conflict detection — warn before overwriting existing files
 - [x] Asset preview — show file contents before writing (`--dry-run`)
+- [x] Pack-aware install — detect `type: pack`, resolve and install each included asset individually; print "Installing N packages from …"
 
 ### Phase 5 — Organisations & Trust
 
@@ -699,6 +709,123 @@ MINIO_BUCKET=ruleshub-packages
 - [ ] Marketplace sidebar in vscode-cc-admin (Claude Code admin extension)
 - [ ] Generic VS Code marketplace extension for other tools
 - [ ] Project type auto-detection → recommended packs prompt
+
+---
+
+### Phase 10 — Documentation
+
+Comprehensive Markdown-based documentation that lives in the repo and is served as a
+first-class docs site. Every page is a `.md` or `.mdx` file — community can contribute
+via PR, same as the code.
+
+#### Structure (`docs/`)
+
+```
+docs/
+├── getting-started/
+│   ├── introduction.md          # what RulesHub is and why it exists
+│   ├── quick-start.md           # install your first package in 60 seconds
+│   └── concepts.md              # rules · commands · workflows · agents · packs
+├── publishing/
+│   ├── your-first-package.md    # step-by-step: create → validate → publish
+│   ├── manifest-reference.md    # full ruleshub.json field reference
+│   ├── targets.md               # how to write files for each supported AI tool
+│   ├── packs.md                 # how to bundle assets into a pack
+│   ├── versioning.md            # semver conventions, yanking, changelogs
+│   └── github-import.md         # auto-publish from a GitHub repo on new tags
+├── cli/
+│   ├── overview.md              # CLI install and global flags
+│   ├── install.md               # `ruleshub install` — all flags and examples
+│   ├── publish.md               # `ruleshub publish` — auth, dry-run, tokens
+│   ├── outdated.md              # `ruleshub outdated` and `update`
+│   └── validate.md              # `ruleshub validate` — local manifest linting
+├── api/
+│   ├── overview.md              # base URL, auth, versioning, rate limits
+│   ├── packages.md              # /packages endpoints
+│   ├── users.md                 # /users endpoints
+│   ├── auth.md                  # OAuth + API key flow
+│   └── recommendations.md       # /recommendations endpoint
+├── tools/
+│   ├── claude-code.md           # target paths, install behaviour, CLAUDE.md rules
+│   ├── cursor.md
+│   ├── copilot.md
+│   ├── windsurf.md
+│   ├── cline.md
+│   ├── aider.md
+│   └── continue.md
+├── contributing/
+│   ├── adding-a-tool.md         # PR checklist for adding a new AI tool target
+│   ├── development.md           # local dev setup (docker compose, env vars)
+│   └── architecture.md          # monorepo layout, data flow, storage abstraction
+└── changelog.md                 # project-level changelog (not per-package)
+```
+
+#### Docs Site
+
+- [ ] Add a `/docs` section inside `apps/web` using Next.js MDX (`@next/mdx`)
+- [ ] Sidebar navigation auto-generated from the `docs/` folder structure
+- [ ] Full-text search powered by [Pagefind](https://pagefind.app) (static, zero infra cost)
+- [ ] Syntax-highlighted code blocks (Shiki, matches the existing site theme)
+- [ ] "Edit this page on GitHub" link on every page
+- [ ] Version badge in the header linking to latest CLI release on npm
+- [ ] SEO: `sitemap.xml` includes all `/docs/*` routes
+- [ ] Dark mode consistent with the rest of the site (no separate theme toggle needed)
+- [ ] Mobile-friendly: collapsible sidebar, sticky ToC on desktop
+
+#### Content Milestones
+
+- [ ] Getting Started + Concepts section — unblocks new users immediately
+- [ ] Manifest Reference — single authoritative source (replaces inline plan docs)
+- [ ] CLI Reference — one page per command, with flags table and examples
+- [ ] Tool Target Guides — one page per supported AI tool
+- [ ] API Reference — human-readable complement to Swagger/OpenAPI
+- [ ] Contributing Guide — onboards external contributors
+
+---
+
+### Phase 11 — Package Authoring SDK
+
+Tools that make it easy for anyone to create, validate, and publish RulesHub packages —
+without reading the full docs first.
+
+#### `packages/create-ruleshub` — Scaffolding CLI
+
+A zero-config project generator: `npx create-ruleshub`
+
+- [ ] Interactive wizard: name → type → target tools → license → author
+- [ ] Generates a ready-to-publish folder with `ruleshub.json`, placeholder files per target, and a `README.md`
+- [ ] Templates for every asset type: `rule` · `command` · `workflow` · `agent` · `mcp-server` · `pack`
+- [ ] `--template <type>` flag for non-interactive use (CI/scripts)
+- [ ] Infers namespace from `git config user.name` / GitHub username
+- [ ] Prints next steps: `cd my-package && npx ruleshub validate && npx ruleshub publish`
+
+#### `ruleshub validate` CLI command (extends `packages/cli`)
+
+- [ ] `npx ruleshub validate` — validates `ruleshub.json` in the current directory
+- [ ] Checks: required fields, valid semver version, known `type`, known `targets` keys, referenced files exist, valid SPDX license identifier
+- [ ] Machine-readable output: `--json` flag returns structured errors for editor integrations
+- [ ] Exit code 1 on any error (CI-friendly)
+- [ ] Integrated into `npx ruleshub publish` as a pre-publish gate — publish fails if validate fails
+
+#### JSON Schema for `ruleshub.json`
+
+- [ ] Publish `ruleshub-schema` to [SchemaStore](https://www.schemastore.org/json/) — enables IDE autocompletion for any editor (VS Code, IntelliJ, Neovim + LSP)
+- [ ] Schema hosted at `https://ruleshub.dev/schema/ruleshub.json` (stable URL)
+- [ ] Add `"$schema": "https://ruleshub.dev/schema/ruleshub.json"` to all sample manifests
+- [ ] Schema served from `apps/api` and versioned (breaking changes bump schema URL)
+
+#### `packages/ruleshub-kit` — TypeScript authoring helpers
+
+A lightweight utility library for programmatic manifest construction and validation —
+useful for tools, scripts, and IDE extensions that need to read or write `ruleshub.json`.
+
+- [ ] `parseManifest(json)` — parses and validates, returns typed `PackageManifest` or throws `ZodError`
+- [ ] `buildManifest(partial)` — typed builder with sensible defaults; returns a `PackageManifest`
+- [ ] `validateManifest(manifest)` — pure validation, returns `{ valid, errors }`
+- [ ] `getTargetFile(manifest, tool)` — resolves the file path for a given AI tool target
+- [ ] Re-exports the Zod schema and all types from `packages/types` — single import for consumers
+- [ ] MIT licensed (same as `packages/types` and `packages/cli`)
+- [ ] Fully tree-shakeable, zero runtime dependencies beyond `zod`
 
 ---
 

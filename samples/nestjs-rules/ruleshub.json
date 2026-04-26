@@ -1,12 +1,12 @@
 {
   "name": "lozymon/nestjs-rules",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "type": "rule",
   "description": "NestJS coding conventions for AI coding tools. Enforces module structure, controller/service separation, Prisma usage, Swagger documentation, and typed error handling.",
   "license": "MIT",
   "tags": ["nestjs", "typescript", "prisma"],
   "projectTypes": ["nestjs", "node"],
-  "changelog": "Added nestjs-generate-module slash command and PR review workflow.",
+  "changelog": "Split into individual assets. This package now contains only the core NestJS rules.",
   "targets": {
     "claude-code": { "file": "CLAUDE.md" }
   }

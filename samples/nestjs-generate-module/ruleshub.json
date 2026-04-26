@@ -1,0 +1,12 @@
+{
+  "name": "lozymon/nestjs-generate-module",
+  "version": "1.0.0",
+  "type": "command",
+  "description": "Slash command to scaffold a complete NestJS feature module with controller, service, and DTOs.",
+  "license": "MIT",
+  "tags": ["nestjs", "scaffold", "typescript"],
+  "projectTypes": ["nestjs", "node"],
+  "targets": {
+    "claude-code": { "file": "command.md" }
+  }
+}

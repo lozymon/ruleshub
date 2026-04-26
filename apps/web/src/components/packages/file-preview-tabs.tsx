@@ -21,6 +21,10 @@ function fileDir(path: string) {
   return parts.length > 1 ? parts.slice(0, -1).join("/") + "/" : "";
 }
 
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
 export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
   const [active, setActive] = useState(0);
 
@@ -95,6 +99,10 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
             </span>
             <span className="text-[11px] text-fg-dim">
               {current.content.length.toLocaleString()} chars
+              <span className="mx-1.5 text-fg-faint">·</span>
+              <span title="Estimated token count (≈ chars ÷ 4)">
+                ~{estimateTokens(current.content).toLocaleString()} tokens
+              </span>
             </span>
           </div>
 

@@ -3,7 +3,7 @@ import { Star, Download } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { ToolBadge } from "@/components/ui/tool-badge";
 import { QualityBadge } from "@/components/ui/quality-badge";
-import type { PackageDto } from "@ruleshub/types";
+import type { PackageDto, PackageSummaryDto } from "@ruleshub/types";
 
 const TYPE_ICONS: Record<string, string> = {
   rule: "📄",
@@ -13,6 +13,16 @@ const TYPE_ICONS: Record<string, string> = {
   mcp: "⬡",
   pack: "▣",
 };
+
+function packContentsSummary(includes: PackageSummaryDto[]): string {
+  const counts: Record<string, number> = {};
+  for (const item of includes) {
+    counts[item.type] = (counts[item.type] ?? 0) + 1;
+  }
+  return Object.entries(counts)
+    .map(([type, n]) => `${n} ${n === 1 ? type : type + "s"}`)
+    .join(" · ");
+}
 
 interface PackageCardProps {
   pkg: PackageDto;
@@ -66,6 +76,11 @@ export function PackageCard({ pkg }: PackageCardProps) {
               <span className="rounded-[3px] border border-border bg-bg-elev-2 px-1.5 py-0.5 font-mono text-[10.5px] font-medium lowercase text-fg-muted">
                 {pkg.type}
               </span>
+              {pkg.type === "pack" && pkg.includes.length > 0 && (
+                <span className="font-mono text-[10.5px] text-fg-faint">
+                  {packContentsSummary(pkg.includes)}
+                </span>
+              )}
               <span className="font-mono text-[11.5px] text-fg-faint">
                 {timeAgo}
               </span>

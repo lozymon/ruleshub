@@ -27,6 +27,16 @@ export interface PackageVersionDto {
   publishedAt: string;
 }
 
+export interface PackageSummaryDto {
+  fullName: string;
+  namespace: string;
+  name: string;
+  type: AssetType;
+  description: string;
+  versionRange: string;
+  latestVersion: string | null;
+}
+
 export interface PackageDto {
   id: string;
   namespace: string;
@@ -44,6 +54,7 @@ export interface PackageDto {
   owner: UserDto;
   latestVersion: PackageVersionDto | null;
   versions: PackageVersionDto[];
+  includes: PackageSummaryDto[];
   createdAt: string;
   updatedAt: string;
 }

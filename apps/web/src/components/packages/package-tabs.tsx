@@ -25,6 +25,7 @@ const TYPE_ICONS: Record<string, string> = {
   agent: "◉",
   "mcp-server": "⬡",
   pack: "▣",
+  skill: "✦",
 };
 
 const ALL_TABS = [

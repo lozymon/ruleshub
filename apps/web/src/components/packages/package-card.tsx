@@ -12,6 +12,7 @@ const TYPE_ICONS: Record<string, string> = {
   agent: "◉",
   mcp: "⬡",
   pack: "▣",
+  skill: "✦",
 };
 
 function packContentsSummary(includes: PackageSummaryDto[]): string {

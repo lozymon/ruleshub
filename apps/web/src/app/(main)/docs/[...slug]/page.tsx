@@ -42,7 +42,7 @@ export default async function DocsPage({ params }: Props) {
               [
                 rehypePrettyCode,
                 {
-                  theme: { dark: "github-dark-dimmed", light: "github-light" },
+                  theme: "github-dark-dimmed",
                   keepBackground: false,
                 },
               ],

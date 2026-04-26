@@ -327,15 +327,6 @@
   /* colour is set per-token by Shiki — do not override */
 }
 
-/* rehype-pretty-code: dark is default (class="dark" on <html> via next-themes) */
-.prose-docs code[data-theme*=" "],
-.prose-docs code[data-theme*=" "] span {
-  color: var(--shiki-dark);
-}
-.light .prose-docs code[data-theme*=" "],
-.light .prose-docs code[data-theme*=" "] span {
-  color: var(--shiki-light);
-}
 .prose-docs table {
   width: 100%;
   border-collapse: collapse;

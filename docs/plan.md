@@ -81,7 +81,7 @@ New tools can be added over time without breaking the manifest format.
 - [ ] Leaderboard — top contributors, most starred publishers, trending this week
 - [ ] Weekly digest email — top new assets and most downloaded sent to subscribers
 - [ ] Quality score — auto-calculated per asset (has README, changelog, download count, update frequency)
-- [ ] Version diff viewer — see what changed between versions before updating
+- [x] Version diff viewer — see what changed between versions before updating
 - [ ] Dependency security alerts — notify if a package you depend on is yanked or reported
 - [ ] Structured changelogs — per-version release notes
 - [ ] Publisher analytics dashboard — download trends, top tools, top countries
@@ -658,7 +658,7 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Admin dashboard (`/dashboard/admin`) — paginated user table with search, toggle verified + blocked; visible only to `ADMIN_USERNAMES`; `isAdmin` flag on `/auth/me` response
 - [x] User blocking — `blocked` flag on User prevents login and publishing; admin can set via dashboard
 - [x] Quality score — auto-calculated per asset, shown on browse and detail pages
-- [ ] Version diff viewer — side-by-side diff between versions
+- [x] Version diff viewer — side-by-side diff between versions
 - [x] Structured changelogs — per-version release notes field
 - [ ] Dependency security alerts — notify dependents when a package is yanked or reported
 - [x] API keys — `RULESHUB_TOKEN` for CI/CD publishing without browser OAuth

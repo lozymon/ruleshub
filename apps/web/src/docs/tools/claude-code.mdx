@@ -1,0 +1,84 @@
+# Claude Code
+
+Claude Code reads rules from `CLAUDE.md` files and custom commands from `.claude/commands/`. RulesHub installs assets into these paths automatically based on asset type.
+
+## Install paths by asset type
+
+| Asset type | Written to                        |
+| ---------- | --------------------------------- |
+| `rule`     | `CLAUDE.md` (appended or created) |
+| `command`  | `.claude/commands/<filename>.md`  |
+| `skill`    | `.claude/commands/<filename>.md`  |
+| `workflow` | `.claude/commands/<filename>.md`  |
+| `agent`    | `.claude/agents/<filename>.md`    |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool claude-code
+```
+
+For a pack, each included asset is installed individually:
+
+```bash
+npx ruleshub install lozymon/nestjs-starter-pack --tool claude-code
+# Installing 3 packages from lozymon/nestjs-starter-pack…
+# ✓ lozymon/nestjs-rules@1.0.0
+# ✓ lozymon/nestjs-generate-module@1.0.0
+# ✓ lozymon/nestjs-pr-review-workflow@1.0.0
+```
+
+## Target key
+
+Use `claude-code` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "claude-code": { "file": "targets/claude-code/CLAUDE.md" }
+  }
+}
+```
+
+## Writing effective rules
+
+Claude Code rules live in `CLAUDE.md` and are injected into every conversation in that project. Keep them focused:
+
+- State conventions as direct instructions, not suggestions
+- Group related rules under headings
+- Avoid duplicating what's already in Claude's system prompt (style, politeness, etc.)
+- Use second person: "Always use DTOs", not "The developer should use DTOs"
+
+## Writing commands
+
+Command files are plain Markdown placed in `.claude/commands/`. The filename becomes the slash command name. A file named `pr-review.md` is invoked as `/pr-review`.
+
+```markdown
+Review the current branch diff against the main branch.
+
+Check for:
+
+- Missing input validation
+- Exposed sensitive data in responses
+- Unhandled error cases
+```
+
+## Conflict detection
+
+The CLI warns before overwriting an existing file:
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool claude-code
+# ⚠ CLAUDE.md already exists. Use --force to overwrite.
+```
+
+Use `--dry-run` to preview what would be written without touching anything:
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool claude-code --dry-run
+```
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

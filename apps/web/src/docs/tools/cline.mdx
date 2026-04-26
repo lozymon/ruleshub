@@ -1,0 +1,43 @@
+# Cline
+
+Cline reads project rules from `.clinerules` in the project root. RulesHub writes rule assets to this file.
+
+## Install paths by asset type
+
+| Asset type | Written to    |
+| ---------- | ------------- |
+| `rule`     | `.clinerules` |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool cline
+```
+
+## Target key
+
+Use `cline` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "cline": { "file": "targets/cline/.clinerules" }
+  }
+}
+```
+
+## Writing rules for Cline
+
+`.clinerules` is injected as system-level context for every Cline task in the project. Write rules as direct instructions focused on what Cline should and should not do:
+
+```
+Always ask before running destructive shell commands (rm, DROP, DELETE without WHERE).
+Prefer editing existing files over creating new ones.
+Run the test suite after making changes to business logic.
+Never hardcode secrets — reference environment variables.
+```
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { DocsSidebar } from "./docs-sidebar";
+import { DocsSearch } from "./docs-search";
 
 export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +27,9 @@ export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
     <div className="container mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl px-4">
       {/* Desktop sidebar — sticky, scrollable independently */}
       <div className="hidden md:block sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto shrink-0">
+        <div className="px-4 pt-6 pb-2">
+          <DocsSearch />
+        </div>
         <DocsSidebar />
       </div>
 
@@ -39,6 +43,9 @@ export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
           <Menu className="h-4 w-4" />
           Menu
         </button>
+        <div className="flex-1">
+          <DocsSearch />
+        </div>
       </div>
 
       {/* Mobile drawer backdrop */}

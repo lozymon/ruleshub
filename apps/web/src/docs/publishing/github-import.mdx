@@ -1,0 +1,52 @@
+# GitHub Import
+
+Connect a GitHub repository to RulesHub and publish new versions automatically whenever you push a new tag.
+
+## How it works
+
+1. You register a GitHub repo URL on the Import page (`/import`)
+2. RulesHub creates a webhook on that repository
+3. When you push a tag (e.g. `v1.2.0`), GitHub fires the webhook
+4. RulesHub fetches the tag's zip archive, reads `ruleshub.json`, and publishes it as a new package version
+
+You never need to run `npx ruleshub publish` manually again — tag a release and it's live.
+
+## Prerequisites
+
+- A public GitHub repository containing a valid `ruleshub.json` at its root
+- A RulesHub account (GitHub OAuth)
+- The `GITHUB_TOKEN` scope must include `repo` access if the repository is private (private packages require a paid plan)
+
+## Setting up the import
+
+1. Go to [/import](/import) while signed in
+2. Paste your repository URL: `https://github.com/you/your-package`
+3. Click **Connect** — RulesHub will install a webhook on the repo using your OAuth token
+4. Push your first tag to publish the initial version
+
+## Tagging conventions
+
+RulesHub extracts the version from the tag name. Supported formats:
+
+| Tag format | Version published |
+| ---------- | ----------------- |
+| `v1.2.0`   | `1.2.0`           |
+| `1.2.0`    | `1.2.0`           |
+
+The version in the tag must match the `version` field in `ruleshub.json`, or the publish will fail with a validation error.
+
+## What gets published
+
+RulesHub downloads the tag's source archive from GitHub and publishes it exactly as `npx ruleshub publish` would — the same validation, the same size limits, and the same manifest parsing.
+
+Your `ruleshub.json` is the source of truth. Make sure it's up to date before tagging.
+
+## Disconnecting
+
+To stop auto-publishing, go to your Dashboard, find the imported package, and click **Disconnect repo**. The webhook will be removed from GitHub.
+
+## See also
+
+- [Your First Package](/docs/publishing/your-first-package) — manual publish flow
+- [Manifest Reference](/docs/publishing/manifest-reference) — all `ruleshub.json` fields
+- [Versioning](/docs/publishing/versioning) — semver conventions and yanking

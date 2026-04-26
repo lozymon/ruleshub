@@ -1,0 +1,47 @@
+# Aider
+
+Aider reads project conventions from `.aider.conf.yml` and `CONVENTIONS.md`. RulesHub writes rule assets to `.aider.conf.yml`.
+
+## Install paths by asset type
+
+| Asset type | Written to        |
+| ---------- | ----------------- |
+| `rule`     | `.aider.conf.yml` |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool aider
+```
+
+## Target key
+
+Use `aider` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "aider": { "file": "targets/aider/.aider.conf.yml" }
+  }
+}
+```
+
+## Writing rules for Aider
+
+Aider's `.aider.conf.yml` file can embed a `system_prompt` key to inject custom instructions into every session:
+
+```yaml
+system_prompt: |
+  This is a NestJS REST API backed by Prisma and PostgreSQL.
+  Always use TypeScript strict mode.
+  Controllers are thin — no business logic, only service calls.
+  All DTOs use class-validator decorators.
+  Wrap multi-step DB operations in Prisma transactions.
+```
+
+Keep the system prompt concise — Aider also has a `--read` flag for injecting larger context files, which can complement your rules package.
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

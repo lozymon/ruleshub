@@ -7,6 +7,9 @@ import { contentMap } from "@/docs/content-map";
 import { flatPages } from "@/docs/nav";
 import type { Metadata } from "next";
 
+const GITHUB_EDIT_BASE =
+  "https://github.com/lozymon/ruleshub/edit/main/apps/web/src/docs";
+
 interface Props {
   params: Promise<{ slug: string[] }>;
 }
@@ -30,6 +33,7 @@ export default async function DocsPage({ params }: Props) {
   if (!filePath) notFound();
 
   const source = readFileSync(filePath, "utf-8");
+  const editUrl = `${GITHUB_EDIT_BASE}/${key}.mdx`;
 
   return (
     <article className="prose-docs max-w-3xl">
@@ -50,6 +54,16 @@ export default async function DocsPage({ params }: Props) {
           },
         }}
       />
+      <div className="mt-12 border-t border-border pt-6">
+        <a
+          href={editUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Edit this page on GitHub →
+        </a>
+      </div>
     </article>
   );
 }

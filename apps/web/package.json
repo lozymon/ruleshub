@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && pagefind --source .next/server/app --output-path public/_pagefind",
     "start": "next start",
     "lint": "eslint"
   },
@@ -38,6 +38,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "pagefind": "^1.5.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

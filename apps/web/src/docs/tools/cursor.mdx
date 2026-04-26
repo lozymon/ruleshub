@@ -1,0 +1,50 @@
+# Cursor
+
+Cursor reads rules from `.cursorrules` (project root) and from `.cursor/rules/` (directory-scoped rules). RulesHub writes to these paths based on the asset type.
+
+## Install paths by asset type
+
+| Asset type | Written to       |
+| ---------- | ---------------- |
+| `rule`     | `.cursorrules`   |
+| `command`  | `.cursor/rules/` |
+| `workflow` | `.cursor/rules/` |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool cursor
+```
+
+## Target key
+
+Use `cursor` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "cursor": { "file": "targets/cursor/.cursorrules" }
+  }
+}
+```
+
+## Writing rules for Cursor
+
+Cursor's `.cursorrules` file is plain text — instructions are read as context for every AI request in the project. Effective Cursor rules:
+
+- Are specific about the tech stack and version conventions
+- List forbidden patterns explicitly ("Never use `var`")
+- Include file structure expectations if non-standard
+- Keep each rule on its own line or clearly separated section
+
+```
+You are working on a NestJS application.
+Always use TypeScript strict mode.
+Controllers are thin — no business logic, only service calls.
+Use class-validator decorators on all DTOs.
+```
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

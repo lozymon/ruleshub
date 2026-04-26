@@ -1,0 +1,43 @@
+# Windsurf
+
+Windsurf reads project rules from `.windsurfrules` in the project root. RulesHub writes rule assets to this file.
+
+## Install paths by asset type
+
+| Asset type | Written to       |
+| ---------- | ---------------- |
+| `rule`     | `.windsurfrules` |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool windsurf
+```
+
+## Target key
+
+Use `windsurf` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "windsurf": { "file": "targets/windsurf/.windsurfrules" }
+  }
+}
+```
+
+## Writing rules for Windsurf
+
+`.windsurfrules` follows the same natural-language format as other rule files. Windsurf's Cascade AI reads this file as persistent context for the project.
+
+```
+This project is a NestJS REST API using Prisma ORM and PostgreSQL.
+Always generate TypeScript, never JavaScript.
+All endpoints require DTO classes with class-validator decorators.
+Use NestJS built-in exception classes — never throw raw Error objects.
+```
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

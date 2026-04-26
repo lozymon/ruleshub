@@ -1,0 +1,84 @@
+# Recommendations API
+
+Base URL: `https://api.ruleshub.dev/v1`
+
+The recommendations endpoint returns packages suited to a specific project type and AI tool. It powers the "Suggested for your stack" section on the browse page and is designed to be consumed directly by IDE extensions.
+
+## Get recommendations
+
+```
+GET /recommendations
+```
+
+### Query parameters
+
+| Parameter     | Type     | Required | Description                                                  |
+| ------------- | -------- | -------- | ------------------------------------------------------------ |
+| `projectType` | `string` | No       | Project type to filter by (e.g. `nestjs`, `react`, `python`) |
+| `tool`        | `string` | No       | AI tool to filter by (e.g. `claude-code`, `cursor`)          |
+| `limit`       | `number` | No       | Max results to return (default `10`, max `50`)               |
+
+At least one of `projectType` or `tool` should be provided. Omitting both returns trending packages across all types.
+
+### Example request
+
+```
+GET /recommendations?projectType=nestjs&tool=claude-code
+```
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "namespace": "lozymon",
+      "name": "nestjs-rules",
+      "type": "rule",
+      "description": "NestJS coding rules for AI tools",
+      "tags": ["nestjs", "typescript"],
+      "projectTypes": ["nestjs", "node"],
+      "supportedTools": ["claude-code", "cursor", "copilot"],
+      "totalDownloads": 1240,
+      "stars": 38,
+      "qualityScore": 91,
+      "latestVersion": "1.2.0"
+    }
+  ],
+  "total": 1
+}
+```
+
+### Error responses
+
+| Status | Reason                                |
+| ------ | ------------------------------------- |
+| `400`  | Invalid `tool` or `projectType` value |
+
+---
+
+## Supported `projectType` values
+
+Common values include `nestjs`, `react`, `next`, `vue`, `python`, `django`, `fastapi`, `go`, `node`, `laravel`. The list is open-ended — any string is accepted, but only values that match published package metadata will return results.
+
+## Supported `tool` values
+
+| Value         | Tool           |
+| ------------- | -------------- |
+| `claude-code` | Claude Code    |
+| `cursor`      | Cursor         |
+| `copilot`     | GitHub Copilot |
+| `windsurf`    | Windsurf       |
+| `cline`       | Cline          |
+| `aider`       | Aider          |
+| `continue`    | Continue       |
+
+## IDE extension usage
+
+This endpoint is designed to be lightweight and cacheable. IDE extensions should:
+
+1. Detect the project type from lock files and config files in the workspace
+2. Call `GET /recommendations?projectType=<detected>&tool=<extension-tool>`
+3. Display the top results as install suggestions in the sidebar
+
+See the [API Overview](/docs/api/overview) for base URL, rate limits, and versioning.

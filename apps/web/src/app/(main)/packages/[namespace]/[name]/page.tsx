@@ -1,22 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  ChevronRight,
-  Clock,
-  Download,
-  ExternalLink,
-  BookOpen,
-  History,
-  FileText,
-  MessageSquare,
-} from "lucide-react";
+import { ChevronRight, Clock, Download, ExternalLink } from "lucide-react";
 import { getPackage, getPackagePreview } from "@/lib/api/packages";
 import { InstallBlock } from "@/components/packages/install-block";
 import { StarButton } from "@/components/packages/star-button";
 import { ToolBadge } from "@/components/ui/tool-badge";
 import { QualityBadge } from "@/components/ui/quality-badge";
 import { BadgeSnippets } from "@/components/packages/badge-snippets";
-import { FilePreviewTabs } from "@/components/packages/file-preview-tabs";
+import { PackageTabs } from "@/components/packages/package-tabs";
 import { config } from "@/lib/config";
 import { routes } from "@/lib/routes";
 
@@ -181,137 +172,12 @@ export default async function PackagePage({ params }: PackagePageProps) {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_280px]">
         {/* Main content — tabs */}
-        <div>
-          {/* Tab bar */}
-          <div className="flex border-b border-border">
-            {(
-              [
-                { id: "readme", label: "README", Icon: BookOpen },
-                { id: "versions", label: "Versions", Icon: History },
-                { id: "files", label: "Files", Icon: FileText },
-                { id: "comments", label: "Comments", Icon: MessageSquare },
-              ] as const
-            ).map(({ id, label, Icon }, i) => (
-              <button
-                key={id}
-                className={`inline-flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors ${
-                  i === 0
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-fg-muted hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* README content (default tab — static for now) */}
-          <div className="prose-readme py-6">
-            <h1>
-              {namespace}/{name}
-            </h1>
-            <p>{pkg.description}</p>
-            <h2>Installation</h2>
-            <pre>
-              <code>{`npx ruleshub install ${namespace}/${name}`}</code>
-            </pre>
-            <p>
-              The CLI writes the appropriate files per detected tool — Claude
-              Code receives a <code>CLAUDE.md</code> delta, Cursor gets{" "}
-              <code>.cursor/rules/*.mdc</code>, and Copilot gets{" "}
-              <code>.github/copilot-instructions.md</code>.
-            </p>
-            <h2>Supported tools</h2>
-            <ul>
-              {pkg.supportedTools.map((t) => (
-                <li key={t}>
-                  <code>{t}</code>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Files preview */}
-          {preview && preview.previews.length > 0 && (
-            <div className="mt-2 border-t border-border pt-6">
-              <h3 className="mb-4 text-[14px] font-semibold">Files</h3>
-              <FilePreviewTabs previews={preview.previews} />
-            </div>
-          )}
-
-          {/* Versions */}
-          <div className="mt-2 border-t border-border pt-6">
-            <h3 className="mb-4 text-[14px] font-semibold">Versions</h3>
-            {pkg.versions.length === 0 ? (
-              <p className="text-[13px] text-fg-muted">
-                No versions published yet.
-              </p>
-            ) : (
-              <div className="overflow-hidden rounded-[10px] border border-border bg-bg-elev">
-                {pkg.versions.map((v, i) => (
-                  <div
-                    key={v.id}
-                    className={
-                      i < pkg.versions.length - 1
-                        ? "border-b border-border"
-                        : ""
-                    }
-                  >
-                    <div className="flex items-center gap-3 px-4 py-3.5">
-                      <span className="flex-1 font-mono text-[13px]">
-                        {v.version}
-                        {i === 0 && (
-                          <span className="ml-2 rounded-[3px] border border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)] px-1.5 py-0.5 font-mono text-[10px] text-primary">
-                            LATEST
-                          </span>
-                        )}
-                        {v.yanked && (
-                          <span className="ml-2 rounded-[3px] border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 font-mono text-[10px] text-destructive">
-                            YANKED
-                          </span>
-                        )}
-                      </span>
-                      <span className="font-mono text-[12px] text-fg-dim">
-                        {v.downloads.toLocaleString()} installs
-                      </span>
-                      <span className="text-[12px] text-fg-dim">
-                        {new Date(v.publishedAt).toLocaleDateString()}
-                      </span>
-                      {i > 0 && pkg.versions[0] && (
-                        <Link
-                          href={routes.packageDiff(
-                            `${namespace}/${name}`,
-                            v.version,
-                            pkg.versions[0].version,
-                          )}
-                          className="font-mono text-[11px] text-fg-dim transition-colors hover:text-primary"
-                        >
-                          diff →latest
-                        </Link>
-                      )}
-                    </div>
-                    {v.changelog && (
-                      <details className="group px-4 pb-3">
-                        <summary className="cursor-pointer list-none text-[12px] text-fg-dim hover:text-foreground">
-                          <span className="inline-flex items-center gap-1">
-                            <span className="transition-transform group-open:rotate-90">
-                              ▶
-                            </span>
-                            Changelog
-                          </span>
-                        </summary>
-                        <p className="mt-2 whitespace-pre-wrap rounded-md border border-border bg-bg-elev-2 px-3 py-2.5 font-mono text-[12px] leading-relaxed text-fg-muted">
-                          {v.changelog}
-                        </p>
-                      </details>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <PackageTabs
+          namespace={namespace}
+          name={name}
+          pkg={pkg}
+          preview={preview}
+        />
 
         {/* Sidebar */}
         <aside className="space-y-4 pt-[53px]">

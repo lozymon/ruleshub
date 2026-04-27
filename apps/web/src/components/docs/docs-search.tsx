@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, X, Loader2 } from "lucide-react";
+import { docNav } from "@/docs/nav";
 
 interface PagefindResult {
   url: string;
@@ -17,12 +18,12 @@ interface PagefindModule {
 }
 
 let cached: PagefindModule | null = null;
+let pagefindUnavailable = false;
 
 async function loadPagefind(): Promise<PagefindModule | null> {
+  if (pagefindUnavailable) return null;
   if (cached) return cached;
   try {
-    // new Function bypasses both webpack bundling and TS module resolution —
-    // /_pagefind/pagefind.js is generated at build time by the pagefind CLI
     const pf = (await new Function(
       'return import("/_pagefind/pagefind.js")',
     )()) as PagefindModule;
@@ -30,8 +31,31 @@ async function loadPagefind(): Promise<PagefindModule | null> {
     cached = pf;
     return cached;
   } catch {
+    pagefindUnavailable = true;
     return null;
   }
+}
+
+// Nav-based fallback for dev / pre-build environments
+function navSearch(query: string): PagefindResult[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  return docNav
+    .flatMap((section) =>
+      section.pages.map((page) => ({
+        url: `/docs/${page.slug}`,
+        meta: { title: page.title },
+        excerpt: `<span>${section.title}</span>`,
+        _score: page.title.toLowerCase().includes(q)
+          ? page.title.toLowerCase().startsWith(q)
+            ? 2
+            : 1
+          : 0,
+      })),
+    )
+    .filter((r) => r._score > 0)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 8);
 }
 
 export function DocsSearch() {
@@ -39,6 +63,7 @@ export function DocsSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PagefindResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const close = useCallback(() => {
@@ -75,8 +100,19 @@ export function DocsSearch() {
     }
     let cancelled = false;
     setLoading(true);
+
     loadPagefind().then(async (pf) => {
-      if (!pf || cancelled) return;
+      if (cancelled) return;
+
+      if (!pf) {
+        // Pagefind not available — use nav title search
+        setUsingFallback(true);
+        setResults(navSearch(query));
+        setLoading(false);
+        return;
+      }
+
+      setUsingFallback(false);
       const res = await pf.search(query);
       const data = await Promise.all(
         res.results.slice(0, 8).map((r) => r.data()),
@@ -86,6 +122,7 @@ export function DocsSearch() {
         setLoading(false);
       }
     });
+
     return () => {
       cancelled = true;
       setLoading(false);
@@ -168,6 +205,14 @@ export function DocsSearch() {
             {!query && (
               <p className="px-4 py-6 text-center text-sm text-muted-foreground">
                 Type to search documentation…
+              </p>
+            )}
+
+            {usingFallback && results.length > 0 && (
+              <p className="border-t border-border px-4 py-2 text-center text-[11px] text-fg-faint">
+                Title search only — run{" "}
+                <code className="font-mono">pnpm build</code> for full-text
+                search
               </p>
             )}
           </div>

@@ -236,10 +236,10 @@ export default async function HomePage() {
               <Link
                 key={tool}
                 href={routes.tool(tool)}
-                className="flex items-center gap-3 rounded-sm border border-border bg-bg-elev p-4 transition-colors hover:border-border-hover"
+                className="flex items-center gap-3 rounded-[10px] border border-border bg-bg-elev p-4 transition-colors hover:border-border-hover"
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm font-mono text-[14px] font-semibold"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] font-mono text-[14px] font-semibold"
                   style={{
                     background: `${toolColors[tool]}22`,
                     color: toolColors[tool],

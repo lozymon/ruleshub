@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Star, Download } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { ToolBadge } from "@/components/ui/tool-badge";
-import { QualityBadge } from "@/components/ui/quality-badge";
 import type { PackageDto, PackageSummaryDto } from "@ruleshub/types";
 
 const TYPE_ICONS: Record<string, string> = {
@@ -53,17 +52,17 @@ export function PackageCard({ pkg }: PackageCardProps) {
 
   return (
     <Link href={routes.package(pkg.fullName)} className="block">
-      <div className="group flex cursor-pointer flex-col gap-3 rounded-[10px] border border-border bg-bg-elev p-[18px] transition-all duration-[180ms] ease-out hover:-translate-y-px hover:border-border-hover hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6),0_0_0_1px_var(--border-hover)]">
+      <div className="group flex cursor-pointer flex-col gap-3 rounded-[2px] border border-border bg-bg-elev p-[18px] transition-all duration-[180ms] ease-out hover:-translate-y-px hover:border-border-hover hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6),0_0_0_1px_var(--border-hover)]">
         {/* Header */}
         <div className="flex items-start gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-bg-elev-2 text-[13px] text-fg-muted">
             {TYPE_ICONS[pkg.type] ?? "□"}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5 font-mono text-[14px] font-medium leading-snug tracking-[-0.01em]">
-              <span className="text-fg-dim">{pkg.namespace}</span>
-              <span className="text-fg-faint">/</span>
-              <span className="text-foreground">{pkg.name}</span>
+            <div className="flex min-w-0 items-center gap-1.5 font-mono text-[14px] font-medium leading-snug tracking-[-0.01em]">
+              <span className="shrink-0 text-fg-dim">{pkg.namespace}</span>
+              <span className="shrink-0 text-fg-faint">/</span>
+              <span className="truncate text-foreground">{pkg.name}</span>
               {pkg.owner.verified && (
                 <span
                   className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground"
@@ -116,7 +115,6 @@ export function PackageCard({ pkg }: PackageCardProps) {
             <Download className="h-3 w-3" />
             {downloads}
           </span>
-          <QualityBadge score={pkg.qualityScore} />
           <span className="ml-auto text-fg-faint">
             {pkg.latestVersion ? `v${pkg.latestVersion.version}` : "—"}
           </span>

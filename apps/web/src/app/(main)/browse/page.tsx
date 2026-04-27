@@ -7,15 +7,27 @@ import { searchPackages } from "@/lib/api/packages";
 import { PackageCard } from "@/components/packages/package-card";
 import { PackageCardSkeleton } from "@/components/packages/package-card-skeleton";
 import { BrowseFilters } from "@/components/packages/browse-filters";
-import { BrowseSearch } from "@/components/packages/browse-search";
 import { BrowsePagination } from "@/components/packages/browse-pagination";
 import { routes } from "@/lib/routes";
 import { TOOL_LABELS } from "@ruleshub/types";
-import type { SupportedTool, PackageSearchParams } from "@ruleshub/types";
+import type {
+  SupportedTool,
+  PackageSearchParams,
+  AssetType,
+} from "@ruleshub/types";
 import { TOOL_COLORS } from "@/lib/tool-colors";
 import { cn } from "@/lib/utils";
 
 const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
+const TYPE_IDS: AssetType[] = [
+  "rule",
+  "command",
+  "workflow",
+  "agent",
+  "mcp-server",
+  "pack",
+  "skill",
+];
 const PER_PAGE = 9;
 
 interface BrowsePageProps {
@@ -27,7 +39,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const currentPage = Math.max(1, Number(params.page ?? 1));
   const empty = { data: [], total: 0, page: 1, limit: PER_PAGE };
 
-  const [{ data: packages, total }, ...toolTotals] = await Promise.all([
+  const [packagesResult, ...allTotals] = await Promise.all([
     searchPackages({ ...params, limit: PER_PAGE, page: currentPage }).catch(
       () => empty,
     ),
@@ -36,11 +48,24 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         .then((r) => r.total)
         .catch(() => 0),
     ),
+    ...TYPE_IDS.map((type) =>
+      searchPackages({ type, limit: 1 })
+        .then((r) => r.total)
+        .catch(() => 0),
+    ),
   ]);
+
+  const { data: packages, total } = packagesResult;
+  const toolTotals = allTotals.slice(0, TOOLS.length);
+  const typeTotals = allTotals.slice(TOOLS.length);
 
   const toolCountMap = Object.fromEntries(
     TOOLS.map(([tool], i) => [tool, toolTotals[i] as number]),
   ) as Record<SupportedTool, number>;
+
+  const typeCountMap = Object.fromEntries(
+    TYPE_IDS.map((type, i) => [type, typeTotals[i] as number]),
+  ) as Record<AssetType, number>;
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const currentTool = params.tool ?? "all";
@@ -58,13 +83,6 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         </p>
       </div>
 
-      {/* Search input */}
-      <div className="mb-5">
-        <Suspense>
-          <BrowseSearch defaultValue={params.q ?? ""} />
-        </Suspense>
-      </div>
-
       {/* Tool tabs */}
       <div className="border-b border-border">
         <div className="-mx-6 flex overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -78,7 +96,14 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             )}
           >
             All
-            <span className="rounded-[10px] bg-bg-elev-2 px-1.5 py-0.5 font-mono text-[11px] text-fg-dim">
+            <span
+              className={cn(
+                "rounded-[10px] px-1.5 py-0.5 font-mono text-[11px]",
+                currentTool === "all"
+                  ? "bg-[var(--rh-accent-tint)] text-primary"
+                  : "bg-bg-elev text-fg-faint",
+              )}
+            >
               {total}
             </span>
           </Link>
@@ -98,11 +123,16 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 style={{ background: TOOL_COLORS[tool] }}
               />
               {label}
-              {toolCountMap[tool] > 0 && (
-                <span className="rounded-[10px] bg-bg-elev-2 px-1.5 py-0.5 font-mono text-[11px] text-fg-dim">
-                  {toolCountMap[tool]}
-                </span>
-              )}
+              <span
+                className={cn(
+                  "rounded-[10px] px-1.5 py-0.5 font-mono text-[11px]",
+                  currentTool === tool
+                    ? "bg-[var(--rh-accent-tint)] text-primary"
+                    : "bg-bg-elev text-fg-faint",
+                )}
+              >
+                {toolCountMap[tool]}
+              </span>
             </Link>
           ))}
         </div>
@@ -112,7 +142,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       <div className="grid grid-cols-1 gap-8 py-8 pb-16 md:grid-cols-[240px_1fr]">
         {/* Sidebar */}
         <aside className="md:sticky md:top-20 md:self-start">
-          <BrowseFilters current={params} />
+          <BrowseFilters
+            current={params}
+            total={total}
+            typeCounts={typeCountMap}
+          />
         </aside>
 
         {/* Cards grid + pagination */}
@@ -137,7 +171,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {packages.map((pkg) => (
                   <PackageCard key={pkg.id} pkg={pkg} />
                 ))}

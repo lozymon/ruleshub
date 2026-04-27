@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/app/providers";
 import { Sun, Moon, Search } from "lucide-react";
 
 function GithubIcon({ className }: { className?: string }) {

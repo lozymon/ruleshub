@@ -9,56 +9,56 @@
 // 8. Prev/Next footer nav
 
 const DOCS_NAV = [
-  { section: 'Getting Started', items: [
-    { id: 'introduction', label: 'Introduction' },
-    { id: 'quick-start', label: 'Quick Start' },
-    { id: 'concepts', label: 'Concepts' },
-  ]},
-  { section: 'Publishing', items: [
-    { id: 'first-package', label: 'Your First Package' },
-    { id: 'manifest-reference', label: 'Manifest Reference' },
-    { id: 'tool-targets', label: 'Tool Targets' },
-    { id: 'packs', label: 'Packs' },
-    { id: 'versioning', label: 'Versioning' },
-    { id: 'github-import', label: 'GitHub Import' },
-  ]},
-  { section: 'CLI', items: [
-    { id: 'cli-overview', label: 'Overview' },
-    { id: 'cli-install', label: 'install' },
-    { id: 'cli-publish', label: 'publish' },
-    { id: 'cli-validate', label: 'validate' },
-    { id: 'cli-outdated', label: 'outdated & update' },
-  ]},
-  { section: 'API', items: [
-    { id: 'api-overview', label: 'Overview' },
-    { id: 'api-packages', label: 'Packages' },
-    { id: 'api-users', label: 'Users' },
-    { id: 'api-recommendations', label: 'Recommendations' },
-    { id: 'api-auth', label: 'Authentication' },
-  ]},
-  { section: 'Tools', items: [
-    { id: 'tool-claude-code', label: 'Claude Code' },
-    { id: 'tool-cursor', label: 'Cursor' },
-    { id: 'tool-copilot', label: 'Copilot' },
-    { id: 'tool-windsurf', label: 'Windsurf' },
-    { id: 'tool-cline', label: 'Cline' },
-    { id: 'tool-aider', label: 'Aider' },
-    { id: 'tool-continue', label: 'Continue' },
-  ]},
-];
+{ section: 'Getting Started', items: [
+  { id: 'introduction', label: 'Introduction' },
+  { id: 'quick-start', label: 'Quick Start' },
+  { id: 'concepts', label: 'Concepts' }]
+},
+{ section: 'Publishing', items: [
+  { id: 'first-package', label: 'Your First Package' },
+  { id: 'manifest-reference', label: 'Manifest Reference' },
+  { id: 'tool-targets', label: 'Tool Targets' },
+  { id: 'packs', label: 'Packs' },
+  { id: 'versioning', label: 'Versioning' },
+  { id: 'github-import', label: 'GitHub Import' }]
+},
+{ section: 'CLI', items: [
+  { id: 'cli-overview', label: 'Overview' },
+  { id: 'cli-install', label: 'install' },
+  { id: 'cli-publish', label: 'publish' },
+  { id: 'cli-validate', label: 'validate' },
+  { id: 'cli-outdated', label: 'outdated & update' }]
+},
+{ section: 'API', items: [
+  { id: 'api-overview', label: 'Overview' },
+  { id: 'api-packages', label: 'Packages' },
+  { id: 'api-users', label: 'Users' },
+  { id: 'api-recommendations', label: 'Recommendations' },
+  { id: 'api-auth', label: 'Authentication' }]
+},
+{ section: 'Tools', items: [
+  { id: 'tool-claude-code', label: 'Claude Code' },
+  { id: 'tool-cursor', label: 'Cursor' },
+  { id: 'tool-copilot', label: 'Copilot' },
+  { id: 'tool-windsurf', label: 'Windsurf' },
+  { id: 'tool-cline', label: 'Cline' },
+  { id: 'tool-aider', label: 'Aider' },
+  { id: 'tool-continue', label: 'Continue' }]
+}];
+
 
 // Flatten for prev/next
-const DOCS_FLAT = DOCS_NAV.flatMap(s => s.items.map(i => ({ ...i, section: s.section })));
+const DOCS_FLAT = DOCS_NAV.flatMap((s) => s.items.map((i) => ({ ...i, section: s.section })));
 
 // Find which section an item lives in
-const sectionOf = (id) => DOCS_NAV.find(s => s.items.some(i => i.id === id))?.section;
+const sectionOf = (id) => DOCS_NAV.find((s) => s.items.some((i) => i.id === id))?.section;
 
 // --- Callout ---
 const Callout = ({ kind = 'note', title, children }) => {
   const config = {
-    note:    { color: 'var(--accent)',  bg: 'var(--accent-tint)',  icon: 'book',  label: 'Note' },
-    tip:     { color: 'var(--success)', bg: 'rgba(16,185,129,0.10)', icon: 'check', label: 'Tip' },
-    warning: { color: 'var(--warn)',    bg: 'rgba(245,158,11,0.10)', icon: 'alert', label: 'Warning' },
+    note: { color: 'var(--accent)', bg: 'var(--accent-tint)', icon: 'book', label: 'Note' },
+    tip: { color: 'var(--success)', bg: 'rgba(16,185,129,0.10)', icon: 'check', label: 'Tip' },
+    warning: { color: 'var(--warn)', bg: 'rgba(245,158,11,0.10)', icon: 'alert', label: 'Warning' }
   };
   const c = config[kind];
   return (
@@ -68,20 +68,20 @@ const Callout = ({ kind = 'note', title, children }) => {
       padding: '12px 16px',
       borderRadius: '0 6px 6px 0',
       margin: '20px 0',
-      fontSize: 13.5,
+      fontSize: 13.5
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6,
         color: c.color, fontWeight: 600, fontSize: 12,
         textTransform: 'uppercase', letterSpacing: '0.06em',
-        marginBottom: 6,
+        marginBottom: 6
       }}>
         <Icon name={c.icon} size={13} />
         {title || c.label}
       </div>
       <div style={{ color: 'var(--fg)', lineHeight: 1.6 }}>{children}</div>
-    </div>
-  );
+    </div>);
+
 };
 
 // --- Code block w/ header ---
@@ -94,57 +94,35 @@ const CodeBlock = ({ lang = 'bash', filename, children, copyText }) => {
     setTimeout(() => setCopied(false), 1500);
   };
   return (
-    <div style={{
-      background: 'var(--bg-code)', border: '1px solid var(--border)',
-      borderRadius: 8, overflow: 'hidden', margin: '16px 0',
-    }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 12px',
-        background: 'color-mix(in srgb, var(--bg-code) 70%, black)',
-        borderBottom: '1px solid var(--border)',
-        fontFamily: 'var(--font-mono)', fontSize: 11.5,
-        color: '#a1a1aa',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {filename ? (
-            <><Icon name="file" size={11} /><span>{filename}</span></>
-          ) : (
-            <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>{lang}</span>
-          )}
+    <div className="code-block">
+      <div className="code-block-header">
+        <div className="code-block-header-title">
+          {filename ?
+          <><Icon name="file" size={11} /><span>{filename}</span></> :
+
+          <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>{lang}</span>
+          }
         </div>
-        <button onClick={onCopy} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '3px 8px', borderRadius: 4,
-          color: copied ? 'var(--success)' : '#a1a1aa',
-          fontSize: 11, fontFamily: 'var(--font-sans)',
-          background: 'transparent',
-          transition: 'color .15s',
-        }}>
+        <button onClick={onCopy} className={`code-block-copy ${copied ? 'copied' : ''}`}>
           <Icon name={copied ? 'check' : 'copy'} size={11} />
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre style={{
-        margin: 0, padding: '14px 16px',
-        fontSize: 12.5, lineHeight: 1.6,
-        color: '#ededf0',
-        overflow: 'auto',
-      }}><code>{children}</code></pre>
-    </div>
-  );
+      <pre className="code-block-body"><code>{children}</code></pre>
+    </div>);
+
 };
 
 // --- Highlighted bash command ---
-const BashCmd = ({ cmd, args = [], flag, value }) => (
-  <>
-    <span style={{ color: '#71717a' }}>$ </span>
-    <span style={{ color: '#a78bfa' }}>{cmd}</span>
-    {args.map((a, i) => <span key={i}> <span style={{ color: '#ededf0' }}>{a}</span></span>)}
-    {flag && <span> <span style={{ color: '#60a5fa' }}>{flag}</span></span>}
-    {value && <span> <span style={{ color: '#34d399' }}>{value}</span></span>}
-  </>
-);
+const BashCmd = ({ cmd, args = [], flag, value }) =>
+<>
+    <span className="tok-prompt">$ </span>
+    <span className="tok-cmd">{cmd}</span>
+    {args.map((a, i) => <span key={i}> <span className="tok-arg">{a}</span></span>)}
+    {flag && <span> <span className="tok-flag">{flag}</span></span>}
+    {value && <span> <span className="tok-value">{value}</span></span>}
+  </>;
+
 
 // --- Page content map (all content lives here, keyed by id) ---
 const docPage = (id, navigate) => {
@@ -171,7 +149,7 @@ const docPage = (id, navigate) => {
     'api-packages': apiPackagesPage,
     'api-users': apiUsersPage,
     'api-recommendations': apiRecsPage,
-    'api-auth': apiAuthPage,
+    'api-auth': apiAuthPage
   };
   return (pages[id] || introductionPage)();
 };
@@ -180,12 +158,12 @@ const docPage = (id, navigate) => {
 const introductionPage = () => ({
   title: 'Introduction',
   headings: [
-    { id: 'what-is', label: 'What is RulesHub?' },
-    { id: 'why', label: 'Why a registry?' },
-    { id: 'next', label: 'What\'s next' },
-  ],
-  content: (
-    <>
+  { id: 'what-is', label: 'What is RulesHub?' },
+  { id: 'why', label: 'Why a registry?' },
+  { id: 'next', label: 'What\'s next' }],
+
+  content:
+  <>
       <p>RulesHub is the open registry for AI coding tool configuration — rules, slash commands, workflows, agents, and MCP servers. Publish once, install everywhere.</p>
       <h2 id="what-is">What is RulesHub?</h2>
       <p>RulesHub solves a fragmentation problem: every AI coding tool — Claude Code, Cursor, Copilot, Windsurf, and friends — has its own format for configuration. RulesHub packages let you author once and target any combination of those tools through a single manifest.</p>
@@ -200,19 +178,19 @@ const introductionPage = () => ({
       <h2 id="next">What's next</h2>
       <p>Continue to <a href="#" data-doc="quick-start">Quick Start</a> to install your first package, or jump to <a href="#" data-doc="first-package">Your First Package</a> if you want to publish.</p>
     </>
-  ),
+
 });
 
 const quickStartPage = () => ({
   title: 'Quick Start',
   headings: [
-    { id: 'install-cli', label: 'Install the CLI' },
-    { id: 'find-package', label: 'Find a package' },
-    { id: 'install-package', label: 'Install a package' },
-    { id: 'verify', label: 'Verify it worked' },
-  ],
-  content: (
-    <>
+  { id: 'install-cli', label: 'Install the CLI' },
+  { id: 'find-package', label: 'Find a package' },
+  { id: 'install-package', label: 'Install a package' },
+  { id: 'verify', label: 'Verify it worked' }],
+
+  content:
+  <>
       <p>Get from zero to your first installed RulesHub package in under two minutes.</p>
       <h2 id="install-cli">1. Install the CLI</h2>
       <p>The CLI ships as a single binary. No global install required — use it via <code>npx</code>, <code>pnpm dlx</code>, or <code>bunx</code>.</p>
@@ -228,19 +206,19 @@ const quickStartPage = () => ({
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'list']} /></CodeBlock>
       <p>You should see <code>microsoft/typescript-strict@3.1.0</code> listed under each detected tool.</p>
     </>
-  ),
+
 });
 
 const conceptsPage = () => ({
   title: 'Concepts',
   headings: [
-    { id: 'package', label: 'Package' },
-    { id: 'asset-type', label: 'Asset type' },
-    { id: 'target', label: 'Target' },
-    { id: 'manifest', label: 'Manifest' },
-  ],
-  content: (
-    <>
+  { id: 'package', label: 'Package' },
+  { id: 'asset-type', label: 'Asset type' },
+  { id: 'target', label: 'Target' },
+  { id: 'manifest', label: 'Manifest' }],
+
+  content:
+  <>
       <p>Four primitives power everything in RulesHub.</p>
       <h2 id="package">Package</h2>
       <p>A <strong>package</strong> is a versioned, namespaced bundle — <code>vercel/nextjs-app-router@2.4.1</code>. Packages are immutable once published; new versions are released, not edited in place.</p>
@@ -251,19 +229,19 @@ const conceptsPage = () => ({
       <h2 id="manifest">Manifest</h2>
       <p>The <code>ruleshub.yaml</code> file at the root of every package. It declares the name, version, type, targets, and content layout.</p>
     </>
-  ),
+
 });
 
 const firstPackagePage = () => ({
   title: 'Your First Package',
   headings: [
-    { id: 'init', label: 'Initialize' },
-    { id: 'edit', label: 'Edit the manifest' },
-    { id: 'preview', label: 'Preview' },
-    { id: 'publish', label: 'Publish' },
-  ],
-  content: (
-    <>
+  { id: 'init', label: 'Initialize' },
+  { id: 'edit', label: 'Edit the manifest' },
+  { id: 'preview', label: 'Preview' },
+  { id: 'publish', label: 'Publish' }],
+
+  content:
+  <>
       <p>End-to-end walkthrough — from empty folder to a published package.</p>
       <h2 id="init">Initialize</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'init']} /></CodeBlock>
@@ -286,19 +264,19 @@ content:
       <h2 id="publish">Publish</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'publish']} /></CodeBlock>
     </>
-  ),
+
 });
 
 const manifestReferencePage = () => ({
   title: 'Manifest Reference',
   headings: [
-    { id: 'top-level', label: 'Top-level fields' },
-    { id: 'targets', label: 'targets' },
-    { id: 'content', label: 'content' },
-    { id: 'metadata', label: 'metadata' },
-  ],
-  content: (
-    <>
+  { id: 'top-level', label: 'Top-level fields' },
+  { id: 'targets', label: 'targets' },
+  { id: 'content', label: 'content' },
+  { id: 'metadata', label: 'metadata' }],
+
+  content:
+  <>
       <p>Complete schema for <code>ruleshub.yaml</code>.</p>
       <h2 id="top-level">Top-level fields</h2>
       <div className="data-table" style={{ margin: '16px 0' }}>
@@ -325,37 +303,37 @@ const manifestReferencePage = () => ({
   repository: https://github.com/owner/repo
   keywords: [react, testing, conventions]`}</CodeBlock>
     </>
-  ),
+
 });
 
 const toolTargetsPage = () => ({
   title: 'Tool Targets',
   headings: [
-    { id: 'paths', label: 'Default paths' },
-    { id: 'overrides', label: 'Per-target overrides' },
-  ],
-  content: (
-    <>
+  { id: 'paths', label: 'Default paths' },
+  { id: 'overrides', label: 'Per-target overrides' }],
+
+  content:
+  <>
       <p>Every tool has a default install path. You can override per-package.</p>
       <h2 id="paths">Default paths</h2>
       <div className="data-table" style={{ margin: '16px 0' }}>
         <table>
           <thead><tr><th>Tool</th><th>Default path</th></tr></thead>
           <tbody>
-            {TOOLS.map(t => (
-              <tr key={t.id}>
+            {TOOLS.map((t) =>
+          <tr key={t.id}>
                 <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span className="tool-dot" style={{ background: t.color }} />{t.name}</span></td>
                 <td className="mono-cell">{
-                  { 'claude-code': 'CLAUDE.md',
-                    'cursor': '.cursor/rules/',
-                    'copilot': '.github/copilot-instructions.md',
-                    'windsurf': '.windsurf/rules/',
-                    'cline': '.clinerules',
-                    'aider': '.aiderrules',
-                    'continue': '.continue/config.json' }[t.id]
-                }</td>
+              { 'claude-code': 'CLAUDE.md',
+                'cursor': '.cursor/rules/',
+                'copilot': '.github/copilot-instructions.md',
+                'windsurf': '.windsurf/rules/',
+                'cline': '.clinerules',
+                'aider': '.aiderrules',
+                'continue': '.continue/config.json' }[t.id]
+              }</td>
               </tr>
-            ))}
+          )}
           </tbody>
         </table>
       </div>
@@ -365,14 +343,14 @@ const toolTargetsPage = () => ({
     dir: ".cursor/rules/strict/"
     glob: "*.mdc"`}</CodeBlock>
     </>
-  ),
+
 });
 
 const packsPage = () => ({
   title: 'Packs',
   headings: [{ id: 'what', label: 'What is a Pack?' }, { id: 'authoring', label: 'Authoring' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="what">What is a Pack?</h2>
       <p>A pack is a curated bundle of other packages — install one thing, get a whole stack. Think <code>vercel/full-stack-starter</code>: Next.js rules, Tailwind conventions, Prisma workflow, and auth patterns in a single install.</p>
       <h2 id="authoring">Authoring</h2>
@@ -383,65 +361,65 @@ includes:
   - prisma/schema-migration-mcp@latest`}</CodeBlock>
       <Callout kind="note">Packs respect semver ranges. Conflicts surface at install time, not publish time.</Callout>
     </>
-  ),
+
 });
 
 const versioningPage = () => ({
   title: 'Versioning',
   headings: [{ id: 'semver', label: 'Semver' }, { id: 'deprecation', label: 'Deprecation' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="semver">Semver</h2>
       <p>RulesHub follows strict semver. Breaking changes bump major, additive changes bump minor, fixes bump patch.</p>
       <h2 id="deprecation">Deprecation</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'deprecate', 'yourname/pkg@1.x']} flag="--reason" value='"superseded by 2.x"' /></CodeBlock>
     </>
-  ),
+
 });
 
 const githubImportPage = () => ({
   title: 'GitHub Import',
   headings: [{ id: 'how', label: 'How it works' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="how">How it works</h2>
       <p>Point the publish UI at a public GitHub repo. RulesHub reads the manifest from the default branch, resolves <code>content</code> globs against the working tree, and creates a versioned snapshot.</p>
       <Callout kind="tip">Tag your release in git first — RulesHub will offer to use the tag as the package version.</Callout>
     </>
-  ),
+
 });
 
 const cliOverviewPage = () => ({
   title: 'CLI Overview',
   headings: [{ id: 'commands', label: 'Commands' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="commands">Commands</h2>
       <div className="data-table" style={{ margin: '16px 0' }}>
         <table>
           <thead><tr><th>Command</th><th>Description</th></tr></thead>
           <tbody>
             {[
-              ['install', 'Install one or more packages'],
-              ['publish', 'Publish a new version'],
-              ['validate', 'Lint a manifest'],
-              ['list', 'Show installed packages'],
-              ['outdated', 'Show available updates'],
-              ['update', 'Upgrade installed packages'],
-              ['search', 'Search the registry'],
-            ].map(([c, d]) => <tr key={c}><td className="mono-cell">{c}</td><td>{d}</td></tr>)}
+          ['install', 'Install one or more packages'],
+          ['publish', 'Publish a new version'],
+          ['validate', 'Lint a manifest'],
+          ['list', 'Show installed packages'],
+          ['outdated', 'Show available updates'],
+          ['update', 'Upgrade installed packages'],
+          ['search', 'Search the registry']].
+          map(([c, d]) => <tr key={c}><td className="mono-cell">{c}</td><td>{d}</td></tr>)}
           </tbody>
         </table>
       </div>
     </>
-  ),
+
 });
 
 const cliInstallPage = () => ({
   title: 'install',
   headings: [{ id: 'usage', label: 'Usage' }, { id: 'flags', label: 'Flags' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="usage">Usage</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'install']} value="<package>[@version]" /></CodeBlock>
       <h2 id="flags">Flags</h2>
@@ -451,88 +429,88 @@ const cliInstallPage = () => ({
         <li><code>--dry-run</code> — show what would change</li>
       </ul>
     </>
-  ),
+
 });
 
 const cliPublishPage = () => ({
   title: 'publish',
   headings: [{ id: 'usage', label: 'Usage' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="usage">Usage</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'publish']} flag="--dry-run" /></CodeBlock>
       <Callout kind="warning">You must be authenticated. Run <code>ruleshub auth login</code> first.</Callout>
     </>
-  ),
+
 });
 
 const cliValidatePage = () => ({
   title: 'validate',
   headings: [{ id: 'usage', label: 'Usage' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="usage">Usage</h2>
       <p>Statically validates a manifest without contacting the registry.</p>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'validate']} /></CodeBlock>
     </>
-  ),
+
 });
 
 const cliOutdatedPage = () => ({
   title: 'outdated & update',
   headings: [{ id: 'outdated', label: 'outdated' }, { id: 'update', label: 'update' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="outdated">outdated</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'outdated']} /></CodeBlock>
       <h2 id="update">update</h2>
       <CodeBlock lang="bash"><BashCmd cmd="npx" args={['ruleshub', 'update']} flag="--latest" /></CodeBlock>
     </>
-  ),
+
 });
 
 const apiOverviewPage = () => ({
   title: 'API Overview',
   headings: [{ id: 'base', label: 'Base URL' }, { id: 'auth', label: 'Authentication' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="base">Base URL</h2>
       <CodeBlock lang="http">https://api.ruleshub.dev/v1</CodeBlock>
       <h2 id="auth">Authentication</h2>
       <p>Bearer tokens. See <a href="#" data-doc="api-auth">Authentication</a>.</p>
     </>
-  ),
+
 });
 
 const apiPackagesPage = () => ({
   title: 'API · Packages',
   headings: [{ id: 'list', label: 'List packages' }, { id: 'get', label: 'Get package' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="list">List packages</h2>
       <CodeBlock lang="http">{`GET /v1/packages?tool=cursor&type=rule&limit=20`}</CodeBlock>
       <h2 id="get">Get package</h2>
       <CodeBlock lang="http">{`GET /v1/packages/{ns}/{name}`}</CodeBlock>
     </>
-  ),
+
 });
 
 const apiUsersPage = () => ({
   title: 'API · Users',
   headings: [{ id: 'get', label: 'Get user' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="get">Get user</h2>
       <CodeBlock lang="http">{`GET /v1/users/{handle}`}</CodeBlock>
     </>
-  ),
+
 });
 
 const apiRecsPage = () => ({
   title: 'API · Recommendations',
   headings: [{ id: 'get', label: 'Get recommendations' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="get">Get recommendations</h2>
       <p>Suggests packages based on a manifest of repo signals (frameworks detected, languages, etc).</p>
       <CodeBlock lang="http">{`POST /v1/recommendations
@@ -543,19 +521,19 @@ Content-Type: application/json
   "language": "typescript"
 }`}</CodeBlock>
     </>
-  ),
+
 });
 
 const apiAuthPage = () => ({
   title: 'API · Authentication',
   headings: [{ id: 'tokens', label: 'Personal access tokens' }],
-  content: (
-    <>
+  content:
+  <>
       <h2 id="tokens">Personal access tokens</h2>
       <p>Generate from your dashboard. Scope tokens to <code>read</code>, <code>publish</code>, or <code>admin</code>.</p>
       <CodeBlock lang="http">{`Authorization: Bearer rh_pat_••••••••••••`}</CodeBlock>
     </>
-  ),
+
 });
 
 // Tool docs (the kind of page in the screenshots)
@@ -569,21 +547,21 @@ const toolDocPage = (toolId, navigate) => {
     'windsurf': '.windsurf/rules/',
     'cline': '.clinerules',
     'aider': '.aiderrules',
-    'continue': '.continue/config.json',
+    'continue': '.continue/config.json'
   };
   const path = paths[toolId];
   return {
     title: t.name,
     toolColor: t.color,
     headings: [
-      { id: 'install-paths', label: 'Install paths by asset type' },
-      { id: 'installing', label: 'Installing a package' },
-      { id: 'target-key', label: 'Target key' },
-      { id: 'writing-rules', label: `Writing rules for ${t.name}` },
-      { id: 'limitations', label: 'Limitations' },
-    ],
-    content: (
-      <>
+    { id: 'install-paths', label: 'Install paths by asset type' },
+    { id: 'installing', label: 'Installing a package' },
+    { id: 'target-key', label: 'Target key' },
+    { id: 'writing-rules', label: `Writing rules for ${t.name}` },
+    { id: 'limitations', label: 'Limitations' }],
+
+    content:
+    <>
         <p>{t.name} reads project configuration from <code>{path}</code>. RulesHub writes rule assets into this {path.endsWith('/') ? 'directory' : 'file'}.</p>
         <h2 id="install-paths">Install paths by asset type</h2>
         <div className="data-table" style={{ margin: '16px 0' }}>
@@ -605,11 +583,11 @@ const toolDocPage = (toolId, navigate) => {
   ${toolId}: { ${path.endsWith('/') ? 'dir' : 'file'}: "${path}" }`}</CodeBlock>
         <h2 id="writing-rules">Writing rules for {t.name}</h2>
         <p>{t.name}'s {path.endsWith('.json') ? 'config.json supports a systemMessage field that injects custom context into every chat session' : 'context format is plain markdown — write headings, lists, and code samples'}:</p>
-        <CodeBlock filename={path.endsWith('/') ? `${path}main.md` : path}>{path.endsWith('.json')
-          ? `{
+        <CodeBlock filename={path.endsWith('/') ? `${path}main.md` : path}>{path.endsWith('.json') ?
+        `{
   "systemMessage": "This is a NestJS REST API using Prisma and PostgreSQL. Always use TypeScript strict mode."
-}`
-          : `# Project conventions
+}` :
+        `# Project conventions
 - Use TypeScript strict mode
 - Prefer composition over inheritance
 - Validate inputs with Zod at the controller boundary`}</CodeBlock>
@@ -620,7 +598,7 @@ const toolDocPage = (toolId, navigate) => {
           <li>{toolId === 'claude-code' || toolId === 'cursor' ? 'Supports nested rule directories' : 'Single-file only'}</li>
         </ul>
       </>
-    ),
+
   };
 };
 
@@ -632,10 +610,10 @@ const DocsPage = ({ navigate, route }) => {
   const [activeHeading, setActiveHeading] = React.useState('');
   const articleRef = React.useRef(null);
 
-  React.useEffect(() => { setActiveId(route.doc || 'tool-continue'); }, [route.doc]);
+  React.useEffect(() => {setActiveId(route.doc || 'tool-continue');}, [route.doc]);
 
   const page = docPage(activeId, navigate);
-  const flatIdx = DOCS_FLAT.findIndex(i => i.id === activeId);
+  const flatIdx = DOCS_FLAT.findIndex((i) => i.id === activeId);
   const prev = flatIdx > 0 ? DOCS_FLAT[flatIdx - 1] : null;
   const next = flatIdx < DOCS_FLAT.length - 1 ? DOCS_FLAT[flatIdx + 1] : null;
   const currentSection = sectionOf(activeId);
@@ -643,9 +621,9 @@ const DocsPage = ({ navigate, route }) => {
   const filteredNav = React.useMemo(() => {
     if (!search) return DOCS_NAV;
     const q = search.toLowerCase();
-    return DOCS_NAV
-      .map(s => ({ ...s, items: s.items.filter(i => i.label.toLowerCase().includes(q) || s.section.toLowerCase().includes(q)) }))
-      .filter(s => s.items.length > 0);
+    return DOCS_NAV.
+    map((s) => ({ ...s, items: s.items.filter((i) => i.label.toLowerCase().includes(q) || s.section.toLowerCase().includes(q)) })).
+    filter((s) => s.items.length > 0);
   }, [search]);
 
   // Spy on H2 visibility to update right-rail TOC
@@ -654,22 +632,22 @@ const DocsPage = ({ navigate, route }) => {
     const headings = articleRef.current.querySelectorAll('h2[id]');
     if (!headings.length) return;
     const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter(e => e.isIntersecting);
+      const visible = entries.filter((e) => e.isIntersecting);
       if (visible.length) setActiveHeading(visible[0].target.id);
     }, { rootMargin: '-80px 0px -60% 0px' });
-    headings.forEach(h => observer.observe(h));
+    headings.forEach((h) => observer.observe(h));
     return () => observer.disconnect();
   }, [activeId]);
 
   // Click-to-navigate inside doc content
   const onContentClick = (e) => {
     const a = e.target.closest('a[data-doc]');
-    if (a) { e.preventDefault(); setActiveId(a.dataset.doc); window.scrollTo({ top: 0 }); }
+    if (a) {e.preventDefault();setActiveId(a.dataset.doc);window.scrollTo({ top: 0 });}
   };
 
   // Last updated (deterministic per page)
   const lastUpdated = React.useMemo(() => {
-    const days = (activeId.length * 7) % 30 + 1;
+    const days = activeId.length * 7 % 30 + 1;
     return `${days}d ago`;
   }, [activeId]);
 
@@ -683,7 +661,7 @@ const DocsPage = ({ navigate, route }) => {
         alignSelf: 'start',
         height: 'calc(100vh - 56px)',
         overflowY: 'auto',
-        background: 'var(--bg)',
+        background: 'var(--bg)'
       }}>
         {/* Docs-scoped search */}
         <div style={{ position: 'relative', marginBottom: 18 }}>
@@ -691,21 +669,21 @@ const DocsPage = ({ navigate, route }) => {
           <input
             placeholder="Search docs..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             style={{
               width: '100%', height: 32, padding: '0 12px 0 32px',
               background: 'var(--bg-elev)', border: '1px solid var(--border)',
-              borderRadius: 6, fontSize: 12.5, color: 'var(--fg)',
-            }}
-          />
+              borderRadius: 6, fontSize: 12.5, color: 'var(--fg)'
+            }} />
+          
           <kbd style={{
             position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
             fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-dim)',
-            padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 3,
+            padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 3
           }}>⌘K</kbd>
         </div>
 
-        {filteredNav.map(s => {
+        {filteredNav.map((s) => {
           const isCurrent = s.section === currentSection;
           return (
             <div key={s.section} style={{ marginBottom: 22 }}>
@@ -713,31 +691,31 @@ const DocsPage = ({ navigate, route }) => {
                 fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em',
                 color: isCurrent ? 'var(--fg)' : 'var(--fg-dim)',
                 fontWeight: isCurrent ? 700 : 600,
-                margin: '0 0 6px', padding: '0 8px',
+                margin: '0 0 6px', padding: '0 8px'
               }}>{s.section}</div>
-              {s.items.map(i => {
+              {s.items.map((i) => {
                 const active = i.id === activeId;
                 return (
                   <button key={i.id}
-                    onClick={() => { setActiveId(i.id); window.scrollTo({ top: 0 }); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', width: '100%',
-                      padding: '5px 8px', borderRadius: 4,
-                      fontSize: 12.5, textAlign: 'left',
-                      color: active ? 'var(--accent)' : 'var(--fg-muted)',
-                      background: active ? 'var(--accent-tint)' : 'transparent',
-                      borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-                      paddingLeft: active ? 10 : 8,
-                      fontWeight: active ? 500 : 400,
-                      transition: 'all .12s',
-                    }}
-                    onMouseEnter={e => !active && (e.currentTarget.style.color = 'var(--fg)')}
-                    onMouseLeave={e => !active && (e.currentTarget.style.color = 'var(--fg-muted)')}
-                  >{i.label}</button>
-                );
+                  onClick={() => {setActiveId(i.id);window.scrollTo({ top: 0 });}}
+                  style={{
+                    display: 'flex', alignItems: 'center', width: '100%',
+                    padding: '5px 8px', borderRadius: 4,
+                    fontSize: 12.5, textAlign: 'left',
+                    color: active ? 'var(--accent)' : 'var(--fg-muted)',
+                    background: active ? 'var(--accent-tint)' : 'transparent',
+                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                    paddingLeft: active ? 10 : 8,
+                    fontWeight: active ? 500 : 400,
+                    transition: 'all .12s'
+                  }}
+                  onMouseEnter={(e) => !active && (e.currentTarget.style.color = 'var(--fg)')}
+                  onMouseLeave={(e) => !active && (e.currentTarget.style.color = 'var(--fg-muted)')}>
+                    {i.label}</button>);
+
               })}
-            </div>
-          );
+            </div>);
+
         })}
       </aside>
 
@@ -747,10 +725,10 @@ const DocsPage = ({ navigate, route }) => {
           {/* Breadcrumb */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: 14, gap: 16, flexWrap: 'wrap',
+            marginBottom: 14, gap: 16, flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fg-dim)' }}>
-              <a href="#" onClick={e => { e.preventDefault(); navigate({ page: 'home' }); }} style={{ color: 'var(--fg-muted)' }}>Docs</a>
+              <a href="#" onClick={(e) => {e.preventDefault();navigate({ page: 'home' });}} style={{ color: 'var(--fg-muted)' }}>Docs</a>
               <Icon name="chevronRight" size={10} />
               <span style={{ color: 'var(--fg-muted)' }}>{currentSection}</span>
               <Icon name="chevronRight" size={10} />
@@ -758,7 +736,7 @@ const DocsPage = ({ navigate, route }) => {
             </div>
             <a href="#" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 12, color: 'var(--fg-muted)',
+              fontSize: 12, color: 'var(--fg-muted)'
             }}>
               <Icon name="github" size={12} />
               Edit on GitHub
@@ -769,7 +747,7 @@ const DocsPage = ({ navigate, route }) => {
           {/* Title */}
           <h1 style={{
             fontSize: 32, margin: '0 0 12px', letterSpacing: '-0.025em', fontWeight: 600,
-            display: 'flex', alignItems: 'center', gap: 12,
+            display: 'flex', alignItems: 'center', gap: 12
           }}>
             {page.toolColor && <span style={{ width: 10, height: 10, borderRadius: '50%', background: page.toolColor, flexShrink: 0 }} />}
             {page.title}
@@ -782,34 +760,34 @@ const DocsPage = ({ navigate, route }) => {
           {/* Prev/Next nav */}
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '40px 0 24px' }} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {prev ? (
-              <button onClick={() => { setActiveId(prev.id); window.scrollTo({ top: 0 }); }} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8,
-                background: 'var(--bg-elev)', textAlign: 'left',
-                transition: 'border-color .15s',
-              }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
-                 onMouseLeave={e => e.currentTarget.style.borderColor = ''}>
+            {prev ?
+            <button onClick={() => {setActiveId(prev.id);window.scrollTo({ top: 0 });}} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+              padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8,
+              background: 'var(--bg-elev)', textAlign: 'left',
+              transition: 'border-color .15s'
+            }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = ''}>
                 <span style={{ fontSize: 11, color: 'var(--fg-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Icon name="chevronRight" size={11} style={{ transform: 'rotate(180deg)' }} /> Previous
                 </span>
                 <span style={{ fontSize: 14, color: 'var(--fg)', fontWeight: 500, marginTop: 4 }}>{prev.label}</span>
-              </button>
-            ) : <div />}
-            {next ? (
-              <button onClick={() => { setActiveId(next.id); window.scrollTo({ top: 0 }); }} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-                padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8,
-                background: 'var(--bg-elev)', textAlign: 'right',
-                transition: 'border-color .15s',
-              }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
-                 onMouseLeave={e => e.currentTarget.style.borderColor = ''}>
+              </button> :
+            <div />}
+            {next ?
+            <button onClick={() => {setActiveId(next.id);window.scrollTo({ top: 0 });}} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+              padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8,
+              background: 'var(--bg-elev)', textAlign: 'right',
+              transition: 'border-color .15s'
+            }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = ''}>
                 <span style={{ fontSize: 11, color: 'var(--fg-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   Next <Icon name="chevronRight" size={11} />
                 </span>
                 <span style={{ fontSize: 14, color: 'var(--fg)', fontWeight: 500, marginTop: 4 }}>{next.label}</span>
-              </button>
-            ) : <div />}
+              </button> :
+            <div />}
           </div>
         </article>
 
@@ -819,13 +797,13 @@ const DocsPage = ({ navigate, route }) => {
           position: 'sticky', top: 56,
           alignSelf: 'start',
           height: 'calc(100vh - 56px)',
-          overflowY: 'auto',
+          overflowY: 'auto'
         }}>
           <div style={{
             fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em',
-            color: 'var(--fg-dim)', fontWeight: 600, margin: '0 0 10px',
+            color: 'var(--fg-dim)', fontWeight: 600, margin: '0 0 10px'
           }}>On this page</div>
-          {page.headings.map(h => {
+          {page.headings.map((h) => {
             const active = h.id === activeHeading;
             return (
               <a key={h.id} href={`#${h.id}`} style={{
@@ -835,9 +813,9 @@ const DocsPage = ({ navigate, route }) => {
                 borderLeft: active ? '2px solid var(--accent)' : '2px solid var(--border)',
                 paddingLeft: 12, marginLeft: -2,
                 fontWeight: active ? 500 : 400,
-                transition: 'color .12s',
-              }}>{h.label}</a>
-            );
+                transition: 'color .12s'
+              }}>{h.label}</a>);
+
           })}
           <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
             <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--fg-muted)', padding: '4px 0' }}>
@@ -849,8 +827,8 @@ const DocsPage = ({ navigate, route }) => {
           </div>
         </aside>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 Object.assign(window, { DocsPage });

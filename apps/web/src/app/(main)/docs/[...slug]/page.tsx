@@ -9,12 +9,13 @@ import rehypeSlug from "rehype-slug";
 import { contentMap } from "@/docs/content-map";
 import { docNav, flatPages } from "@/docs/nav";
 import { Callout } from "@/components/docs/callout";
+import { CodeBlock } from "@/components/docs/code-block";
 import type { Metadata } from "next";
 
 const GITHUB_EDIT_BASE =
   "https://github.com/lozymon/ruleshub/edit/main/apps/web/src/docs";
 
-const mdxComponents = { Callout };
+const mdxComponents = { Callout, pre: CodeBlock };
 
 interface Props {
   params: Promise<{ slug: string[] }>;
@@ -103,7 +104,7 @@ export default async function DocsPage({ params }: Props) {
               [
                 rehypePrettyCode,
                 {
-                  theme: "github-dark-dimmed",
+                  theme: { dark: "github-dark-dimmed", light: "github-light" },
                   keepBackground: false,
                 },
               ],

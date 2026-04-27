@@ -25,7 +25,7 @@ export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1240px]">
       {/* Desktop sidebar */}
-      <div className="hidden md:block sticky top-[56px] h-[calc(100vh-56px)] w-[240px] shrink-0 overflow-y-auto border-r border-border">
+      <div className="hidden md:block scrollbar-thin sticky top-[56px] h-[calc(100vh-56px)] w-[240px] shrink-0 overflow-y-auto border-r border-border">
         <div className="px-4 pt-5">
           <DocsSearch />
           <DocsSidebar />
@@ -58,7 +58,7 @@ export function DocsLayoutClient({ children }: { children: React.ReactNode }) {
 
       {/* Mobile drawer panel */}
       <div
-        className={`md:hidden fixed top-0 left-0 z-50 h-full w-72 bg-background border-r border-border overflow-y-auto transition-transform duration-200 ${
+        className={`md:hidden scrollbar-thin fixed top-0 left-0 z-50 h-full w-72 bg-background border-r border-border overflow-y-auto transition-transform duration-200 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

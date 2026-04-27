@@ -2,7 +2,7 @@
 const TOOLS = [
   { id: 'claude-code', name: 'Claude Code', color: '#d97757', short: 'Claude' },
   { id: 'cursor', name: 'Cursor', color: '#4a9eff', short: 'Cursor' },
-  { id: 'copilot', name: 'Copilot', color: '#3fb950', short: 'Copilot' },
+  { id: 'copilot', name: 'GitHub Copilot', color: '#3fb950', short: 'Copilot' },
   { id: 'windsurf', name: 'Windsurf', color: '#22d3ee', short: 'Windsurf' },
   { id: 'cline', name: 'Cline', color: '#a78bfa', short: 'Cline' },
   { id: 'aider', name: 'Aider', color: '#eab308', short: 'Aider' },
@@ -11,6 +11,7 @@ const TOOLS = [
 
 const TYPES = [
   { id: 'rule', name: 'Rule', plural: 'Rules' },
+  { id: 'skill', name: 'Skill', plural: 'Skills' },
   { id: 'command', name: 'Command', plural: 'Commands' },
   { id: 'workflow', name: 'Workflow', plural: 'Workflows' },
   { id: 'agent', name: 'Agent', plural: 'Agents' },
@@ -32,6 +33,7 @@ const Icon = ({ name, size = 16, className = '', ...rest }) => {
     workflow: <><circle cx="5" cy="6" r="2" /><circle cx="5" cy="18" r="2" /><circle cx="19" cy="12" r="2" /><path d="M5 8v8M7 6h6a4 4 0 0 1 4 4v0M7 18h6a4 4 0 0 0 4-4v0" /></>,
     agent: <><rect x="4" y="8" width="16" height="12" rx="2" /><path d="M12 4v4" /><circle cx="12" cy="3" r="1" /><circle cx="9" cy="14" r="1" /><circle cx="15" cy="14" r="1" /><path d="M10 18h4" /></>,
     mcp: <><path d="M9 3v4M15 3v4" /><rect x="7" y="7" width="10" height="6" rx="1" /><path d="M12 13v4a3 3 0 0 1-3 3H5" /></>,
+    skill: <><path d="M12 3l2.5 5.5L20 9.5l-4 4 1 5.5-5-2.7-5 2.7 1-5.5-4-4 5.5-1z" /></>,
     pack: <><path d="M3 7l9-4 9 4-9 4z" /><path d="M3 7v10l9 4 9-4V7" /><path d="M12 11v10" /></>,
     // UI
     search: <><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></>,
@@ -72,7 +74,7 @@ const Icon = ({ name, size = 16, className = '', ...rest }) => {
 };
 
 const typeIcon = (type) => {
-  const map = { rule: 'rule', command: 'command', workflow: 'workflow', agent: 'agent', mcp: 'mcp', pack: 'pack' };
+  const map = { rule: 'rule', skill: 'skill', command: 'command', workflow: 'workflow', agent: 'agent', mcp: 'mcp', pack: 'pack' };
   return map[type] || 'file';
 };
 
@@ -94,6 +96,9 @@ const PACKAGES = [
   { ns: 'mdx-js', name: 'mdx-content-workflow', type: 'workflow', tools: ['claude-code'], desc: 'Author MDX content with frontmatter validation, broken-link detection, and auto-generated table of contents.', stars: 534, downloads: 18700, version: '0.3.2', verified: false, updated: '6d ago' },
   { ns: 'nodejs', name: 'node-test-runner-cmd', type: 'command', tools: ['claude-code', 'copilot'], desc: 'Run Node\'s built-in test runner with watch mode, coverage thresholds, and focus-on-changed-files logic.', stars: 712, downloads: 29400, version: '1.0.8', verified: false, updated: '4d ago' },
   { ns: 'fastify', name: 'fastify-plugin-scaffold', type: 'agent', tools: ['cursor', 'continue'], desc: 'Scaffolds type-safe Fastify plugins with encapsulation, lifecycle hooks, and schema-validated routes.', stars: 423, downloads: 12800, version: '0.4.0', verified: false, updated: '1w ago' },
+  { ns: 'anthropic', name: 'pdf-extraction-skill', type: 'skill', tools: ['claude-code'], desc: 'Claude skill for extracting structured data from PDFs — tables, forms, and multi-column layouts. Invocable via @pdf.', stars: 2890, downloads: 94200, version: '1.2.0', verified: true, trending: 5, updated: '1d ago' },
+  { ns: 'notion', name: 'db-query-skill', type: 'skill', tools: ['claude-code'], desc: 'Skill that gives Claude safe read/write access to Notion databases with schema introspection and batch mutations.', stars: 1240, downloads: 38500, version: '0.6.2', verified: true, updated: '3d ago' },
+  { ns: 'figma', name: 'design-token-sync', type: 'skill', tools: ['claude-code'], desc: 'Sync Figma variables with your codebase — extracts tokens, generates CSS/Tailwind config, and flags drift.', stars: 1687, downloads: 42100, version: '2.0.1', verified: true, updated: '6h ago' },
   { ns: 'playwright', name: 'e2e-test-patterns', type: 'workflow', tools: ['claude-code', 'cursor', 'windsurf'], desc: 'Playwright E2E workflow — page objects, fixtures, network mocking, visual regression, and flake detection.', stars: 1567, downloads: 72100, version: '2.2.0', verified: true, updated: '2d ago' },
   { ns: 'zod', name: 'zod-schema-mcp', type: 'mcp', tools: ['claude-code'], desc: 'MCP server for Zod — generate schemas from TypeScript types, inspect runtime errors, and derive OpenAPI.', stars: 689, downloads: 22400, version: '0.2.1', verified: false, updated: '5d ago' },
 ];

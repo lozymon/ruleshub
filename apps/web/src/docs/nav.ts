@@ -25,6 +25,7 @@ export const docNav: DocSection[] = [
       { title: "Tool Targets", slug: "publishing/targets" },
       { title: "Packs", slug: "publishing/packs" },
       { title: "Versioning", slug: "publishing/versioning" },
+      { title: "GitHub Import", slug: "publishing/github-import" },
     ],
   },
   {
@@ -42,7 +43,21 @@ export const docNav: DocSection[] = [
     pages: [
       { title: "Overview", slug: "api/overview" },
       { title: "Packages", slug: "api/packages" },
+      { title: "Users", slug: "api/users" },
+      { title: "Recommendations", slug: "api/recommendations" },
       { title: "Authentication", slug: "api/auth" },
+    ],
+  },
+  {
+    title: "Tools",
+    pages: [
+      { title: "Claude Code", slug: "tools/claude-code" },
+      { title: "Cursor", slug: "tools/cursor" },
+      { title: "GitHub Copilot", slug: "tools/copilot" },
+      { title: "Windsurf", slug: "tools/windsurf" },
+      { title: "Cline", slug: "tools/cline" },
+      { title: "Aider", slug: "tools/aider" },
+      { title: "Continue", slug: "tools/continue" },
     ],
   },
   {

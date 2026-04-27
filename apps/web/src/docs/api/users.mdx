@@ -1,0 +1,87 @@
+# Users API
+
+Base URL: `https://api.ruleshub.dev/v1`
+
+## Get a public profile
+
+```
+GET /users/:username
+```
+
+Returns a user's public profile and their published packages.
+
+### Response
+
+```json
+{
+  "id": "clx...",
+  "username": "lozymon",
+  "avatarUrl": "https://avatars.githubusercontent.com/u/123456",
+  "bio": "Building open-source tools",
+  "verified": true,
+  "createdAt": "2024-01-15T10:00:00.000Z",
+  "packages": [
+    {
+      "namespace": "lozymon",
+      "name": "nestjs-rules",
+      "type": "rule",
+      "description": "NestJS coding rules for AI tools",
+      "totalDownloads": 1240,
+      "stars": 38,
+      "qualityScore": 91,
+      "latestVersion": "1.2.0",
+      "updatedAt": "2025-03-01T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+### Error responses
+
+| Status | Reason         |
+| ------ | -------------- |
+| `404`  | User not found |
+
+---
+
+## Get own profile
+
+Requires authentication.
+
+```
+GET /users/me
+```
+
+Returns the authenticated user's full profile, including private details.
+
+### Headers
+
+```
+Authorization: Bearer <jwt>
+```
+
+### Response
+
+```json
+{
+  "id": "clx...",
+  "username": "lozymon",
+  "avatarUrl": "https://avatars.githubusercontent.com/u/123456",
+  "bio": "Building open-source tools",
+  "verified": true,
+  "isAdmin": false,
+  "createdAt": "2024-01-15T10:00:00.000Z"
+}
+```
+
+### Error responses
+
+| Status | Reason                   |
+| ------ | ------------------------ |
+| `401`  | Missing or invalid token |
+
+---
+
+## Authentication
+
+See [Authentication](/docs/api/auth) for how to obtain a JWT or API key.

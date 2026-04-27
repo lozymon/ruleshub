@@ -1,22 +1,23 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { StorageModule } from './storage/storage.module';
-import { PackagesModule } from './packages/packages.module';
-import { StarsModule } from './stars/stars.module';
-import { RecommendationsModule } from './recommendations/recommendations.module';
-import { CollectionsModule } from './collections/collections.module';
-import { CommentsModule } from './comments/comments.module';
-import { LeaderboardModule } from './leaderboard/leaderboard.module';
-import { OrganisationsModule } from './organisations/organisations.module';
-import { ApiKeysModule } from './api-keys/api-keys.module';
-import { BadgesModule } from './badges/badges.module';
-import { ImportsModule } from './imports/imports.module';
-import { AdminModule } from './admin/admin.module';
-import { WebhooksModule } from './webhooks/webhooks.module';
-import configuration from './config/configuration';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { PrismaModule } from "./prisma/prisma.module";
+import { AuthModule } from "./auth/auth.module";
+import { UsersModule } from "./users/users.module";
+import { StorageModule } from "./storage/storage.module";
+import { PackagesModule } from "./packages/packages.module";
+import { StarsModule } from "./stars/stars.module";
+import { RecommendationsModule } from "./recommendations/recommendations.module";
+import { CollectionsModule } from "./collections/collections.module";
+import { CommentsModule } from "./comments/comments.module";
+import { LeaderboardModule } from "./leaderboard/leaderboard.module";
+import { OrganisationsModule } from "./organisations/organisations.module";
+import { ApiKeysModule } from "./api-keys/api-keys.module";
+import { BadgesModule } from "./badges/badges.module";
+import { ImportsModule } from "./imports/imports.module";
+import { AdminModule } from "./admin/admin.module";
+import { WebhooksModule } from "./webhooks/webhooks.module";
+import { SecurityAlertsModule } from "./security-alerts/security-alerts.module";
+import configuration from "./config/configuration";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import configuration from './config/configuration';
     ImportsModule,
     AdminModule,
     WebhooksModule,
+    SecurityAlertsModule,
   ],
 })
 export class AppModule {}

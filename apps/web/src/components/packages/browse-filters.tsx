@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   FileText,
@@ -29,21 +29,19 @@ function GithubIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-import { TOOL_LABELS } from "@ruleshub/types";
-import type { SupportedTool, PackageSearchParams } from "@ruleshub/types";
-import { TOOL_COLORS } from "@/lib/tool-colors";
-import { routes } from "@/lib/routes";
+import type { PackageSearchParams, AssetType } from "@ruleshub/types";
 import { cn } from "@/lib/utils";
 
-const ASSET_TYPES = [
-  { id: "rule", label: "Rules", Icon: FileText },
-  { id: "command", label: "Commands", Icon: Terminal },
-  { id: "workflow", label: "Workflows", Icon: GitBranch },
-  { id: "agent", label: "Agents", Icon: Bot },
-  { id: "mcp", label: "MCP Servers", Icon: Plug },
-  { id: "pack", label: "Packs", Icon: Package },
-  { id: "skill", label: "Skills", Icon: Wand2 },
-] as const;
+const ASSET_TYPES: { id: AssetType; label: string; Icon: React.ElementType }[] =
+  [
+    { id: "rule", label: "Rules", Icon: FileText },
+    { id: "skill", label: "Skills", Icon: Wand2 },
+    { id: "command", label: "Commands", Icon: Terminal },
+    { id: "workflow", label: "Workflows", Icon: GitBranch },
+    { id: "agent", label: "Agents", Icon: Bot },
+    { id: "mcp-server", label: "MCP Servers", Icon: Plug },
+    { id: "pack", label: "Packs", Icon: Package },
+  ];
 
 const SORT_OPTIONS = [
   { id: "trending", label: "Trending", Icon: Flame },
@@ -54,9 +52,15 @@ const SORT_OPTIONS = [
 
 interface BrowseFiltersProps {
   current: PackageSearchParams & { sort?: string };
+  total: number;
+  typeCounts: Record<AssetType, number>;
 }
 
-export function BrowseFilters({ current }: BrowseFiltersProps) {
+export function BrowseFilters({
+  current,
+  total,
+  typeCounts,
+}: BrowseFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -76,7 +80,6 @@ export function BrowseFilters({ current }: BrowseFiltersProps) {
   }
 
   const currentType = current.type ?? "all";
-  const currentTool = current.tool ?? "all";
   const currentSort = (current as { sort?: string }).sort ?? "trending";
 
   const filterBtn = (active: boolean) =>
@@ -99,6 +102,9 @@ export function BrowseFilters({ current }: BrowseFiltersProps) {
           onClick={() => update("type", undefined)}
         >
           All types
+          <span className="ml-auto font-mono text-[11px] text-fg-faint">
+            {total}
+          </span>
         </button>
         {ASSET_TYPES.map(({ id, label, Icon }) => (
           <button
@@ -108,6 +114,9 @@ export function BrowseFilters({ current }: BrowseFiltersProps) {
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
             {label}
+            <span className="ml-auto font-mono text-[11px] text-fg-faint">
+              {typeCounts[id] ?? 0}
+            </span>
           </button>
         ))}
       </div>

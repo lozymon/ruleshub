@@ -1,0 +1,44 @@
+# Continue
+
+Continue reads project configuration from `.continue/config.json`. RulesHub writes rule assets into this directory.
+
+## Install paths by asset type
+
+| Asset type | Written to              |
+| ---------- | ----------------------- |
+| `rule`     | `.continue/config.json` |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool continue
+```
+
+## Target key
+
+Use `continue` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "continue": { "file": "targets/continue/config.json" }
+  }
+}
+```
+
+## Writing rules for Continue
+
+Continue's `config.json` supports a `systemMessage` field that injects custom context into every chat session:
+
+```json
+{
+  "systemMessage": "This is a NestJS REST API using Prisma and PostgreSQL. Always use TypeScript. All request bodies use DTO classes with class-validator. Controllers are thin — delegate logic to services."
+}
+```
+
+When targeting Continue, ship a complete `config.json` fragment with at least the `systemMessage` key populated with your rules.
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

@@ -25,6 +25,9 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Pagefind search index (generated at build time)
+apps/web/public/_pagefind/
+
 # IDE
 .vscode/
 .idea/

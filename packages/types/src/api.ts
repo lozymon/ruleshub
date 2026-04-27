@@ -1,5 +1,5 @@
-import { AssetType } from './manifest';
-import { SupportedTool } from './tools';
+import { AssetType } from "./manifest";
+import { SupportedTool } from "./tools";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -71,7 +71,7 @@ export interface OrgDto {
 
 export interface OrgMemberDto {
   user: UserDto;
-  role: 'owner' | 'admin' | 'member';
+  role: "owner" | "admin" | "member";
 }
 
 export interface ApiKeyDto {
@@ -105,15 +105,16 @@ export interface PackageSearchParams {
   tag?: string;
   projectType?: string;
   tool?: SupportedTool;
-  scope?: 'individual' | 'pack';
-  sort?: 'trending' | 'newest' | 'mostDownloaded' | 'mostStarred';
+  scope?: "individual" | "pack";
+  sort?: "trending" | "newest" | "mostDownloaded" | "mostStarred";
   page?: number;
   limit?: number;
 }
 
 export type WebhookEvent =
-  | 'package.version.published'
-  | 'package.version.yanked';
+  | "package.version.published"
+  | "package.version.yanked"
+  | "package.dependency.yanked";
 
 export interface WebhookDto {
   id: string;
@@ -135,7 +136,7 @@ export interface WebhookDeliveryDto {
   attemptedAt: string;
 }
 
-export type DiffChangeKind = 'unchanged' | 'changed' | 'added' | 'removed';
+export type DiffChangeKind = "unchanged" | "changed" | "added" | "removed";
 
 export interface DiffChange {
   field: string;

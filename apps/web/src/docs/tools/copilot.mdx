@@ -1,0 +1,49 @@
+# GitHub Copilot
+
+GitHub Copilot reads project instructions from `.github/copilot-instructions.md`. RulesHub writes rule assets to this path.
+
+## Install paths by asset type
+
+| Asset type | Written to                        |
+| ---------- | --------------------------------- |
+| `rule`     | `.github/copilot-instructions.md` |
+
+## Installing a package
+
+```bash
+npx ruleshub install lozymon/nestjs-rules --tool copilot
+```
+
+## Target key
+
+Use `copilot` in your manifest's `targets` map:
+
+```json
+{
+  "targets": {
+    "copilot": { "file": "targets/copilot/copilot-instructions.md" }
+  }
+}
+```
+
+## Writing rules for Copilot
+
+The `copilot-instructions.md` file is injected as context for every Copilot chat and inline suggestion in the repository. Keep instructions:
+
+- Written in natural language (Markdown prose, not bullet lists of commands)
+- Specific to your stack and conventions
+- Free of boilerplate that Copilot already knows (language syntax, standard library usage)
+
+```markdown
+This is a NestJS REST API backed by Prisma and PostgreSQL.
+
+All request bodies use DTOs with class-validator decorators. Controllers are thin
+and delegate all logic to service classes. Wrap multi-step database operations in
+Prisma transactions. Throw NestJS built-in exceptions (NotFoundException, etc.)
+rather than raw Error objects.
+```
+
+## See also
+
+- [Tool Targets](/docs/publishing/targets) — how to structure target files in your package
+- [CLI install reference](/docs/cli/install) — all flags and options

@@ -31,6 +31,19 @@ export const contentMap: Record<string, string> = {
   "publishing/targets": path.join(docsRoot, "publishing/targets.mdx"),
   "publishing/packs": path.join(docsRoot, "publishing/packs.mdx"),
   "publishing/versioning": path.join(docsRoot, "publishing/versioning.mdx"),
+  "publishing/github-import": path.join(
+    docsRoot,
+    "publishing/github-import.mdx",
+  ),
+
+  // Tools
+  "tools/claude-code": path.join(docsRoot, "tools/claude-code.mdx"),
+  "tools/cursor": path.join(docsRoot, "tools/cursor.mdx"),
+  "tools/copilot": path.join(docsRoot, "tools/copilot.mdx"),
+  "tools/windsurf": path.join(docsRoot, "tools/windsurf.mdx"),
+  "tools/cline": path.join(docsRoot, "tools/cline.mdx"),
+  "tools/aider": path.join(docsRoot, "tools/aider.mdx"),
+  "tools/continue": path.join(docsRoot, "tools/continue.mdx"),
 
   // CLI
   "cli/overview": path.join(docsRoot, "cli/overview.mdx"),
@@ -42,6 +55,8 @@ export const contentMap: Record<string, string> = {
   // API
   "api/overview": path.join(docsRoot, "api/overview.mdx"),
   "api/packages": path.join(docsRoot, "api/packages.mdx"),
+  "api/users": path.join(docsRoot, "api/users.mdx"),
+  "api/recommendations": path.join(docsRoot, "api/recommendations.mdx"),
   "api/auth": path.join(docsRoot, "api/auth.mdx"),
 
   // Contributing

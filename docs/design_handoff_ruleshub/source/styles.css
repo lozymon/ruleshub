@@ -1,14 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Dark (default) */
-  --bg: #0a0a0b;
-  --bg-elev: #111114;
-  --bg-elev-2: #17171c;
-  --bg-code: #0d0d10;
-  --border: #23232a;
-  --border-strong: #2e2e37;
-  --border-hover: #3a3a45;
+  /* Dark (default) — VS Code-style neutral greys */
+  --bg: #181818;
+  --bg-elev: #1e1e1e;
+  --bg-elev-2: #252526;
+  --bg-code: #1a1a1a;
+  --border: #2d2d2d;
+  --border-strong: #3c3c3c;
+  --border-hover: #4a4a4a;
   --fg: #ededf0;
   --fg-muted: #a1a1aa;
   --fg-dim: #71717a;
@@ -41,6 +41,25 @@
   --shadow-hover: 0 8px 24px -8px rgba(0,0,0,0.6), 0 0 0 1px var(--border-hover);
 
   --maxw: 1240px;
+
+  /* Code-block (dark) — github-dark-dimmed */
+  --code-bg: #1a1a1a;
+  --code-header-bg: #1f1f23;
+  --code-header-hover: rgba(255,255,255,0.06);
+  --code-border: #2d2d2d;
+  --code-fg: #adbac7;
+  --code-header-fg: #a1a1aa;
+  --code-tok-prompt: #768390;        /* comment grey */
+  --code-tok-cmd: #f47067;           /* keyword red */
+  --code-tok-arg: #adbac7;           /* plain */
+  --code-tok-flag: #f69d50;          /* variable orange */
+  --code-tok-value: #96d0ff;         /* string blue */
+  --code-tok-string: #96d0ff;
+  --code-tok-keyword: #f47067;
+  --code-tok-fn: #dcbdfb;
+  --code-tok-num: #6cb6ff;
+  --code-tok-type: #5eb5f5;
+  --code-tok-comment: #768390;
 }
 
 [data-theme="light"] {
@@ -62,6 +81,25 @@
   --accent-border: rgba(37, 99, 235, 0.25);
   --shadow-card: 0 1px 2px 0 rgba(0,0,0,0.04);
   --shadow-hover: 0 8px 24px -8px rgba(0,0,0,0.15), 0 0 0 1px var(--border-hover);
+
+  /* Code-block (light) — light panel, dark text */
+  --code-bg: #f4f4f5;
+  --code-header-bg: #e4e4e7;
+  --code-header-hover: rgba(0,0,0,0.06);
+  --code-border: #f4f4f5;
+  --code-fg: #18181b;
+  --code-header-fg: #3f3f46;
+  --code-tok-prompt: #71717a;
+  --code-tok-cmd: #b91c1c;
+  --code-tok-arg: #18181b;
+  --code-tok-flag: #b45309;
+  --code-tok-value: #1d4ed8;
+  --code-tok-string: #1d4ed8;
+  --code-tok-keyword: #b91c1c;
+  --code-tok-fn: #6d28d9;
+  --code-tok-num: #1d4ed8;
+  --code-tok-type: #0369a1;
+  --code-tok-comment: #71717a;
 }
 
 * { box-sizing: border-box; }
@@ -214,15 +252,18 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
 
 /* ---------- Stats bar ---------- */
 .stats-bar {
+  border-bottom: 1px solid var(--border);
+}
+.stats-bar-inner {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 0;
-  border-bottom: 1px solid var(--border);
 }
 .stat {
   padding: 24px 28px;
   border-right: 1px solid var(--border);
 }
-.stat:last-child { border-right: none; }
+.stat:first-child { padding-left: 0; }
+.stat:last-child { padding-right: 0; border-right: none; }
 .stat-num {
   font-family: var(--font-mono);
   font-size: 26px; font-weight: 500; letter-spacing: -0.02em;
@@ -234,6 +275,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
   letter-spacing: 0.06em; font-weight: 500;
 }
 .stat-delta { font-size: 11.5px; color: var(--success); margin-top: 2px; font-family: var(--font-mono); }
+.stat-num-empty { color: var(--fg-faint); }
 
 /* ---------- Section headers ---------- */
 .section { padding: 48px 0; border-bottom: 1px solid var(--border); }
@@ -254,9 +296,11 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
 .section-link:hover { color: var(--fg); }
 
 /* ---------- Tool tabs ---------- */
+.tool-tabs-bar {
+  border-bottom: 1px solid var(--border);
+}
 .tool-tabs {
   display: flex; gap: 0; overflow-x: auto;
-  border-bottom: 1px solid var(--border);
   margin: 0 -24px;
   padding: 0 24px;
   scrollbar-width: none;
@@ -528,9 +572,71 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
   border-radius: 6px; padding: 14px; overflow-x: auto;
   font-size: 13px; line-height: 1.55;
 }
-.readme pre code { background: none; border: none; padding: 0; color: #ededf0; }
+.readme pre code { background: none; border: none; padding: 0; color: var(--fg); }
+/* Suppress generic .readme prose styles inside our themed CodeBlock */
+.readme .code-block-body {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 14px 16px !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: var(--code-fg) !important;
+}
+.readme .code-block-body code {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--code-fg) !important;
+}
 .readme a { color: var(--accent); }
 .readme a:hover { text-decoration: underline; }
+
+/* ---------- Code block (docs) ---------- */
+.code-block {
+  margin: 16px 0;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.code-block-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--code-header-bg);
+  border-bottom: 1px solid var(--code-border);
+  font-family: var(--font-mono); font-size: 11.5px;
+  color: var(--code-header-fg);
+}
+[data-theme="light"] .code-block-header {
+  border-bottom-color: #d4d4d8;
+}
+.code-block-header-title { display: flex; align-items: center; gap: 8px; }
+.code-block-copy {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 4px;
+  color: var(--code-header-fg);
+  font-size: 11px; font-family: var(--font-sans);
+  background: transparent; border: none; cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.code-block-copy:hover { color: var(--fg); background: var(--code-header-hover); }
+.code-block-copy.copied { color: var(--success); }
+.code-block-body {
+  margin: 0; padding: 14px 16px;
+  font-size: 12.5px; line-height: 1.6;
+  color: var(--code-fg);
+  overflow: auto;
+  font-family: var(--font-mono);
+}
+.code-block .code-block-body code { background: none; border: none; padding: 0; color: var(--code-fg); font-size: inherit; }
+
+/* Bash syntax tints — token vars so they adapt per theme */
+.tok-prompt { color: var(--code-tok-prompt); }
+.tok-cmd { color: var(--code-tok-cmd); }
+.tok-arg { color: var(--code-tok-arg); }
+.tok-flag { color: var(--code-tok-flag); }
+.tok-value { color: var(--code-tok-value); }
 
 /* Sidebar */
 .side-card {

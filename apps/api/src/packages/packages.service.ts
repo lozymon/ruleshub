@@ -25,6 +25,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { WebhooksService } from "../webhooks/webhooks.service";
+import { SecurityAlertsService } from "../security-alerts/security-alerts.service";
 
 type DepWithPackage = PackageDependency & {
   dep: Package & { versions: PackageVersion[] };
@@ -111,6 +112,7 @@ export class PackagesService {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly webhooks: WebhooksService,
+    private readonly securityAlerts: SecurityAlertsService,
   ) {}
 
   async search(params: SearchPackagesDto) {
@@ -499,6 +501,11 @@ export class PackagesService {
     if (pkg) {
       this.webhooks.fireForPackage(
         "package.version.yanked",
+        pkg.id,
+        `${namespace}/${name}`,
+        version,
+      );
+      this.securityAlerts.notifyDependents(
         pkg.id,
         `${namespace}/${name}`,
         version,

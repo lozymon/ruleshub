@@ -667,11 +667,12 @@ thin downloader that wraps the canonical Rust binary, with no breaking changes t
 
 ### Phase 4.5 — Canonical CLI Binary (Rust)
 
-The single source of truth for all CLI behaviour. Every language-ecosystem package
-(npm, Composer, pip, gem, cargo, NuGet) ships a thin wrapper that downloads and runs
-this binary — there is no second implementation. Pattern modelled on
-[ruff](https://github.com/astral-sh/ruff), [biome](https://biomejs.dev/), and
-[swc](https://swc.rs/), all of which distribute one Rust binary across npm/pip/etc.
+The single source of truth for all CLI behaviour. Every language-ecosystem wrapper
+(npm, pip, Composer in scope; gem and NuGet deferred — see Phase 4.7) ships a thin
+package that downloads and runs this binary — there is no second implementation.
+Pattern modelled on [ruff](https://github.com/astral-sh/ruff),
+[biome](https://biomejs.dev/), and [swc](https://swc.rs/), all of which distribute
+one Rust binary across npm/pip/etc.
 
 - [x] `packages-rs/cli/` — single Rust crate producing the `ruleshub` binary (workspace promotion deferred until a second crate exists)
 - [x] Built on [clap](https://docs.rs/clap/) (derive API) — the de-facto Rust CLI framework
@@ -710,28 +711,54 @@ Direct binary install for users who don't go through a language ecosystem.
 
 ### Phase 4.7 — Language-Ecosystem Wrappers
 
-Per-ecosystem packages that do exactly one thing: detect the user's platform, download
-the matching canonical binary from GitHub Releases, verify checksum, and expose
-`ruleshub` on the user's `$PATH`. Each wrapper is ~50–150 lines of code.
+Per-ecosystem packages that do exactly one thing: detect the user's platform, download the matching canonical binary from GitHub Releases, verify checksum, expose `ruleshub` on the user's `$PATH`. Each wrapper is ~50-150 lines of code with no business logic.
 
-The existing Node CLI (Phase 4) migrates to this model in v2 — same package name,
-same commands, same UX, just a wrapper instead of a TypeScript reimplementation.
+**In scope**: npm, pip, Composer. **Deferred** (with documented exit conditions): RubyGems, NuGet.
 
-| Ecosystem  | Wrapper package | Install command                       | Mechanism                                     |
-| ---------- | --------------- | ------------------------------------- | --------------------------------------------- |
-| npm        | `ruleshub`      | `npm install -g ruleshub`             | `postinstall` script downloads binary         |
-| Composer   | `ruleshub/cli`  | `composer require ruleshub/cli --dev` | `post-install-cmd` script downloads binary    |
-| pip / pipx | `ruleshub`      | `pipx install ruleshub`               | Per-platform wheels embed the binary directly |
-| RubyGems   | `ruleshub`      | `gem install ruleshub`                | Per-platform gems embed the binary directly   |
-| NuGet      | `RulesHub.Cli`  | `dotnet tool install -g RulesHub.Cli` | Per-RID NuGet package embeds the binary       |
+| Ecosystem  | Wrapper package | Install command                       | Mechanism                                     | Status   |
+| ---------- | --------------- | ------------------------------------- | --------------------------------------------- | -------- |
+| npm        | `ruleshub@^2`   | `npm install -g ruleshub`             | `postinstall` script downloads binary         | In scope |
+| pip / pipx | `ruleshub`      | `pipx install ruleshub`               | Per-platform wheels embed the binary directly | In scope |
+| Composer   | `ruleshub/cli`  | `composer require ruleshub/cli --dev` | `post-install-cmd` script downloads binary    | In scope |
+| RubyGems   | `ruleshub`      | `gem install ruleshub`                | Per-platform gems embed the binary directly   | Deferred |
+| NuGet      | `RulesHub.Cli`  | `dotnet tool install -g RulesHub.Cli` | Per-RID NuGet package embeds the binary       | Deferred |
 
-- [ ] Each wrapper publishes platform-specific artefacts where the ecosystem supports it (pip wheels, ruby platform gems, NuGet RIDs) — avoids runtime download and works offline after install
-- [ ] npm + Composer use postinstall download because their ecosystems don't have first-class platform packages — fall back to embedded binary if download fails
-- [ ] Checksum verification on every download (binary is signed via cargo-dist's SLSA attestation)
-- [ ] Single GitHub Action releases the canonical binary first, then publishes all six wrappers in parallel on the same tag
-- [ ] `cargo install` doesn't need a wrapper — it builds the canonical binary directly from source
-- [ ] `go install` is intentionally **not** supported — Go modules can't wrap a Rust binary cleanly; Go developers use Homebrew or the install script
-- [ ] `docs/cli/wrappers.md` — explains the wrapper model and lists the install command for each ecosystem
+#### npm wrapper — migrate the existing TS CLI
+
+The current `packages/cli` is a real TypeScript implementation, not a wrapper. The migration:
+
+- [ ] Bump npm package to `ruleshub@2.0.0` — major version signals the underlying change
+- [ ] Replace `packages/cli/src/**` with a postinstall script that downloads the matching Rust binary from GitHub Releases and places it at `node_modules/.bin/ruleshub` (per-platform fallback to bundled binary if download fails)
+- [ ] Existing `npx ruleshub@1` users keep working unchanged (legacy TS CLI on the v1 line)
+- [ ] Smoke test in CI: `npm install -g ruleshub@<version>` on Linux/macOS/Windows runners → `ruleshub --version` → assert `0.1.0`
+
+#### pip / pipx wrapper
+
+- [ ] `packages-py/cli/` — Python wrapper using [maturin-style platform wheels](https://www.maturin.rs/distribution.html#binary-wheels) so each `pip install` gets a wheel with the binary already embedded. No runtime download needed
+- [ ] CI matrix: Python 3.10, 3.11, 3.12, 3.13 × Linux glibc, Linux musl, macOS, Windows
+- [ ] Auto-publish to PyPI on tag push using [trusted publishing](https://docs.pypi.org/trusted-publishers/) (no token in CI)
+- [ ] Smoke test: `pipx install ruleshub` on each platform → `ruleshub --version`
+
+#### Composer wrapper
+
+- [ ] `packages-php/cli/` — Composer package that downloads the binary in `post-install-cmd` (Composer doesn't have platform-specific packages, so we use postinstall like npm)
+- [ ] PHP 8.2+ minimum (matches Laravel/Symfony LTS)
+- [ ] Auto-publish to Packagist on tag push (Packagist auto-syncs from GitHub, just need to register the repo once)
+- [ ] Exposes `vendor/bin/ruleshub` per-project, plus `composer global` install path for system-wide use
+- [ ] Smoke test: `composer require ruleshub/cli` in a fresh PHP project → `vendor/bin/ruleshub --version`
+
+#### Cross-cutting
+
+- [ ] Every wrapper verifies SHA256 against the published `SHA256SUMS` before placing the binary on `PATH`
+- [ ] Single GitHub Action gates on `build` matrix succeeding, then publishes all wrappers in parallel after the GitHub Release exists
+- [ ] `cargo install` doesn't need a wrapper — it builds the canonical binary directly from crates.io (Phase 4.6, done)
+- [ ] `go install` is intentionally **not** supported — Go modules can't wrap a Rust binary cleanly; Go developers use the install script
+- [ ] `docs/cli/wrappers.md` — explains the wrapper model and lists the install command per ecosystem (or fold into `docs/cli/binary.mdx` when wrappers ship)
+
+#### Deferred wrappers — exit conditions
+
+- [~] **RubyGems** — defer until a Ruby/Rails developer opens an issue or PRs the wrapper. Modern Rails projects increasingly use Bundler-aware tooling that can install via `gem install` from `Gemfile`, but the audience overlap with AI-coding tooling is small and shrinking
+- [~] **NuGet** — defer until enterprise .NET demand emerges (likely signalled by an org using RulesHub adopting it internally and asking). Per-RID NuGet packaging is the highest-effort wrapper format on the list and we shouldn't pay that cost speculatively
 
 ### Phase 4.8 — Shell-Only CLI Implementation (dropped)
 
@@ -750,7 +777,7 @@ Cross-cutting infrastructure that keeps the wrapper model honest.
 - [x] **Single source of truth** — `packages-rs/cli` is the only place CLI behaviour lives. Wrappers (when they land in Phase 4.7) will be download-and-exec only, no behaviour added
 - [~] **OpenAPI-driven HTTP client** — deferred (see Phase 4.5 progenitor entry). Hand-rolled `reqwest::get(...)` for our 4 endpoints today
 - [x] **Shared JSON Schema** — manifest validation already loads `https://ruleshub.dev/schema/ruleshub.json` at runtime in `commands/validate.rs`; any future IDE extension can hit the same URL
-- [ ] **Wrapper smoke tests** — every wrapper (npm/composer/pip/gem/nuget) runs a tiny matrix in CI: install on every supported platform → run `ruleshub --version` → assert binary launched. Comes with Phase 4.7
+- [ ] **Wrapper smoke tests** — every shipping wrapper (npm, pip, Composer; gem and NuGet are deferred) runs a tiny matrix in CI: install on every supported platform → run `ruleshub --version` → assert binary launched. Comes with Phase 4.7
 - [x] **Release coordination** — `cli-release.yml` already does this for the binary side: tag → cross-compile → GitHub Release → `cargo publish`. Phase 4.7 wrappers will hook in to re-publish themselves after the GitHub Release exists
 
 ### Phase 5 — Organisations & Trust

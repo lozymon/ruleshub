@@ -1,6 +1,6 @@
 # CLI Architecture
 
-The RulesHub CLI ships through many ecosystems — npm, Composer, pip, gem, Homebrew, scoop, NuGet, GitHub Releases — but it is **one Rust binary** under the hood. This page explains the model so contributors know where to land changes.
+The RulesHub CLI ships through several ecosystems — npm, pip, Composer, GitHub Releases, crates.io — but it is **one Rust binary** under the hood. This page explains the model so contributors know where to land changes.
 
 ## The model — one binary, many wrappers
 
@@ -17,7 +17,7 @@ The RulesHub CLI ships through many ecosystems — npm, Composer, pip, gem, Home
    ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
    │  GitHub Releases │  │ Homebrew tap     │  │ Per-ecosystem    │
    │  + install.sh    │  │ + scoop          │  │ wrappers         │
-   │  (raw binary)    │  │ (system pkg mgr) │  │ (npm, pip, gem…) │
+   │  (raw binary)    │  │ (system pkg mgr) │  │ (npm, pip, ...)  │
    └──────────────────┘  └──────────────────┘  └──────────────────┘
 ```
 
@@ -96,7 +96,7 @@ git push origin cli-v0.2.0
 3. Generates `SHA256SUMS`
 4. Creates a GitHub Release with all archives + auto-generated release notes
 
-The wrapper packages (npm/pip/gem/composer/nuget) — when they exist — will run their own publish jobs after the GitHub Release exists, downloading the matching archive and re-publishing into their ecosystems.
+The wrapper packages (npm, pip, Composer; gem and NuGet are deferred) — when they exist — will run their own publish jobs after the GitHub Release exists, downloading the matching archive and re-publishing into their ecosystems.
 
 ## Compatibility guarantees
 

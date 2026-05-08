@@ -7,6 +7,16 @@ dist/
 .next/
 .turbo/
 
+# Rust / cargo
+target/
+**/*.rs.bk
+
+# TypeScript build output
+*.tsbuildinfo
+apps/api/test/*.js
+apps/api/test/*.js.map
+apps/api/test/*.d.ts
+
 # Environment
 .env
 .env.local

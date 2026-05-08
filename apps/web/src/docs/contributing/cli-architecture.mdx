@@ -109,7 +109,7 @@ The wrapper packages (npm/pip/gem/composer/nuget) — when they exist — will r
 - Multiple Rust implementations of the same command (one source of truth).
 - Per-ecosystem business logic in wrapper packages (download + exec only).
 - Hand-maintained Homebrew formula or Scoop manifests (the release pipeline emits these from a template).
-- Reimplementing the CLI in any other language. The bash + PowerShell scripts (Phase 4.8 of the plan) are the only exception, and they have a deliberately reduced scope (`install`, `outdated`, `update`, `validate` — no `publish`).
+- Reimplementing the CLI in any other language. The musl Linux binary, install scripts, and per-ecosystem wrappers cover every realistic environment without needing a parallel implementation.
 
 ## Related reading
 

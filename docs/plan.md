@@ -733,37 +733,25 @@ same commands, same UX, just a wrapper instead of a TypeScript reimplementation.
 - [ ] `go install` is intentionally **not** supported — Go modules can't wrap a Rust binary cleanly; Go developers use Homebrew or the install script
 - [ ] `docs/cli/wrappers.md` — explains the wrapper model and lists the install command for each ecosystem
 
-### Phase 4.8 — Shell Scripts (bash + PowerShell)
+### Phase 4.8 — Shell-Only CLI Implementation (dropped)
 
-The one exception to the wrapper model — shell scripts can't sensibly wrap a binary
-(it would defeat the "no runtime needed" purpose). These are real, independent
-implementations with reduced scope.
+**Originally scoped**: a parallel CLI implementation in pure POSIX shell + PowerShell — `ruleshub.sh` / `ruleshub.ps1` — for environments where running a binary isn't possible.
 
-- [ ] `packages-sh/cli/ruleshub.sh` — POSIX-compatible (works in bash, zsh, dash, ash/Alpine)
-- [ ] `packages-sh/cli/ruleshub.ps1` — PowerShell equivalent (PowerShell 5.1+ ships on Windows 10/11)
-- [ ] `packages-sh/cli/ruleshub.bat` — thin shim that forwards to `ruleshub.ps1`
-- [ ] Dependencies: `curl` + `jq` for bash; built-in `Invoke-RestMethod` + `ConvertFrom-Json` for PowerShell
-- [ ] **In-scope commands** — `install`, `outdated`, `update`, `validate`
-- [ ] **Out-of-scope commands** — `publish` (multipart upload + OAuth flow isn't worth it in pure shell; direct users to a real CLI)
-- [ ] Pack-aware install — resolves `includes` by calling the API and looping
-- [ ] Conflict detection + `--dry-run` + `--force`
-- [ ] Distribution via the same `install.sh` / `install.ps1` URLs as the binary (the install scripts can self-install in shell-only mode)
-- [ ] CI matrix — bash on Ubuntu, macOS, Alpine; PowerShell on Windows Server, Ubuntu (PowerShell Core), macOS
-- [ ] Shellcheck + PSScriptAnalyzer in CI
-- [ ] Conformance test suite (see Phase 4.9) runs against the shell scripts too — covers the in-scope commands
-- [ ] `docs/cli/shell.md` — install + usage guide with a clear "use the real CLI for publishing" callout
+**Why dropped**: the canonical Rust binary now ships statically-linked musl builds that run on Alpine, distroless, and scratch containers, plus glibc Linux, macOS (Intel + Silicon), and Windows. Phase 4.6 added one-line install scripts (`install.sh`, `install.ps1`) that put the binary on `$PATH` in ~3 seconds. The cases this phase was supposed to address — environments that allow shell but block binaries, or CI runs that can't spare the install-script seconds — are either rare or not worth a parallel implementation that will inevitably drift.
+
+**Revisit only if**: a concrete user case appears that the binary genuinely can't reach (e.g. a corporate environment that allows scripts but blocks all unsigned binaries), AND that user can't fall back to direct API calls via `curl` + `jq`.
+
+The `install.sh` and `install.ps1` files in `apps/web/public/` from Phase 4.6 are **installers**, not CLI implementations — they download the Rust binary, they don't reimplement commands.
 
 ### Phase 4.9 — CLI Architecture & Conformance
 
 Cross-cutting infrastructure that keeps the wrapper model honest.
 
-- [ ] **Single source of truth** — Rust workspace in Phase 4.5 is the only place CLI behaviour is implemented. Wrappers are forbidden from adding logic beyond download + exec
-- [ ] **OpenAPI-driven HTTP client** — the API's Swagger spec drives `progenitor` codegen; bumping an API version regenerates the client, no hand-edits
-- [ ] **Shared JSON Schema** — manifest validation lives in the schema (Phase 11); the binary, the shell scripts, and any future IDE extension all consume it
-- [ ] **Conformance test suite** — `tests/cli-conformance/` holds language-agnostic JSON test cases (input args + expected stdout/stderr/exit code/filesystem changes); the binary and the two shell scripts must pass
-- [ ] **Wrapper smoke tests** — every wrapper (npm/composer/pip/gem/nuget) runs a tiny matrix in CI: install on every supported platform → run `ruleshub --version` → assert binary launched
-- [ ] **Release coordination** — single GitHub Action: tag → cargo-dist builds binaries → GitHub Release → Homebrew formula bumped → all wrappers re-published in parallel
-- [ ] **Feature-parity page** — `/docs/cli/parity` auto-generated, but trivial: every wrapper exposes the same canonical binary, so the only real distinction is "shell scripts have no `publish`"
+- [x] **Single source of truth** — `packages-rs/cli` is the only place CLI behaviour lives. Wrappers (when they land in Phase 4.7) will be download-and-exec only, no behaviour added
+- [~] **OpenAPI-driven HTTP client** — deferred (see Phase 4.5 progenitor entry). Hand-rolled `reqwest::get(...)` for our 4 endpoints today
+- [x] **Shared JSON Schema** — manifest validation already loads `https://ruleshub.dev/schema/ruleshub.json` at runtime in `commands/validate.rs`; any future IDE extension can hit the same URL
+- [ ] **Wrapper smoke tests** — every wrapper (npm/composer/pip/gem/nuget) runs a tiny matrix in CI: install on every supported platform → run `ruleshub --version` → assert binary launched. Comes with Phase 4.7
+- [x] **Release coordination** — `cli-release.yml` already does this for the binary side: tag → cross-compile → GitHub Release → `cargo publish`. Phase 4.7 wrappers will hook in to re-publish themselves after the GitHub Release exists
 
 ### Phase 5 — Organisations & Trust
 

@@ -1,0 +1,60 @@
+name: CLI (Rust)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "packages-rs/**"
+      - ".github/workflows/cli-rust.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "packages-rs/**"
+      - ".github/workflows/cli-rust.yml"
+
+defaults:
+  run:
+    working-directory: packages-rs/cli
+
+jobs:
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages-rs/cli
+      - run: cargo clippy --all-targets -- -D warnings
+
+  build:
+    name: build & test (${{ matrix.toolchain }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, beta]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages-rs/cli
+      - run: cargo build --verbose
+      - run: cargo test --verbose

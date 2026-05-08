@@ -47,6 +47,7 @@ export const contentMap: Record<string, string> = {
 
   // CLI
   "cli/overview": path.join(docsRoot, "cli/overview.mdx"),
+  "cli/binary": path.join(docsRoot, "cli/binary.mdx"),
   "cli/install": path.join(docsRoot, "cli/install.mdx"),
   "cli/publish": path.join(docsRoot, "cli/publish.mdx"),
   "cli/validate": path.join(docsRoot, "cli/validate.mdx"),

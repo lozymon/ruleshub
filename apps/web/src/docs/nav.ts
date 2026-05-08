@@ -32,6 +32,7 @@ export const docNav: DocSection[] = [
     title: "CLI",
     pages: [
       { title: "Overview", slug: "cli/overview" },
+      { title: "Installing the CLI", slug: "cli/binary" },
       { title: "install", slug: "cli/install" },
       { title: "publish", slug: "cli/publish" },
       { title: "validate", slug: "cli/validate" },

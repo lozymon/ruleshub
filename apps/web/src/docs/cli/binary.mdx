@@ -1,0 +1,125 @@
+# Installing the CLI
+
+The RulesHub CLI is one Rust binary distributed through several channels — every install method gives you the same `ruleshub` executable on your `PATH`.
+
+## Quick install
+
+### Linux / macOS
+
+```bash
+curl -fsSL https://ruleshub.dev/install.sh | sh
+```
+
+This downloads the matching binary from GitHub Releases, verifies its SHA256 against the published checksum, and installs it to `$HOME/.local/bin/ruleshub`. Override the location with `RULESHUB_INSTALL_DIR`, or pin a specific version with `RULESHUB_VERSION`:
+
+```bash
+RULESHUB_VERSION=0.1.0 RULESHUB_INSTALL_DIR=/usr/local/bin curl -fsSL https://ruleshub.dev/install.sh | sh
+```
+
+Linux binaries are statically linked against musl, so they run on Alpine, Debian, RHEL, Ubuntu — any Linux without needing a matching glibc.
+
+### Windows (PowerShell)
+
+```powershell
+iwr -useb https://ruleshub.dev/install.ps1 | iex
+```
+
+Installs to `%LOCALAPPDATA%\Programs\ruleshub\ruleshub.exe`. Override via `$env:RULESHUB_INSTALL_DIR` or `$env:RULESHUB_VERSION`.
+
+## Via npm / npx
+
+If you already have Node, `npx` lets you run the CLI without a global install:
+
+```bash
+npx ruleshub <command>
+```
+
+Or install once globally:
+
+```bash
+npm install -g ruleshub
+```
+
+## Manual download
+
+Head to the [latest release](https://github.com/lozymon/ruleshub/releases/latest) and grab the archive for your platform:
+
+| Target                      | Archive                                                |
+| --------------------------- | ------------------------------------------------------ |
+| Linux x86_64 (glibc)        | `ruleshub-<version>-x86_64-unknown-linux-gnu.tar.gz`   |
+| Linux x86_64 (musl, Alpine) | `ruleshub-<version>-x86_64-unknown-linux-musl.tar.gz`  |
+| Linux ARM64 (glibc)         | `ruleshub-<version>-aarch64-unknown-linux-gnu.tar.gz`  |
+| Linux ARM64 (musl)          | `ruleshub-<version>-aarch64-unknown-linux-musl.tar.gz` |
+| macOS Intel                 | `ruleshub-<version>-x86_64-apple-darwin.tar.gz`        |
+| macOS Apple Silicon         | `ruleshub-<version>-aarch64-apple-darwin.tar.gz`       |
+| Windows x86_64              | `ruleshub-<version>-x86_64-pc-windows-msvc.zip`        |
+
+Each release also includes a `SHA256SUMS` file — verify the archive before extracting:
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing
+```
+
+Then extract and move the `ruleshub` binary somewhere on your `PATH`.
+
+## Via cargo
+
+If you have a Rust toolchain installed and want the binary on `PATH`:
+
+```bash
+cargo install ruleshub
+```
+
+This pulls the published crate from [crates.io](https://crates.io/crates/ruleshub) and compiles it locally — slower than the native install (~1 minute) but always builds for your exact target.
+
+## From source
+
+To build from the source tree (e.g. while developing):
+
+```bash
+git clone https://github.com/lozymon/ruleshub.git
+cd ruleshub/packages-rs/cli
+cargo build --release
+# binary lands at ./target/release/ruleshub
+```
+
+Requires Rust 1.85+ (declared as `rust-version` in `Cargo.toml`).
+
+## Verify the install
+
+```bash
+ruleshub --version
+# ruleshub 0.1.0
+```
+
+If `ruleshub: command not found`, the install location isn't on your `PATH`. The install scripts print a one-line `export PATH=...` you can append to `~/.bashrc`, `~/.zshrc`, or your PowerShell profile.
+
+## Updating
+
+The native install scripts overwrite the previous binary on a fresh run — re-running `curl -fsSL https://ruleshub.dev/install.sh | sh` always pulls the latest release.
+
+To update CLI-managed packages within a project, use the [`update`](/docs/cli/outdated) command — that's a separate operation.
+
+## Uninstalling
+
+```bash
+# Linux / macOS
+rm "$HOME/.local/bin/ruleshub"
+
+# Windows (PowerShell)
+Remove-Item "$env:LOCALAPPDATA\Programs\ruleshub\ruleshub.exe"
+```
+
+If you installed with `npm install -g`, run `npm uninstall -g ruleshub`.
+
+## Coming soon
+
+We're adding these channels in upcoming releases — see [Phase 4.7 of the plan](https://github.com/lozymon/ruleshub/blob/main/docs/plan.md):
+
+- Wrappers in **Composer**, **pip**, **gem**, **NuGet**
+- **Homebrew** and **Scoop** — added once there's user demand
+
+## Related
+
+- [CLI Overview](/docs/cli/overview) — what the CLI does
+- [CLI Architecture](/docs/contributing/cli-architecture) — how the binary is built and distributed

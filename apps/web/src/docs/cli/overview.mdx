@@ -1,8 +1,15 @@
 # CLI Overview
 
-The RulesHub CLI is available via `npx` — no global install required.
+The RulesHub CLI ships as a single Rust binary distributed through several channels — pick whichever fits your environment. See the [installation guide](/docs/cli/binary) for all supported channels.
 
 ```bash
+# quick install (Linux / macOS)
+curl -fsSL https://ruleshub.dev/install.sh | sh
+
+# quick install (Windows PowerShell)
+iwr -useb https://ruleshub.dev/install.ps1 | iex
+
+# or via npx (no global install)
 npx ruleshub <command> [options]
 ```
 

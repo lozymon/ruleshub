@@ -701,13 +701,12 @@ this binary — there is no second implementation. Pattern modelled on
 Direct binary install for users who don't go through a language ecosystem.
 
 - [x] GitHub Releases — `cli-release.yml` attaches all 7 supported platforms (Linux gnu/musl × x86_64/aarch64, macOS Intel/Silicon, Windows x86_64) plus SHA256SUMS on every `cli-v*` tag push
-- [ ] Homebrew tap — `brew install ruleshub/tap/ruleshub`; formula auto-updates on release
-- [ ] Submit to homebrew-core once download volume justifies it
-- [ ] Install script — `curl -fsSL https://ruleshub.dev/install.sh | sh` (Linux/macOS)
-- [ ] PowerShell install script — `iwr -useb https://ruleshub.dev/install.ps1 | iex` (Windows)
-- [ ] Scoop bucket (Windows) — `scoop install ruleshub`
-- [ ] `cargo install ruleshub-cli` — Rustaceans get a real `cargo install` from the same workspace
-- [ ] `docs/cli/binary.md` — covers all native install paths
+- [x] Install script (Linux / macOS) — `apps/web/public/install.sh`, served at `https://ruleshub.dev/install.sh`. POSIX-compatible (works in bash, zsh, dash, ash). Detects platform, fetches latest release tag from the GitHub API, downloads + verifies SHA256 against the published `SHA256SUMS`, extracts to `$HOME/.local/bin/ruleshub`. Honours `RULESHUB_VERSION` and `RULESHUB_INSTALL_DIR` env overrides. Linux uses musl target for portability across glibc/musl distros
+- [x] PowerShell install script (Windows) — `apps/web/public/install.ps1`, served at `https://ruleshub.dev/install.ps1`. Equivalent feature set: platform detection, GitHub API for latest tag, SHA256 verify, extracts to `%LOCALAPPDATA%\Programs\ruleshub\ruleshub.exe`. ARM64 falls back to x86_64 via emulation (until we add a Windows ARM64 target)
+- [x] `docs/cli/binary.mdx` — covers all native install paths (install scripts, npm, manual GitHub Releases download, build from source), verifying, updating, uninstalling, and a "coming soon" section for Homebrew/Scoop/cargo. Registered in `nav.ts` + `content-map.ts`. Overview page updated to lead with native install
+- [x] `cargo install ruleshub` — `publish-crate` job in `cli-release.yml` runs after `build` succeeds: verifies tag matches `Cargo.toml` version, then `cargo publish --locked`. Guarded by `if: github.repository == 'lozymon/ruleshub'` (forks won't try). Needs `CRATES_IO_TOKEN` secret on first publish; both `ruleshub` and `ruleshub-cli` names confirmed available on crates.io as of writing
+- [~] **Deferred — Homebrew tap** (`brew install lozymon/tap/ruleshub`). Modern dev tools (`bun`, `deno`, `uv`, `ruff`, `mise`, `fnm`) primarily use `curl | sh` install scripts; Homebrew is a "nice to have" with real maintenance overhead (separate tap repo + deploy key + auto-update workflow + cross-arch testing). Add when there's user demand or download volume justifies homebrew-core submission
+- [~] **Deferred — Scoop bucket** (`scoop install ruleshub`). Same reasoning as Homebrew — defer until Windows users specifically ask for it
 
 ### Phase 4.7 — Language-Ecosystem Wrappers
 

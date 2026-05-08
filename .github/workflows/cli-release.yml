@@ -110,3 +110,32 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+  publish-crate:
+    name: Publish to crates.io
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.repository == 'lozymon/ruleshub'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages-rs/cli
+
+      - name: Verify Cargo.toml version matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          CRATE_VERSION=$(awk -F'"' '/^version *=/ {print $2; exit}' Cargo.toml)
+          if [ "$TAG_VERSION" != "$CRATE_VERSION" ]; then
+            echo "::error::tag $TAG_VERSION does not match Cargo.toml version $CRATE_VERSION"
+            exit 1
+          fi
+          echo "publishing ruleshub@$CRATE_VERSION"
+
+      - name: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --locked

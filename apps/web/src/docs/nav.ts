@@ -66,6 +66,7 @@ export const docNav: DocSection[] = [
       { title: "Development Setup", slug: "contributing/development" },
       { title: "Adding a Tool", slug: "contributing/adding-a-tool" },
       { title: "Architecture", slug: "contributing/architecture" },
+      { title: "CLI Architecture", slug: "contributing/cli-architecture" },
     ],
   },
 ];

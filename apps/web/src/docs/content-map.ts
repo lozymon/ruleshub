@@ -72,4 +72,8 @@ export const contentMap: Record<string, string> = {
     docsRoot,
     "contributing/architecture.mdx",
   ),
+  "contributing/cli-architecture": path.join(
+    docsRoot,
+    "contributing/cli-architecture.mdx",
+  ),
 };

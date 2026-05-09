@@ -117,6 +117,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.repository == 'lozymon/ruleshub'
+    environment: ruleshub-env
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

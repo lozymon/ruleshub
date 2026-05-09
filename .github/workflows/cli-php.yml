@@ -76,4 +76,4 @@ jobs:
           set -euo pipefail
           cd "$RUNNER_TEMP/consumer"
           ./vendor/bin/ruleshub --version
-          ./vendor/bin/ruleshub --version | grep -q 'ruleshub 0.1.0-alpha.1'
+          ./vendor/bin/ruleshub --version | grep -q 'ruleshub 0.1.0-alpha.2'

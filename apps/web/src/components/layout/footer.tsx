@@ -110,9 +110,23 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-between border-t border-border pt-5 font-mono text-[12px] text-fg-dim">
+        <div className="mt-8 flex flex-col items-start justify-between gap-3 border-t border-border pt-5 font-mono text-[12px] text-fg-dim sm:flex-row sm:items-center">
           <span>© 2026 ruleshub.dev</span>
-          <span>open source · AGPL-3.0</span>
+          <div className="flex items-center gap-4">
+            <Link
+              href={routes.privacy}
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy
+            </Link>
+            <Link
+              href={routes.terms}
+              className="hover:text-foreground transition-colors"
+            >
+              Terms
+            </Link>
+            <span>open source · AGPL-3.0</span>
+          </div>
         </div>
       </div>
     </footer>

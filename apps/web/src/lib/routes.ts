@@ -25,4 +25,6 @@ export const routes = {
   comingSoon: "/coming-soon",
   docs: "/docs",
   docsPage: (...slugs: string[]) => `/docs/${slugs.join("/")}`,
+  privacy: "/privacy",
+  terms: "/terms",
 } as const;

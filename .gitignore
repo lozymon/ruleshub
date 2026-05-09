@@ -11,6 +11,11 @@ dist/
 target/
 **/*.rs.bk
 
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
 # TypeScript build output
 *.tsbuildinfo
 apps/api/test/*.js

@@ -109,7 +109,8 @@ jobs:
           name: ${{ github.ref_name }}
           generate_release_notes: true
           draft: false
-          prerelease: false
+          # auto-flag pre-release semver tags (cli-v0.1.0-alpha.1) as prereleases
+          prerelease: ${{ contains(github.ref_name, '-') }}
 
   publish-crate:
     name: Publish to crates.io

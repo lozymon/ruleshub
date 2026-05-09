@@ -739,9 +739,10 @@ The current `packages/cli` is a real TypeScript implementation, not a wrapper. T
 - [x] `ruleshub/_launcher.py` — Python entry point that exec's the binary at `ruleshub/_bin/ruleshub` (or `.exe`); `subprocess.run` on Windows due to `os.execv` quoting issues
 - [x] `tools/build_wheels.py` — downloads canonical archive from GitHub Releases per Rust target, places binary in `_bin/`, runs `python -m build` for a generic wheel, then `wheel tags --platform-tag <tag> --remove` to retag for that platform. Avoids needing setup.py + bdist_wheel --plat-name
 - [x] 7 platform tags supported: `manylinux_2_17_{x86_64,aarch64}`, `musllinux_1_1_{x86_64,aarch64}`, `macosx_10_12_x86_64`, `macosx_11_0_arm64`, `win_amd64`
-- [x] CI smoke test — `cli-pip.yml`: 1 lint + 6 smoke jobs (3 OS × Python 3.10/3.13). Each builds the matching wheel against the published `0.1.0-alpha.3` binary, installs it, asserts `ruleshub --version` reports the right version
-- [ ] Auto-publish to PyPI on tag push using [trusted publishing](https://docs.pypi.org/trusted-publishers/) — needs PyPI account + register the project for trusted publishing pointing at this repo's release workflow. No token in CI once configured
-- [ ] First-time: claim the `ruleshub` name on PyPI by registering the project (one-time, before first publish)
+- [x] CI smoke test — `cli-pip.yml`: lint + 6 smoke jobs (3 OS × Python 3.10/3.13) + `build-all` job that builds all 7 wheels in one invocation and asserts the count (catches the regression class where intermediate wheels get clobbered)
+- [x] Auto-publish to PyPI on tag push via [trusted publishing](https://docs.pypi.org/trusted-publishers/) — `pypi-publish` job in `cli-release.yml` uses `pypa/gh-action-pypi-publish@release/v1` with `id-token: write` permission and the `pypi` GitHub environment. No token to manage; OIDC handles auth
+- [x] PyPI account + Pending Trusted Publisher configured pointing at this repo's `cli-release.yml` workflow + `pypi` environment. Activated on first successful publish (alpha.4)
+- [x] **Verified end-to-end**: `pip install ruleshub==0.1.0a5` downloads the 4 MB manylinux wheel and `ruleshub --version` outputs `ruleshub 0.1.0-alpha.5`. All 7 platform wheels live on `https://pypi.org/project/ruleshub/0.1.0a5/`
 
 #### Composer wrapper
 

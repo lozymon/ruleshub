@@ -31,8 +31,11 @@ jobs:
           - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
             cross: true
+          # Both Mac targets build on macos-latest (Apple Silicon).
+          # x86_64 is a cross-compile via the rustup target; macos-13 (Intel)
+          # had thin runner capacity post-deprecation.
           - target: x86_64-apple-darwin
-            os: macos-13
+            os: macos-latest
           - target: aarch64-apple-darwin
             os: macos-latest
           - target: x86_64-pc-windows-msvc

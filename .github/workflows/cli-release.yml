@@ -115,8 +115,11 @@ jobs:
           name: ${{ github.ref_name }}
           generate_release_notes: true
           draft: false
-          # auto-flag pre-release semver tags (cli-v0.1.0-alpha.1) as prereleases
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          # auto-flag semver pre-release tags as GitHub prereleases.
+          # Match on `-alpha`, `-beta`, `-rc` rather than any hyphen,
+          # because the tag prefix `cli-` itself contains a hyphen and
+          # would falsely flag stable tags like `cli-v0.1.0`.
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
 
   publish-crate:
     name: Publish to crates.io

@@ -179,14 +179,10 @@ jobs:
           EOF
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Install splitsh-lite
+      - name: Configure git identity
         run: |
-          set -euo pipefail
-          wget -q https://github.com/splitsh/lite/releases/download/v2.0.0-beta4/lite_linux_amd64.tar.gz
-          tar -xzf lite_linux_amd64.tar.gz
-          chmod +x splitsh-lite
-          sudo mv splitsh-lite /usr/local/bin/
-          splitsh-lite --version
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
 
       - name: Verify Composer plugin BINARY_VERSION matches tag
         run: |
@@ -206,7 +202,10 @@ jobs:
           VERSION="${GITHUB_REF_NAME#cli-v}"
           TAG="v${VERSION}"
 
-          SPLIT_SHA=$(splitsh-lite --prefix=packages-php/cli/)
+          # git subtree split is built into git, no external tool needed.
+          # Outputs the SHA of the synthetic tree containing only the prefix's
+          # history. Stable across re-runs for the same input.
+          SPLIT_SHA=$(git subtree split --prefix=packages-php/cli/)
           echo "split SHA: $SPLIT_SHA"
 
           git remote add split git@split.github.com:lozymon/ruleshub-cli-php.git

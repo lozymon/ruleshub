@@ -147,3 +147,72 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
         run: cargo publish --locked
+
+  composer-split:
+    name: Subtree split → ruleshub-cli-php
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.repository == 'lozymon/ruleshub'
+    environment: ruleshub-env
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure SSH for split repo
+        env:
+          DEPLOY_KEY: ${{ secrets.COMPOSER_SPLIT_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/split_key
+          chmod 600 ~/.ssh/split_key
+          cat > ~/.ssh/config <<'EOF'
+          Host split.github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/split_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+          EOF
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Install splitsh-lite
+        run: |
+          set -euo pipefail
+          wget -q https://github.com/splitsh/lite/releases/download/v2.0.0-beta4/lite_linux_amd64.tar.gz
+          tar -xzf lite_linux_amd64.tar.gz
+          chmod +x splitsh-lite
+          sudo mv splitsh-lite /usr/local/bin/
+          splitsh-lite --version
+
+      - name: Verify Composer plugin BINARY_VERSION matches tag
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          PLUGIN_VERSION=$(awk -F"'" '/BINARY_VERSION *=/ {print $2; exit}' packages-php/cli/src/Installer.php)
+          if [ "$TAG_VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "::error::tag $TAG_VERSION does not match Installer.php BINARY_VERSION $PLUGIN_VERSION"
+            echo "::error::bump packages-php/cli/src/Installer.php BINARY_VERSION before tagging"
+            exit 1
+          fi
+          echo "splitting ruleshub/cli@$PLUGIN_VERSION"
+
+      - name: Split + push to ruleshub-cli-php
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#cli-v}"
+          TAG="v${VERSION}"
+
+          SPLIT_SHA=$(splitsh-lite --prefix=packages-php/cli/)
+          echo "split SHA: $SPLIT_SHA"
+
+          git remote add split git@split.github.com:lozymon/ruleshub-cli-php.git
+          # Force-push allowed because the split repo is push-only — we never
+          # edit it directly. main always reflects the latest tagged release.
+          git push split "+${SPLIT_SHA}:refs/heads/main"
+          git push split "+${SPLIT_SHA}:refs/tags/${TAG}"
+
+          echo "pushed to ruleshub-cli-php @ main and tag $TAG"

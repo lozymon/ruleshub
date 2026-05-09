@@ -1,0 +1,10 @@
+# Build outputs
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Native binaries — populated at wheel-build time, never committed
+ruleshub/_bin/ruleshub
+ruleshub/_bin/ruleshub.exe

@@ -12,7 +12,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const os = require("node:os");
-const { execSync } = require("node:child_process");
+const { spawnSync } = require("node:child_process");
 
 const REPO = "lozymon/ruleshub";
 const BINARY_VERSION = "0.1.0";
@@ -44,6 +44,40 @@ async function fetchText(url) {
 
 function sha256(bytes) {
   return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
+function extract(archivePath, destDir, ext) {
+  // Windows: tar.exe's libarchive zip support is patchy across the
+  // various tar.exe versions Microsoft has shipped. Use PowerShell's
+  // Expand-Archive instead — works on every Windows 10+ runner.
+  // *nix: tar -xzf is rock solid for tar.gz everywhere.
+  if (process.platform === "win32" && ext === "zip") {
+    const result = spawnSync(
+      "powershell",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        `Expand-Archive -LiteralPath '${archivePath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`,
+      ],
+      { encoding: "utf8" },
+    );
+    if (result.status !== 0) {
+      throw new Error(
+        `Expand-Archive failed (rc=${result.status}): ${result.stderr || result.stdout}`,
+      );
+    }
+    return;
+  }
+  const result = spawnSync("tar", ["-xzf", archivePath], {
+    cwd: destDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `tar extraction failed (rc=${result.status}): ${result.stderr || result.stdout}`,
+    );
+  }
 }
 
 async function run() {
@@ -86,9 +120,7 @@ async function run() {
     const archivePath = path.join(tmpDir, archive);
     fs.writeFileSync(archivePath, archiveBytes);
 
-    // tar handles tar.gz on unix and zip on Windows 10+ (libarchive-based)
-    const flags = ext === "zip" ? "-xf" : "-xzf";
-    execSync(`tar ${flags} "${archivePath}"`, { cwd: tmpDir });
+    extract(archivePath, tmpDir, ext);
 
     const extractedBin = path.join(
       tmpDir,

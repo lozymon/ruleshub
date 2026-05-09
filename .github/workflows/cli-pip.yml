@@ -1,0 +1,83 @@
+name: CLI (pip)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "packages-py/**"
+      - ".github/workflows/cli-pip.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "packages-py/**"
+      - ".github/workflows/cli-pip.yml"
+
+defaults:
+  run:
+    working-directory: packages-py/cli
+
+jobs:
+  lint:
+    name: Python lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Validate pyproject.toml
+        run: python -c "import tomllib; tomllib.load(open('pyproject.toml','rb'))"
+      - name: Syntax check
+        run: |
+          python -m py_compile ruleshub/__init__.py
+          python -m py_compile ruleshub/_launcher.py
+          python -m py_compile tools/build_wheels.py
+
+  smoke:
+    name: smoke (Python ${{ matrix.python }} on ${{ matrix.os }})
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.13"]
+        include:
+          # Map each runner OS to the matching canonical Rust target.
+          # Linux → glibc target (ubuntu-latest is glibc-based; pip on
+          # ubuntu won't accept musllinux wheels by default).
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install build tools
+        run: pip install build wheel
+
+      - name: Build wheel for current platform
+        # Pin to a known-released binary version — same approach as the
+        # Composer smoke test. Tests wrapper *behaviour* against a real
+        # release, independent of what's currently in pyproject.toml.
+        shell: bash
+        run: |
+          python tools/build_wheels.py \
+            --version 0.1.0-alpha.3 \
+            --targets ${{ matrix.target }}
+
+      - name: Install wheel + smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel_path=$(ls dist/ruleshub-*.whl | head -1)
+          echo "installing $wheel_path"
+          pip install "$wheel_path"
+          ruleshub --version
+          ruleshub --version | grep -q 'ruleshub 0.1.0-alpha.3'

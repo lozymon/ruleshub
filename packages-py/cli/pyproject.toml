@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ruleshub"
+version = "0.1.0a3"
+description = "RulesHub CLI — install, publish, and manage AI coding tool assets. Wrapper that ships the canonical Rust binary."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "RulesHub contributors" }]
+keywords = ["cli", "ai", "claude", "cursor", "rules"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development",
+]
+
+[project.urls]
+Homepage = "https://ruleshub.dev"
+Source = "https://github.com/lozymon/ruleshub"
+Documentation = "https://ruleshub.dev/docs/cli/binary"
+
+[project.scripts]
+ruleshub = "ruleshub._launcher:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ruleshub*"]
+
+[tool.setuptools.package-data]
+ruleshub = ["_bin/*"]

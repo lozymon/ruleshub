@@ -734,10 +734,14 @@ The current `packages/cli` is a real TypeScript implementation, not a wrapper. T
 
 #### pip / pipx wrapper
 
-- [ ] `packages-py/cli/` — Python wrapper using [maturin-style platform wheels](https://www.maturin.rs/distribution.html#binary-wheels) so each `pip install` gets a wheel with the binary already embedded. No runtime download needed
-- [ ] CI matrix: Python 3.10, 3.11, 3.12, 3.13 × Linux glibc, Linux musl, macOS, Windows
-- [ ] Auto-publish to PyPI on tag push using [trusted publishing](https://docs.pypi.org/trusted-publishers/) (no token in CI)
-- [ ] Smoke test: `pipx install ruleshub` on each platform → `ruleshub --version`
+- [x] `packages-py/cli/` — Python wrapper with platform-specific wheels (`py3-none-<platform>`). Each wheel embeds the canonical Rust binary; pip auto-selects the matching wheel for the user's OS+arch. Same pattern ruff/biome/polars use; no runtime download, works offline after install
+- [x] PEP 621 metadata in `pyproject.toml`; PEP 440 version `0.1.0a3` (Cargo/npm/Composer's `0.1.0-alpha.3` normalized)
+- [x] `ruleshub/_launcher.py` — Python entry point that exec's the binary at `ruleshub/_bin/ruleshub` (or `.exe`); `subprocess.run` on Windows due to `os.execv` quoting issues
+- [x] `tools/build_wheels.py` — downloads canonical archive from GitHub Releases per Rust target, places binary in `_bin/`, runs `python -m build` for a generic wheel, then `wheel tags --platform-tag <tag> --remove` to retag for that platform. Avoids needing setup.py + bdist_wheel --plat-name
+- [x] 7 platform tags supported: `manylinux_2_17_{x86_64,aarch64}`, `musllinux_1_1_{x86_64,aarch64}`, `macosx_10_12_x86_64`, `macosx_11_0_arm64`, `win_amd64`
+- [x] CI smoke test — `cli-pip.yml`: 1 lint + 6 smoke jobs (3 OS × Python 3.10/3.13). Each builds the matching wheel against the published `0.1.0-alpha.3` binary, installs it, asserts `ruleshub --version` reports the right version
+- [ ] Auto-publish to PyPI on tag push using [trusted publishing](https://docs.pypi.org/trusted-publishers/) — needs PyPI account + register the project for trusted publishing pointing at this repo's release workflow. No token in CI once configured
+- [ ] First-time: claim the `ruleshub` name on PyPI by registering the project (one-time, before first publish)
 
 #### Composer wrapper
 

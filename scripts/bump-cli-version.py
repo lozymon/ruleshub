@@ -12,6 +12,8 @@ Files updated:
   - packages-php/cli/src/Installer.php  (semver, BINARY_VERSION constant)
   - packages-py/cli/pyproject.toml      (PEP 440 normalized)
   - packages-py/cli/ruleshub/__init__.py (PEP 440 normalized)
+  - packages/cli/package.json           (semver)
+  - packages/cli/tools/install.js       (semver, BINARY_VERSION constant)
 
 Usage:
     scripts/bump-cli-version.py 0.1.0
@@ -39,6 +41,8 @@ CARGO_TOML = REPO_ROOT / "packages-rs/cli/Cargo.toml"
 INSTALLER_PHP = REPO_ROOT / "packages-php/cli/src/Installer.php"
 PYPROJECT_TOML = REPO_ROOT / "packages-py/cli/pyproject.toml"
 PY_INIT = REPO_ROOT / "packages-py/cli/ruleshub/__init__.py"
+NPM_PACKAGE_JSON = REPO_ROOT / "packages/cli/package.json"
+NPM_INSTALL_JS = REPO_ROOT / "packages/cli/tools/install.js"
 
 
 def to_pep440(semver: str) -> str:
@@ -117,6 +121,18 @@ def main() -> int:
         r'^__version__ = "[^"]+"',
         f'__version__ = "{py_version}"',
     )
+    # npm package.json — uses semver, same as Cargo
+    replace_in_file(
+        NPM_PACKAGE_JSON,
+        r'^  "version": "[^"]+"',
+        f'  "version": "{semver}"',
+    )
+    # npm install.js — BINARY_VERSION constant the postinstall downloads
+    replace_in_file(
+        NPM_INSTALL_JS,
+        r'const BINARY_VERSION = "[^"]+";',
+        f'const BINARY_VERSION = "{semver}";',
+    )
 
     if not args.no_cargo_build:
         print("\nrefreshing Cargo.lock...")
@@ -131,7 +147,9 @@ def main() -> int:
     print("  git add packages-rs/cli/Cargo.toml packages-rs/cli/Cargo.lock \\")
     print("          packages-php/cli/src/Installer.php \\")
     print("          packages-py/cli/pyproject.toml \\")
-    print("          packages-py/cli/ruleshub/__init__.py")
+    print("          packages-py/cli/ruleshub/__init__.py \\")
+    print("          packages/cli/package.json \\")
+    print("          packages/cli/tools/install.js")
     print(f'  git commit -m "chore(cli): bump to {semver}"')
     print("  # PR develop -> main, merge")
     print(f"  # git tag cli-v{semver} origin/main && git push origin cli-v{semver}")

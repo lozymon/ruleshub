@@ -1,0 +1,143 @@
+name: CLI Release
+
+on:
+  push:
+    tags:
+      - "cli-v*"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: packages-rs/cli
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            cross: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: true
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            cross: true
+          - target: x86_64-apple-darwin
+            os: macos-13
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages-rs/cli
+          key: ${{ matrix.target }}
+
+      - name: Install cross (Linux ARM64 only)
+        if: matrix.cross
+        run: cargo install cross --locked
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Package archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#cli-v}"
+          NAME="ruleshub-${VERSION}-${{ matrix.target }}"
+          mkdir -p "dist/${NAME}"
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            cp "target/${{ matrix.target }}/release/ruleshub.exe" "dist/${NAME}/"
+            (cd dist && 7z a "${NAME}.zip" "${NAME}" >/dev/null)
+          else
+            cp "target/${{ matrix.target }}/release/ruleshub" "dist/${NAME}/"
+            (cd dist && tar czf "${NAME}.tar.gz" "${NAME}")
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: |
+            packages-rs/cli/dist/*.tar.gz
+            packages-rs/cli/dist/*.zip
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum ruleshub-* > SHA256SUMS
+          cat SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/ruleshub-*
+            artifacts/SHA256SUMS
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          # auto-flag pre-release semver tags (cli-v0.1.0-alpha.1) as prereleases
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  publish-crate:
+    name: Publish to crates.io
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.repository == 'lozymon/ruleshub'
+    environment: ruleshub-env
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages-rs/cli
+
+      - name: Verify Cargo.toml version matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          CRATE_VERSION=$(awk -F'"' '/^version *=/ {print $2; exit}' Cargo.toml)
+          if [ "$TAG_VERSION" != "$CRATE_VERSION" ]; then
+            echo "::error::tag $TAG_VERSION does not match Cargo.toml version $CRATE_VERSION"
+            exit 1
+          fi
+          echo "publishing ruleshub@$CRATE_VERSION"
+
+      - name: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --locked

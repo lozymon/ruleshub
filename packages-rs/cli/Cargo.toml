@@ -1,0 +1,28 @@
+[package]
+name = "ruleshub"
+version = "0.1.0-alpha.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "RulesHub CLI — install, publish, and manage AI coding tool assets"
+repository = "https://github.com/lozymon/ruleshub"
+homepage = "https://ruleshub.dev"
+keywords = ["ai", "claude", "cursor", "rules", "cli"]
+categories = ["command-line-utilities"]
+
+[profile.release]
+lto = "thin"
+strip = "symbols"
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+clap = { version = "4.6.1", features = ["derive"] }
+jsonschema = "0.46.4"
+reqwest = { version = "0.13.3", default-features = false, features = ["json", "rustls", "multipart"] }
+semver = "1.0.28"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+tokio = { version = "1.52.2", features = ["rt-multi-thread", "macros"] }
+zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }

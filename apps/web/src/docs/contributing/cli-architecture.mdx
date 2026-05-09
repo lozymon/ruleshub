@@ -1,0 +1,118 @@
+# CLI Architecture
+
+The RulesHub CLI ships through several ecosystems — npm, pip, Composer, GitHub Releases, crates.io — but it is **one Rust binary** under the hood. This page explains the model so contributors know where to land changes.
+
+## The model — one binary, many wrappers
+
+```
+                 ┌─────────────────────────────────┐
+                 │   packages-rs/cli               │
+                 │   ─────────────────             │
+                 │   The canonical Rust binary.    │
+                 │   Every command lives here.     │
+                 └────────────────┬────────────────┘
+                                  │
+              ┌───────────────────┼───────────────────┐
+              ▼                   ▼                   ▼
+   ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+   │  GitHub Releases │  │ Homebrew tap     │  │ Per-ecosystem    │
+   │  + install.sh    │  │ + scoop          │  │ wrappers         │
+   │  (raw binary)    │  │ (system pkg mgr) │  │ (npm, pip, ...)  │
+   └──────────────────┘  └──────────────────┘  └──────────────────┘
+```
+
+Wrappers do exactly **one** thing: detect the user's platform, download the matching binary from GitHub Releases, verify checksum, expose `ruleshub` on `$PATH`. They are forbidden to add behaviour. Adding behaviour to a wrapper is how you get drift; we don't do drift.
+
+This pattern is borrowed from [ruff](https://github.com/astral-sh/ruff), [biome](https://biomejs.dev/), and [swc](https://swc.rs/) — all distribute one Rust binary across many language ecosystems with no per-ecosystem reimplementation.
+
+## Why Rust
+
+- One static binary per platform, no runtime to install
+- Tooling (cargo-dist, GoReleaser-equivalent) is mature for this exact distribution pattern
+- Type-safe HTTP, JSON Schema, and zip handling
+- Smaller binaries than Go for our workload (~12 MB stripped, more compresses)
+- Strong precedent (ruff, biome, swc, tailwindcss v4) — pattern is well-trodden
+
+## Repo layout
+
+```
+ruleshub/
+├── packages-rs/
+│   └── cli/                # The canonical Rust crate
+│       ├── Cargo.toml      # Crate manifest, release profile, MSRV
+│       ├── openapi.json    # Vendored API spec (reference only today)
+│       └── src/
+│           ├── main.rs     # ~80 lines: clap parse → dispatch → ExitCode
+│           └── lib.rs      # All command logic + types
+├── packages/cli/           # Legacy Node CLI (npm). v2 will become a thin wrapper around the Rust binary
+└── .github/workflows/
+    ├── cli-rust.yml        # PR CI: fmt + clippy + build/test matrix (stable + beta × ubuntu/macos/windows)
+    └── cli-release.yml     # Tag-driven release: cross-compile + GitHub Release + checksums
+```
+
+When the per-ecosystem wrapper packages land they will sit at `packages-php/`, `packages-py/`, `packages-rb/`, `packages-net/` (sibling to `packages-rs/`).
+
+## Where to land changes
+
+| You're changing...                                       | You edit...                                                                                          |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| What a command does (install logic, validate rules, …)   | `packages-rs/cli/src/lib.rs`                                                                         |
+| CLI argument parsing (new subcommand, new flag)          | `packages-rs/cli/src/main.rs`                                                                        |
+| HTTP / API contract (URL, auth header, response shape)   | `packages-rs/cli/src/lib.rs` (the few `reqwest::get(...)` calls)                                     |
+| Tool path mapping (where files get written per AI tool)  | `destination_path()` in `packages-rs/cli/src/lib.rs`                                                 |
+| Lockfile format (`.ruleshub/installed.json`)             | `LockFile`, `InstalledEntry` in `packages-rs/cli/src/lib.rs`                                         |
+| JSON Schema rules for `ruleshub.json`                    | The schema served at `https://ruleshub.dev/schema/ruleshub.json` (separate repo / endpoint)          |
+| Release matrix (new target platform, new archive format) | `.github/workflows/cli-release.yml`                                                                  |
+| Lints / format rules                                     | `cargo fmt` / `cargo clippy` defaults — no project-specific config beyond what `Cargo.toml` declares |
+
+There is **no** "implement this in the npm CLI as well" follow-up — once the Rust binary changes, every wrapper picks it up at the next release.
+
+## Build & test loop
+
+```sh
+cd packages-rs/cli
+cargo check            # type-check, no codegen — fastest feedback
+cargo clippy --all-targets -- -D warnings
+cargo fmt --check
+cargo test
+cargo run -- <command>  # run a subcommand against api.ruleshub.dev/v1
+```
+
+The release binary lives at `target/release/ruleshub` after `cargo build --release`. Local release builds take ~1 minute on a modern laptop; debug builds finish in under 5 seconds.
+
+## Release flow
+
+A release is just a tag push:
+
+```sh
+git tag cli-v0.2.0
+git push origin cli-v0.2.0
+```
+
+`.github/workflows/cli-release.yml` then:
+
+1. Cross-compiles for `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu` (via [`cross`](https://github.com/cross-rs/cross)), `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`
+2. Packages each as `ruleshub-<version>-<target>.{tar.gz,zip}`
+3. Generates `SHA256SUMS`
+4. Creates a GitHub Release with all archives + auto-generated release notes
+
+The wrapper packages (npm, pip, Composer; gem and NuGet are deferred) — when they exist — will run their own publish jobs after the GitHub Release exists, downloading the matching archive and re-publishing into their ecosystems.
+
+## Compatibility guarantees
+
+- **Lockfile format** (`.ruleshub/installed.json`): forward-compatible. Adding fields is fine; renaming or removing requires a CLI major version bump and a migration step.
+- **Manifest format** (`ruleshub.json`): controlled by the JSON Schema. Backwards-incompatible schema changes need a `$schema` URL bump and a deprecation period.
+- **API surface used by the CLI**: documented in `packages-rs/cli/openapi.json` (vendored). Today the CLI uses 4 endpoints; if that grows past ~10 we revisit [progenitor](https://github.com/oxidecomputer/progenitor) codegen.
+
+## Non-goals
+
+- Multiple Rust implementations of the same command (one source of truth).
+- Per-ecosystem business logic in wrapper packages (download + exec only).
+- Hand-maintained Homebrew formula or Scoop manifests (the release pipeline emits these from a template).
+- Reimplementing the CLI in any other language. The musl Linux binary, install scripts, and per-ecosystem wrappers cover every realistic environment without needing a parallel implementation.
+
+## Related reading
+
+- [Overall RulesHub architecture](/docs/contributing/architecture)
+- [CLI command reference](/docs/cli/overview)
+- [Build phases plan — Phase 4.5 onwards](https://github.com/lozymon/ruleshub/blob/main/docs/plan.md)

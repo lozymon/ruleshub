@@ -651,7 +651,11 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Leaderboard page (`/leaderboard`) — stub exists, needs design overhaul
 - [ ] Weekly digest email signup + sending
 
-### Phase 4 — CLI
+### Phase 4 — CLI (v1, Node TypeScript)
+
+The original CLI, shipped in `packages/cli` and published to npm. Stays the canonical
+user experience for Node developers; in v2 (Phase 4.7) its internals are replaced by a
+thin downloader that wraps the canonical Rust binary, with no breaking changes to users.
 
 - [x] `npx ruleshub install <name> --tool claude-code` — installs into correct paths
 - [x] `npx ruleshub publish` — packages and publishes
@@ -660,6 +664,121 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Conflict detection — warn before overwriting existing files
 - [x] Asset preview — show file contents before writing (`--dry-run`)
 - [x] Pack-aware install — detect `type: pack`, resolve and install each included asset individually; print "Installing N packages from …"
+
+### Phase 4.5 — Canonical CLI Binary (Rust)
+
+The single source of truth for all CLI behaviour. Every language-ecosystem wrapper
+(npm, pip, Composer in scope; gem and NuGet deferred — see Phase 4.7) ships a thin
+package that downloads and runs this binary — there is no second implementation.
+Pattern modelled on [ruff](https://github.com/astral-sh/ruff),
+[biome](https://biomejs.dev/), and [swc](https://swc.rs/), all of which distribute
+one Rust binary across npm/pip/etc.
+
+- [x] `packages-rs/cli/` — single Rust crate producing the `ruleshub` binary (workspace promotion deferred until a second crate exists)
+- [x] Built on [clap](https://docs.rs/clap/) (derive API) — the de-facto Rust CLI framework
+- [x] MSRV declared (currently building on Rust 1.95; pin once we cross-compile)
+- [ ] Commands — implemented here once:
+  - [x] `validate` — file read, JSON parsed via serde, JSON Schema check (`jsonschema` crate, fetches `https://ruleshub.dev/schema/ruleshub.json`, strips `$schema` meta key), asset-type allow-list, semver check (`semver` crate), `targets[*].file` existence check, pack-vs-non-pack invariants, `--json` output mode. **Still needs**: license SPDX check, schema caching for offline use
+  - [x] `search [query] [--limit N]` — hits `GET /packages` on the live API
+  - [x] `whoami` — prints configured API URL
+  - [x] `install <namespace/name> [--version V] [--tool T] [--output DIR] [--dry-run] [--force]` — fetches package detail, picks version (latest default), reads manifest, downloads zip, extracts target file, writes to tool-specific destination path (Claude Code · Cursor · Copilot · Windsurf · Cline · Aider · Continue), conflict detection, `--dry-run` preview, **pack install via async recursion** (`Box::pin`), **lockfile write** to `.ruleshub/installed.json`. **Still needs**: checksum verification (cargo-dist SLSA attestation)
+  - [x] `outdated [--output DIR] [--json]` — reads lockfile, parallel-ish API lookup of latest versions, distinguishes "outdated" vs "couldn't check" (e.g. registry 404), exit code reflects state
+  - [x] `update [name] [--output DIR] [--dry-run]` — reads lockfile, calls install pipeline with `force=true` per package; without arg updates all
+  - [x] `publish [--token T] [--dry-run]` — runs `validate` first, builds zip in memory (skips `.git node_modules .DS_Store dist .turbo .ruleshub target`), 5 MB cap check, multipart POST to `/packages` with `Authorization: Bearer <RULESHUB_TOKEN>`
+- [~] Cross-cutting flags — `--dry-run`, `--force`, `--json` wired on the commands that have them; `--verbose` not yet added globally
+- [x] Library split — `src/lib.rs` holds all commands + types; `src/main.rs` is just clap parse → dispatch → `ExitCode`
+- [x] Custom error type via [`thiserror`](https://docs.rs/thiserror/) — `CliError` enum with named variants (`Io`, `Json`, `Http`, `Zip`, `SchemaCompile`, `InvalidName`, `NoVersion`, `VersionNotFound`, `UnsupportedTool`, `FileNotInArchive`, `Other`); `pub type Result<T> = std::result::Result<T, CliError>`; `?` works automatically via `#[from]` conversions
+- [x] `Tool` enum — derives `clap::ValueEnum`, exposes `--tool claude-code|cursor|copilot|windsurf|cline|aider|continue`, owns the destination-path mapping per asset type
+- [~] HTTP client — **deferred**: hand-rolled `reqwest::get(...).json()` with explicit status checks (~30 lines, 4 endpoints used). Revisit [progenitor](https://github.com/oxidecomputer/progenitor) codegen from `https://api.ruleshub.dev/docs-json` when **any** of these is true: (a) the CLI uses 10+ API endpoints, (b) an IDE extension or second Rust client wants to share generated types, (c) we need to enforce request/response shape on every API change. Today: 2 of 4 endpoints (multipart `publish`, binary `download`) are awkward for codegen and would stay hand-rolled regardless, making the win marginal. Spec is vendored at `packages-rs/cli/openapi.json` for reference
+- [x] Manifest parsing via [serde](https://serde.rs/) + JSON Schema validation via [jsonschema](https://docs.rs/jsonschema/) — driven by the live schema URL
+- [x] CI workflow — `.github/workflows/cli-rust.yml`: `fmt` + `clippy --all-targets -- -D warnings` + `build & test` matrix (stable + beta × ubuntu/macos/windows). Path-filtered to `packages-rs/**`
+- [x] Release workflow — `.github/workflows/cli-release.yml`: triggered by `cli-v*` tags, cross-compiles for `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl` (Alpine), `aarch64-unknown-linux-gnu`, `aarch64-unknown-linux-musl` (all musl/aarch64 via [`cross`](https://github.com/cross-rs/cross)), `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`. Produces tar.gz/zip archives + SHA256SUMS, attaches to a GitHub Release. Release profile: `lto = "thin"` + `strip = "symbols"` + `codegen-units = 1` (current binary size: 12 MB on Linux x86_64 glibc)
+- [x] Async runtime — [tokio](https://tokio.rs/) on `rt-multi-thread + macros`; `#[tokio::main]` on `fn main()`. HTTP via `reqwest` with `rustls` (no OpenSSL dependency)
+- [~] **Deferred**: [cargo-dist](https://github.com/axodotdev/cargo-dist). Hand-rolled `cli-release.yml` already does the core job (cross-compile + tar.gz/zip + SHA256SUMS + GitHub Release). Revisit cargo-dist when we need its extras: auto-synced Homebrew formula, npm-shim publishing, Windows MSI installer, or SLSA build attestations
+- [x] CLI architecture doc — landed at `apps/web/src/docs/contributing/cli-architecture.mdx`, registered in `nav.ts` + `content-map.ts`. Covers: the binary-plus-wrappers model, where to land changes (cheat-sheet table), repo layout, build/test loop, release flow, compatibility guarantees, non-goals
+
+### Phase 4.6 — Native Binary Distribution
+
+Direct binary install for users who don't go through a language ecosystem.
+
+- [x] GitHub Releases — `cli-release.yml` attaches all 7 supported platforms (Linux gnu/musl × x86_64/aarch64, macOS Intel/Silicon, Windows x86_64) plus SHA256SUMS on every `cli-v*` tag push
+- [x] Install script (Linux / macOS) — `apps/web/public/install.sh`, served at `https://ruleshub.dev/install.sh`. POSIX-compatible (works in bash, zsh, dash, ash). Detects platform, fetches latest release tag from the GitHub API, downloads + verifies SHA256 against the published `SHA256SUMS`, extracts to `$HOME/.local/bin/ruleshub`. Honours `RULESHUB_VERSION` and `RULESHUB_INSTALL_DIR` env overrides. Linux uses musl target for portability across glibc/musl distros
+- [x] PowerShell install script (Windows) — `apps/web/public/install.ps1`, served at `https://ruleshub.dev/install.ps1`. Equivalent feature set: platform detection, GitHub API for latest tag, SHA256 verify, extracts to `%LOCALAPPDATA%\Programs\ruleshub\ruleshub.exe`. ARM64 falls back to x86_64 via emulation (until we add a Windows ARM64 target)
+- [x] `docs/cli/binary.mdx` — covers all native install paths (install scripts, npm, manual GitHub Releases download, build from source), verifying, updating, uninstalling, and a "coming soon" section for Homebrew/Scoop/cargo. Registered in `nav.ts` + `content-map.ts`. Overview page updated to lead with native install
+- [x] `cargo install ruleshub` — `publish-crate` job in `cli-release.yml` runs after `build` succeeds: verifies tag matches `Cargo.toml` version, then `cargo publish --locked`. Guarded by `if: github.repository == 'lozymon/ruleshub'` (forks won't try). Needs `CRATES_IO_TOKEN` secret on first publish; both `ruleshub` and `ruleshub-cli` names confirmed available on crates.io as of writing
+- [~] **Deferred — Homebrew tap** (`brew install lozymon/tap/ruleshub`). Modern dev tools (`bun`, `deno`, `uv`, `ruff`, `mise`, `fnm`) primarily use `curl | sh` install scripts; Homebrew is a "nice to have" with real maintenance overhead (separate tap repo + deploy key + auto-update workflow + cross-arch testing). Add when there's user demand or download volume justifies homebrew-core submission
+- [~] **Deferred — Scoop bucket** (`scoop install ruleshub`). Same reasoning as Homebrew — defer until Windows users specifically ask for it
+
+### Phase 4.7 — Language-Ecosystem Wrappers
+
+Per-ecosystem packages that do exactly one thing: detect the user's platform, download the matching canonical binary from GitHub Releases, verify checksum, expose `ruleshub` on the user's `$PATH`. Each wrapper is ~50-150 lines of code with no business logic.
+
+**In scope**: npm, pip, Composer. **Deferred** (with documented exit conditions): RubyGems, NuGet.
+
+| Ecosystem  | Wrapper package | Install command                       | Mechanism                                     | Status   |
+| ---------- | --------------- | ------------------------------------- | --------------------------------------------- | -------- |
+| npm        | `ruleshub@^2`   | `npm install -g ruleshub`             | `postinstall` script downloads binary         | In scope |
+| pip / pipx | `ruleshub`      | `pipx install ruleshub`               | Per-platform wheels embed the binary directly | In scope |
+| Composer   | `ruleshub/cli`  | `composer require ruleshub/cli --dev` | `post-install-cmd` script downloads binary    | In scope |
+| RubyGems   | `ruleshub`      | `gem install ruleshub`                | Per-platform gems embed the binary directly   | Deferred |
+| NuGet      | `RulesHub.Cli`  | `dotnet tool install -g RulesHub.Cli` | Per-RID NuGet package embeds the binary       | Deferred |
+
+#### npm wrapper — migrate the existing TS CLI
+
+The current `packages/cli` is a real TypeScript implementation, not a wrapper. The migration:
+
+- [ ] Bump npm package to `ruleshub@2.0.0` — major version signals the underlying change
+- [ ] Replace `packages/cli/src/**` with a postinstall script that downloads the matching Rust binary from GitHub Releases and places it at `node_modules/.bin/ruleshub` (per-platform fallback to bundled binary if download fails)
+- [ ] Existing `npx ruleshub@1` users keep working unchanged (legacy TS CLI on the v1 line)
+- [ ] Smoke test in CI: `npm install -g ruleshub@<version>` on Linux/macOS/Windows runners → `ruleshub --version` → assert `0.1.0`
+
+#### pip / pipx wrapper
+
+- [ ] `packages-py/cli/` — Python wrapper using [maturin-style platform wheels](https://www.maturin.rs/distribution.html#binary-wheels) so each `pip install` gets a wheel with the binary already embedded. No runtime download needed
+- [ ] CI matrix: Python 3.10, 3.11, 3.12, 3.13 × Linux glibc, Linux musl, macOS, Windows
+- [ ] Auto-publish to PyPI on tag push using [trusted publishing](https://docs.pypi.org/trusted-publishers/) (no token in CI)
+- [ ] Smoke test: `pipx install ruleshub` on each platform → `ruleshub --version`
+
+#### Composer wrapper
+
+- [ ] `packages-php/cli/` — Composer package that downloads the binary in `post-install-cmd` (Composer doesn't have platform-specific packages, so we use postinstall like npm)
+- [ ] PHP 8.2+ minimum (matches Laravel/Symfony LTS)
+- [ ] Auto-publish to Packagist on tag push (Packagist auto-syncs from GitHub, just need to register the repo once)
+- [ ] Exposes `vendor/bin/ruleshub` per-project, plus `composer global` install path for system-wide use
+- [ ] Smoke test: `composer require ruleshub/cli` in a fresh PHP project → `vendor/bin/ruleshub --version`
+
+#### Cross-cutting
+
+- [ ] Every wrapper verifies SHA256 against the published `SHA256SUMS` before placing the binary on `PATH`
+- [ ] Single GitHub Action gates on `build` matrix succeeding, then publishes all wrappers in parallel after the GitHub Release exists
+- [ ] `cargo install` doesn't need a wrapper — it builds the canonical binary directly from crates.io (Phase 4.6, done)
+- [ ] `go install` is intentionally **not** supported — Go modules can't wrap a Rust binary cleanly; Go developers use the install script
+- [ ] `docs/cli/wrappers.md` — explains the wrapper model and lists the install command per ecosystem (or fold into `docs/cli/binary.mdx` when wrappers ship)
+
+#### Deferred wrappers — exit conditions
+
+- [~] **RubyGems** — defer until a Ruby/Rails developer opens an issue or PRs the wrapper. Modern Rails projects increasingly use Bundler-aware tooling that can install via `gem install` from `Gemfile`, but the audience overlap with AI-coding tooling is small and shrinking
+- [~] **NuGet** — defer until enterprise .NET demand emerges (likely signalled by an org using RulesHub adopting it internally and asking). Per-RID NuGet packaging is the highest-effort wrapper format on the list and we shouldn't pay that cost speculatively
+
+### Phase 4.8 — Shell-Only CLI Implementation (dropped)
+
+**Originally scoped**: a parallel CLI implementation in pure POSIX shell + PowerShell — `ruleshub.sh` / `ruleshub.ps1` — for environments where running a binary isn't possible.
+
+**Why dropped**: the canonical Rust binary now ships statically-linked musl builds that run on Alpine, distroless, and scratch containers, plus glibc Linux, macOS (Intel + Silicon), and Windows. Phase 4.6 added one-line install scripts (`install.sh`, `install.ps1`) that put the binary on `$PATH` in ~3 seconds. The cases this phase was supposed to address — environments that allow shell but block binaries, or CI runs that can't spare the install-script seconds — are either rare or not worth a parallel implementation that will inevitably drift.
+
+**Revisit only if**: a concrete user case appears that the binary genuinely can't reach (e.g. a corporate environment that allows scripts but blocks all unsigned binaries), AND that user can't fall back to direct API calls via `curl` + `jq`.
+
+The `install.sh` and `install.ps1` files in `apps/web/public/` from Phase 4.6 are **installers**, not CLI implementations — they download the Rust binary, they don't reimplement commands.
+
+### Phase 4.9 — CLI Architecture & Conformance
+
+Cross-cutting infrastructure that keeps the wrapper model honest.
+
+- [x] **Single source of truth** — `packages-rs/cli` is the only place CLI behaviour lives. Wrappers (when they land in Phase 4.7) will be download-and-exec only, no behaviour added
+- [~] **OpenAPI-driven HTTP client** — deferred (see Phase 4.5 progenitor entry). Hand-rolled `reqwest::get(...)` for our 4 endpoints today
+- [x] **Shared JSON Schema** — manifest validation already loads `https://ruleshub.dev/schema/ruleshub.json` at runtime in `commands/validate.rs`; any future IDE extension can hit the same URL
+- [ ] **Wrapper smoke tests** — every shipping wrapper (npm, pip, Composer; gem and NuGet are deferred) runs a tiny matrix in CI: install on every supported platform → run `ruleshub --version` → assert binary launched. Comes with Phase 4.7
+- [x] **Release coordination** — `cli-release.yml` already does this for the binary side: tag → cross-compile → GitHub Release → `cargo publish`. Phase 4.7 wrappers will hook in to re-publish themselves after the GitHub Release exists
 
 ### Phase 5 — Organisations & Trust
 

@@ -9,8 +9,14 @@ curl -fsSL https://ruleshub.dev/install.sh | sh
 # quick install (Windows PowerShell)
 iwr -useb https://ruleshub.dev/install.ps1 | iex
 
-# or via npx (no global install)
-npx ruleshub <command> [options]
+# Python
+pipx install ruleshub
+
+# PHP
+composer require --dev ruleshub/cli
+
+# Rust
+cargo install ruleshub
 ```
 
 ## Commands

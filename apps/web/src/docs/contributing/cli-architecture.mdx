@@ -44,13 +44,15 @@ ruleshub/
 │       └── src/
 │           ├── main.rs     # ~80 lines: clap parse → dispatch → ExitCode
 │           └── lib.rs      # All command logic + types
-├── packages/cli/           # Legacy Node CLI (npm). v2 will become a thin wrapper around the Rust binary
+├── packages/cli/           # Legacy Node CLI (npm v1.x). v2 → wrapper around the Rust binary (pending)
+├── packages-php/cli/       # Composer plugin wrapper (ruleshub/cli on Packagist)
+├── packages-py/cli/        # pip wrapper with platform-specific wheels (ruleshub on PyPI)
 └── .github/workflows/
     ├── cli-rust.yml        # PR CI: fmt + clippy + build/test matrix (stable + beta × ubuntu/macos/windows)
-    └── cli-release.yml     # Tag-driven release: cross-compile + GitHub Release + checksums
+    ├── cli-php.yml         # PR CI: PHP lint + Composer install smoke (PHP 8.2/8.3/8.4 × ubuntu/macos/windows)
+    ├── cli-pip.yml         # PR CI: lint + per-platform smoke + build-all (Python 3.10/3.13 × ubuntu/macos/windows)
+    └── cli-release.yml     # Tag-driven release: cross-compile → GitHub Release → crates.io + Packagist + PyPI
 ```
-
-When the per-ecosystem wrapper packages land they will sit at `packages-php/`, `packages-py/`, `packages-rb/`, `packages-net/` (sibling to `packages-rs/`).
 
 ## Where to land changes
 
@@ -66,6 +68,25 @@ When the per-ecosystem wrapper packages land they will sit at `packages-php/`, `
 | Lints / format rules                                     | `cargo fmt` / `cargo clippy` defaults — no project-specific config beyond what `Cargo.toml` declares |
 
 There is **no** "implement this in the npm CLI as well" follow-up — once the Rust binary changes, every wrapper picks it up at the next release.
+
+## Bumping the version
+
+The CLI ships through three ecosystems whose version-string conventions differ — Cargo wants `0.1.0-alpha.3`, PEP 440 demands `0.1.0a3`, Composer matches Cargo. Run the bump script before tagging a release; it edits all four manifests in one shot and refreshes `Cargo.lock`:
+
+```bash
+scripts/bump-cli-version.py 0.2.0-alpha.1
+# or for a stable release
+scripts/bump-cli-version.py 0.2.0
+```
+
+Files updated:
+
+- `packages-rs/cli/Cargo.toml` (and `Cargo.lock` via `cargo build`)
+- `packages-php/cli/src/Installer.php` (`BINARY_VERSION` constant)
+- `packages-py/cli/pyproject.toml` (PEP 440 normalized)
+- `packages-py/cli/ruleshub/__init__.py` (PEP 440 normalized)
+
+Each release-pipeline job has its own version-vs-tag verify step, so drift would be caught at release time, but the script removes the chance of getting there in the first place.
 
 ## Build & test loop
 

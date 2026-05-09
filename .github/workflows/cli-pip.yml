@@ -81,3 +81,34 @@ jobs:
           pip install "$wheel_path"
           ruleshub --version
           ruleshub --version | grep -q 'ruleshub 0.1.0-alpha.3'
+
+  build-all:
+    # Catches regressions in tools/build_wheels.py where the per-target
+    # loop loses previously-built wheels (e.g. wiping dist/ between
+    # iterations). The default smoke matrix runs --targets <one>, which
+    # doesn't exercise the multi-target accumulation path.
+    name: build all 7 platform wheels
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install build tools
+        run: pip install build wheel
+      - name: Build every target
+        run: |
+          cd packages-py/cli
+          python tools/build_wheels.py --version 0.1.0-alpha.3
+      - name: Assert exactly 7 wheels were produced
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages-py/cli
+          count=$(ls dist/*.whl | wc -l)
+          ls -1 dist/
+          if [ "$count" -ne 7 ]; then
+            echo "::error::expected 7 wheels, got $count"
+            exit 1
+          fi

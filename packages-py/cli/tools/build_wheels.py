@@ -85,24 +85,30 @@ def clean_bin_dir() -> None:
 
 
 def build_generic_wheel(dist_dir: Path) -> Path:
-    """Build a py3-none-any wheel; return its path."""
-    # Wipe any previous build outputs
-    for sub in ("build", "dist"):
-        target = PACKAGE_DIR / sub
-        if target.exists():
-            shutil.rmtree(target)
+    """Build a ``py3-none-any`` wheel; return its path.
 
+    Only wipes ``build/`` (setuptools' staging dir) — never ``dist/``,
+    because the multi-target release workflow accumulates wheels from
+    previous iterations there. Identify the freshly-built wheel via
+    a before/after snapshot, same trick we use in :func:`retag_wheel`.
+    """
+    build_dir = PACKAGE_DIR / "build"
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
+    before = set(dist_dir.glob("*.whl"))
     subprocess.run(
         [sys.executable, "-m", "build", "--wheel", "--outdir", str(dist_dir)],
         cwd=PACKAGE_DIR,
         check=True,
     )
-    wheels = list(dist_dir.glob("ruleshub-*-py3-none-any.whl"))
-    if len(wheels) != 1:
+    after = set(dist_dir.glob("*.whl"))
+    new_wheels = after - before
+    if len(new_wheels) != 1:
         raise RuntimeError(
-            f"expected exactly one py3-none-any wheel, found {len(wheels)}: {wheels}"
+            f"expected exactly one new py3-none-any wheel, got: {sorted(new_wheels)}"
         )
-    return wheels[0]
+    return new_wheels.pop()
 
 
 def retag_wheel(generic_wheel: Path, platform_tag: str, dist_dir: Path) -> Path:

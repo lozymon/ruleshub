@@ -269,3 +269,62 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: packages-py/cli/dist
+
+  npm-publish:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.repository == 'lozymon/ruleshub'
+    environment: npm
+    defaults:
+      run:
+        working-directory: packages/cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Verify package.json version matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::tag $TAG_VERSION does not match package.json version $PKG_VERSION"
+            echo "::error::run scripts/bump-cli-version.py before tagging"
+            exit 1
+          fi
+          echo "publishing ruleshub@$PKG_VERSION"
+
+      - name: Verify install.js BINARY_VERSION matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          BIN_VERSION=$(awk -F'"' '/const BINARY_VERSION/ {print $2; exit}' tools/install.js)
+          if [ "$TAG_VERSION" != "$BIN_VERSION" ]; then
+            echo "::error::tag $TAG_VERSION does not match install.js BINARY_VERSION $BIN_VERSION"
+            exit 1
+          fi
+
+      - name: Publish
+        # npm uses the `latest` dist-tag by default. For pre-release
+        # tags (cli-v0.1.0-alpha.6 etc.) publish under `next` instead
+        # so plain `npm install ruleshub` keeps resolving to the latest
+        # stable. Same logic as the GitHub Release prerelease flag.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_NAME" == *-alpha* || "$GITHUB_REF_NAME" == *-beta* || "$GITHUB_REF_NAME" == *-rc* ]]; then
+            echo "publishing as @next (prerelease)"
+            npm publish --tag next
+          else
+            echo "publishing as @latest (stable)"
+            npm publish
+          fi

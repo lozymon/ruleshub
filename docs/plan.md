@@ -723,14 +723,23 @@ Per-ecosystem packages that do exactly one thing: detect the user's platform, do
 | RubyGems   | `ruleshub`      | `gem install ruleshub`                | Per-platform gems embed the binary directly   | Deferred |
 | NuGet      | `RulesHub.Cli`  | `dotnet tool install -g RulesHub.Cli` | Per-RID NuGet package embeds the binary       | Deferred |
 
-#### npm wrapper — migrate the existing TS CLI
+#### npm wrapper
 
-The current `packages/cli` is a real TypeScript implementation, not a wrapper. The migration:
+Confirmed unclaimed on npm (registry returned 404 for `ruleshub` and `@ruleshub/cli`), so no v1 legacy users to migrate. Started fresh at `ruleshub@0.1.0` matching the binary version.
 
-- [ ] Bump npm package to `ruleshub@2.0.0` — major version signals the underlying change
-- [ ] Replace `packages/cli/src/**` with a postinstall script that downloads the matching Rust binary from GitHub Releases and places it at `node_modules/.bin/ruleshub` (per-platform fallback to bundled binary if download fails)
-- [ ] Existing `npx ruleshub@1` users keep working unchanged (legacy TS CLI on the v1 line)
-- [ ] Smoke test in CI: `npm install -g ruleshub@<version>` on Linux/macOS/Windows runners → `ruleshub --version` → assert `0.1.0`
+- [x] `packages/cli/` — replaced TypeScript implementation (commands, lib, dist, deps) with a wrapper. Same package directory, same npm name, but the package shrunk from a real CLI (~hundreds of KB compressed) to a ~3 KB launcher
+- [x] `bin/ruleshub.js` — Node launcher (~30 lines) that locates `bin/ruleshub-bin` and exec's it; clear error message if the binary's missing (postinstall failed or `--ignore-scripts` was used)
+- [x] `tools/install.js` — postinstall: detects platform (linux/darwin/win32 × x64/arm64), downloads the matching archive from `https://github.com/lozymon/ruleshub/releases/download/cli-v$VERSION/...`, verifies SHA256 against the published `SHA256SUMS`, extracts via system `tar` (handles `.tar.gz` on unix and `.zip` on Windows 10+ libarchive-based tar), places binary at `bin/ruleshub-bin`. Errors don't propagate (exit 0) to keep `npm install` from aborting on transient blips
+- [x] `engines: node >= 18`; no runtime dependencies (uses built-in `fetch`, `crypto`, `child_process`)
+- [x] CI smoke test — `cli-npm.yml`: 1 lint + 6 smoke jobs (3 OS × Node 20/22). Each `npm pack`s the wrapper, installs the tarball into a fresh consumer with `RULESHUB_VERSION=0.1.0` pinned, verifies `ruleshub --version` reports `ruleshub 0.1.0`
+- [x] `npm-publish` job in `cli-release.yml`: token-auth (npm OIDC trusted publishing not yet GA at writing), publishes under `--tag next` for pre-release tags (`-alpha`/`-beta`/`-rc`) and `--tag latest` (default) for stable. Verifies both `package.json` version and `install.js` `BINARY_VERSION` match the git tag before publishing
+- [x] `scripts/bump-cli-version.py` extended to also update `packages/cli/package.json` and `packages/cli/tools/install.js` — single command bumps all seven version-pinned files
+- [x] CLAUDE.md rewritten for the wrapper model (no `src/`, no TS, no implementation)
+- [ ] First-time setup before first publish:
+  - Create npm account (or sign in) at <https://www.npmjs.com/>
+  - Generate access token (Granular or Classic with publish scope on `ruleshub`) at <https://www.npmjs.com/settings/tokens>
+  - Add as `NPM_TOKEN` secret in the `npm` GitHub environment (Settings → Environments → New environment "npm")
+  - Manual `npm login + npm publish` from local to claim the `ruleshub` namespace (npm's first-publish behaviour); subsequent tags auto-publish via CI
 
 #### pip / pipx wrapper
 

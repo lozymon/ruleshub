@@ -64,7 +64,14 @@ jobs:
           composer config allow-plugins.ruleshub/cli true
 
       - name: Require the wrapper
+        # Pin to a known-published binary version. The wrapper's
+        # BINARY_VERSION constant tracks the latest release, but during
+        # PR CI for an unreleased version, that binary doesn't exist on
+        # GitHub Releases yet — RULESHUB_VERSION lets the smoke test
+        # assert behaviour against a real release that does exist.
         shell: bash
+        env:
+          RULESHUB_VERSION: 0.1.0-alpha.1
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/consumer"
@@ -76,4 +83,4 @@ jobs:
           set -euo pipefail
           cd "$RUNNER_TEMP/consumer"
           ./vendor/bin/ruleshub --version
-          ./vendor/bin/ruleshub --version | grep -q 'ruleshub 0.1.0-alpha.2'
+          ./vendor/bin/ruleshub --version | grep -q 'ruleshub 0.1.0-alpha.1'

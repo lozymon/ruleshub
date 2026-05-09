@@ -26,6 +26,18 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
     public function activate(Composer $composer, IOInterface $io): void
     {
         $this->io = $io;
+
+        // Bootstrap install: when this plugin is just being added via
+        // `composer require ruleshub/cli`, Composer fires the
+        // POST_PACKAGE_INSTALL event for our own package *before* it
+        // loads our plugin code, so onPackageEvent never sees that
+        // first install. Detect by checking whether the native binary
+        // is on disk yet, and trigger Installer here if not.
+        $binDir = dirname(__DIR__) . '/bin';
+        $binName = 'ruleshub-bin' . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
+        if (!is_file($binDir . '/' . $binName)) {
+            Installer::install($io);
+        }
     }
 
     public function deactivate(Composer $composer, IOInterface $io): void

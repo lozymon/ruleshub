@@ -1,6 +1,6 @@
 {
   "name": "ruleshub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "RulesHub CLI — install, publish, and manage AI coding tool assets. Wrapper that downloads the canonical Rust binary on install.",
   "homepage": "https://ruleshub.dev",

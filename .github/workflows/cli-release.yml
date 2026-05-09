@@ -98,8 +98,11 @@ jobs:
           merge-multiple: true
 
       - name: Generate checksums
+        # Override workflow-level working-directory: download-artifact
+        # places files at ${{ github.workspace }}/artifacts, not under
+        # packages-rs/cli where the rest of the jobs operate.
+        working-directory: ${{ github.workspace }}/artifacts
         run: |
-          cd artifacts
           sha256sum ruleshub-* > SHA256SUMS
           cat SHA256SUMS
 

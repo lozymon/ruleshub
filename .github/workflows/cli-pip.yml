@@ -98,14 +98,11 @@ jobs:
       - name: Install build tools
         run: pip install build wheel
       - name: Build every target
-        run: |
-          cd packages-py/cli
-          python tools/build_wheels.py --version 0.1.0-alpha.3
+        run: python tools/build_wheels.py --version 0.1.0-alpha.3
       - name: Assert exactly 7 wheels were produced
         shell: bash
         run: |
           set -euo pipefail
-          cd packages-py/cli
           count=$(ls dist/*.whl | wc -l)
           ls -1 dist/
           if [ "$count" -ne 7 ]; then

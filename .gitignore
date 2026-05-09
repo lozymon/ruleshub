@@ -16,6 +16,10 @@ __pycache__/
 *.pyc
 *.egg-info/
 
+# npm wrapper — native binary downloaded by postinstall
+packages/cli/bin/ruleshub-bin
+packages/cli/bin/ruleshub-bin.exe
+
 # TypeScript build output
 *.tsbuildinfo
 apps/api/test/*.js

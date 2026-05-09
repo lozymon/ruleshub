@@ -1,26 +1,36 @@
 {
-  "name": "@ruleshub/cli",
+  "name": "ruleshub",
   "version": "0.1.0",
   "license": "MIT",
+  "description": "RulesHub CLI — install, publish, and manage AI coding tool assets. Wrapper that downloads the canonical Rust binary on install.",
+  "homepage": "https://ruleshub.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lozymon/ruleshub"
+  },
+  "bugs": {
+    "url": "https://github.com/lozymon/ruleshub/issues"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "claude",
+    "cursor",
+    "rules"
+  ],
   "bin": {
-    "ruleshub": "./dist/index.js"
+    "ruleshub": "./bin/ruleshub.js"
   },
-  "main": "./dist/index.js",
+  "files": [
+    "bin",
+    "tools/install.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "postinstall": "node ./tools/install.js"
   },
-  "dependencies": {
-    "@ruleshub/types": "workspace:*",
-    "adm-zip": "^0.5.10",
-    "chalk": "^4.1.2",
-    "commander": "^12.1.0"
-  },
-  "devDependencies": {
-    "@types/adm-zip": "^0.5.5",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.4.0",
-    "vitest": "^1.6.0"
+  "engines": {
+    "node": ">=18"
   }
 }

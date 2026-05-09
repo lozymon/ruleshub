@@ -56,11 +56,13 @@ jobs:
             --type=library \
             --stability=dev \
             --no-interaction
-          # Use a path repository pointing at our wrapper source.
-          # symlink=false forces Composer to copy the package, so the plugin's
-          # binary write doesn't pollute the actual source tree.
+          # Convert backslashes in the workspace path to forward slashes —
+          # otherwise Composer's --json parser reads `D:\a\...` as having
+          # invalid escape sequences (\a, \r). Forward slashes work on
+          # Windows just fine for path repositories.
+          WORKSPACE="${GITHUB_WORKSPACE//\\//}"
           composer config repositories.local --json \
-            "{\"type\":\"path\",\"url\":\"$GITHUB_WORKSPACE/packages-php/cli\",\"options\":{\"symlink\":false}}"
+            "{\"type\":\"path\",\"url\":\"${WORKSPACE}/packages-php/cli\",\"options\":{\"symlink\":false}}"
           composer config allow-plugins.ruleshub/cli true
 
       - name: Require the wrapper

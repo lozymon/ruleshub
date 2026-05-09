@@ -215,3 +215,54 @@ jobs:
           git push split "+${SPLIT_SHA}:refs/tags/${TAG}"
 
           echo "pushed to ruleshub-cli-php @ main and tag $TAG"
+
+  pypi-publish:
+    name: Publish wheels to PyPI
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.repository == 'lozymon/ruleshub'
+    environment: pypi
+    permissions:
+      id-token: write # required for OIDC trusted publishing to PyPI
+    defaults:
+      run:
+        working-directory: packages-py/cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Verify pyproject.toml version matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          # Normalize semver pre-release (alpha.N/beta.N/rc.N) to PEP 440
+          # form (aN/bN/rcN). Cargo's "0.1.0-alpha.4" becomes Python's
+          # "0.1.0a4" — same release, different ecosystem string convention.
+          EXPECTED=$(echo "$TAG_VERSION" \
+            | sed -E 's/-alpha\.([0-9]+)/a\1/' \
+            | sed -E 's/-beta\.([0-9]+)/b\1/' \
+            | sed -E 's/-rc\.([0-9]+)/rc\1/')
+          PY_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "$EXPECTED" != "$PY_VERSION" ]; then
+            echo "::error::tag $TAG_VERSION (PEP 440: $EXPECTED) does not match pyproject.toml version $PY_VERSION"
+            echo "::error::bump packages-py/cli/pyproject.toml version before tagging"
+            exit 1
+          fi
+          echo "publishing ruleshub@$PY_VERSION (from cli-v$TAG_VERSION)"
+
+      - name: Install build tools
+        run: pip install build wheel
+
+      - name: Build all 7 platform wheels
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#cli-v}"
+          python tools/build_wheels.py --version "$TAG_VERSION"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages-py/cli/dist

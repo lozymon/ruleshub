@@ -61,7 +61,7 @@ def fetch_binary(version: str, target: str, bin_name: str, ext: str) -> bytes:
         f"https://github.com/lozymon/ruleshub/releases/download/"
         f"cli-v{version}/{archive}"
     )
-    print(f"  ↓ {url}")
+    print(f"  download: {url}")
     with urllib.request.urlopen(url) as r:
         archive_bytes = r.read()
 
@@ -106,7 +106,15 @@ def build_generic_wheel(dist_dir: Path) -> Path:
 
 
 def retag_wheel(generic_wheel: Path, platform_tag: str, dist_dir: Path) -> Path:
-    """Re-tag the generic wheel with a platform tag using `wheel tags`."""
+    """Re-tag the generic wheel with a platform tag using `wheel tags`.
+
+    `wheel` may normalize compound platform tags (e.g. reorder
+    ``manylinux_2_17_x86_64.manylinux2014_x86_64`` alphabetically), so
+    we don't try to predict the resulting filename. Snapshot the dist
+    directory before and after, and pick up whichever new wheel
+    appeared.
+    """
+    before = set(dist_dir.glob("*.whl"))
     subprocess.run(
         [
             sys.executable, "-m", "wheel", "tags",
@@ -117,18 +125,18 @@ def retag_wheel(generic_wheel: Path, platform_tag: str, dist_dir: Path) -> Path:
         cwd=dist_dir,
         check=True,
     )
-    # `wheel tags --remove` deletes the source and writes a new wheel
-    # named with the new platform tag.
-    name = generic_wheel.name.replace("py3-none-any", f"py3-none-{platform_tag}")
-    new_wheel = generic_wheel.with_name(name)
-    if not new_wheel.is_file():
-        raise RuntimeError(f"retagged wheel not found at {new_wheel}")
-    return new_wheel
+    after = set(dist_dir.glob("*.whl"))
+    new_wheels = after - before
+    if len(new_wheels) != 1:
+        raise RuntimeError(
+            f"expected exactly one new wheel after retag, got: {sorted(new_wheels)}"
+        )
+    return new_wheels.pop()
 
 
 def build_for(version: str, target: str, platform_tag: str,
               bin_name: str, ext: str, dist_dir: Path) -> Path:
-    print(f"\n=== {target} → {platform_tag} ===")
+    print(f"\n=== {target} -> {platform_tag} ===")
 
     clean_bin_dir()
     binary_bytes = fetch_binary(version, target, bin_name, ext)
@@ -138,7 +146,7 @@ def build_for(version: str, target: str, platform_tag: str,
 
     generic = build_generic_wheel(dist_dir)
     final = retag_wheel(generic, platform_tag, dist_dir)
-    print(f"  ✓ {final.name}")
+    print(f"  ok: {final.name}")
     return final
 
 
@@ -175,7 +183,7 @@ def main() -> int:
             build_for(args.version, target, platform_tag, bin_name, ext, dist_dir)
         )
 
-    print(f"\ndone — {len(built)} wheel(s) in {dist_dir}")
+    print(f"\ndone: {len(built)} wheel(s) in {dist_dir}")
     for w in built:
         print(f"  {w.name}")
     return 0

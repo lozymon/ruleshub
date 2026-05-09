@@ -73,24 +73,20 @@ final class Installer
             self::extract($archivePath, $tmpDir, $isWindows);
 
             $extractedDir = "{$tmpDir}/ruleshub-{$version}-{$target}";
-            $extractedBinName = 'ruleshub' . ($isWindows ? '.exe' : '');
-            $extractedBin = "{$extractedDir}/{$extractedBinName}";
+            $extractedBin = "{$extractedDir}/ruleshub" . ($isWindows ? '.exe' : '');
             if (!is_file($extractedBin)) {
                 throw new RuntimeException("expected binary not found in archive: {$extractedBin}");
             }
 
+            // The PHP launcher at bin/ruleshub stays put forever; the native
+            // binary lives at bin/ruleshub-bin (or .exe). The launcher exec's it.
             $packageDir = self::packageDir();
-            $binPath = "{$packageDir}/bin/{$extractedBinName}";
+            $binPath = "{$packageDir}/bin/ruleshub-bin" . ($isWindows ? '.exe' : '');
 
             if (!@copy($extractedBin, $binPath)) {
                 throw new RuntimeException("failed to write binary to {$binPath}");
             }
             chmod($binPath, 0o755);
-
-            // Drop the .php-ish placeholder if both placeholder and .exe end up coexisting on Windows.
-            if ($isWindows && is_file("{$packageDir}/bin/ruleshub")) {
-                @unlink("{$packageDir}/bin/ruleshub");
-            }
 
             $io->write("<info>ruleshub: installed v{$version} at {$binPath}</info>");
         } finally {

@@ -749,9 +749,10 @@ The current `packages/cli` is a real TypeScript implementation, not a wrapper. T
 - [x] Hardcoded `BINARY_VERSION` constant (bumped per release); `RULESHUB_VERSION` env override for testing
 - [x] Linux/macOS use system `tar`; Windows uses `ZipArchive`
 - [x] Failures logged but don't propagate — keeps the user's overall `composer install` from aborting on a transient network blip
-- [ ] CI smoke test — PHP 8.2/8.3/8.4 × Linux/macOS/Windows runners; `composer require` + `vendor/bin/ruleshub --version` round-trip
-- [ ] Packagist registration — needs publish strategy decision (subtree-split monorepo subdir to a separate repo, vs. tag scheme like `composer-v*` on this repo)
-- [ ] Auto-publish on release — Packagist auto-syncs from configured tags once registered
+- [x] Cross-platform launcher pattern — `bin/ruleshub` is a permanent PHP launcher (works with Composer's Windows `.bat` proxy that invokes `php bin/ruleshub`); native binary is downloaded to `bin/ruleshub-bin` (or `.exe` on Windows) and exec'd via `passthru`
+- [x] CI smoke test — `cli-php.yml` matrix: PHP 8.2/8.3/8.4 × Linux/macOS/Windows. Builds a fresh consumer project pointing at `packages-php/cli/` via a `path` repository (`symlink: false` so the install doesn't pollute source), runs `composer require --dev ruleshub/cli:*@dev`, asserts `vendor/bin/ruleshub --version` reports `ruleshub 0.1.0-alpha.1`
+- [ ] **Publish mechanism — decided**: subtree-split. Packagist requires `composer.json` at the repo root, so subdirectory packages aren't supported directly. A separate repo (`lozymon/ruleshub-cli-php`) will receive `packages-php/cli/` contents on each release via [`splitsh-lite`](https://github.com/splitsh/lite) and Packagist will watch _that_ repo. Composer-only tag prefixes on this monorepo (e.g. `composer-v*`) don't work because Packagist still couldn't read the manifest from a subdirectory
+- [ ] **Subtree-split infrastructure** — needed before first Packagist release: (a) create the `lozymon/ruleshub-cli-php` repo, (b) generate a deploy key with write access, (c) add a workflow step to `cli-release.yml` that runs `splitsh-lite --prefix=packages-php/cli/` and pushes the split tree to the target repo with `vX.Y.Z` tags. Until this lands, users can't `composer require` from Packagist; CI smoke test against the local `path` repo proves the wrapper code is correct
 
 #### Cross-cutting
 

@@ -1,0 +1,6 @@
+#!/usr/bin/env php
+<?php
+fwrite(STDERR, "ruleshub: native binary not installed yet.\n");
+fwrite(STDERR, "  the post-install-cmd Composer script downloads it. did you run with --no-scripts?\n");
+fwrite(STDERR, "  to force the install: composer run-script post-install-cmd\n");
+exit(127);

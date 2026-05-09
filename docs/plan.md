@@ -741,11 +741,17 @@ The current `packages/cli` is a real TypeScript implementation, not a wrapper. T
 
 #### Composer wrapper
 
-- [ ] `packages-php/cli/` — Composer package that downloads the binary in `post-install-cmd` (Composer doesn't have platform-specific packages, so we use postinstall like npm)
-- [ ] PHP 8.2+ minimum (matches Laravel/Symfony LTS)
-- [ ] Auto-publish to Packagist on tag push (Packagist auto-syncs from GitHub, just need to register the repo once)
-- [ ] Exposes `vendor/bin/ruleshub` per-project, plus `composer global` install path for system-wide use
-- [ ] Smoke test: `composer require ruleshub/cli` in a fresh PHP project → `vendor/bin/ruleshub --version`
+- [x] `packages-php/cli/` — Composer **plugin** subscribing to `POST_PACKAGE_INSTALL` + `POST_PACKAGE_UPDATE` (script-level `post-install-cmd` only fires for the root package, so a plugin is the right hook for a dependency)
+- [x] PHP 8.2+ minimum (matches Laravel/Symfony LTS)
+- [x] PSR-4 autoload at `RulesHub\Cli\` — `Plugin` (event subscription) + `Installer` (download/verify/extract logic)
+- [x] Platform detection via `PHP_OS_FAMILY` + `php_uname('m')`, maps to release archive target triples
+- [x] SHA256 verification against published `SHA256SUMS` before placing binary
+- [x] Hardcoded `BINARY_VERSION` constant (bumped per release); `RULESHUB_VERSION` env override for testing
+- [x] Linux/macOS use system `tar`; Windows uses `ZipArchive`
+- [x] Failures logged but don't propagate — keeps the user's overall `composer install` from aborting on a transient network blip
+- [ ] CI smoke test — PHP 8.2/8.3/8.4 × Linux/macOS/Windows runners; `composer require` + `vendor/bin/ruleshub --version` round-trip
+- [ ] Packagist registration — needs publish strategy decision (subtree-split monorepo subdir to a separate repo, vs. tag scheme like `composer-v*` on this repo)
+- [ ] Auto-publish on release — Packagist auto-syncs from configured tags once registered
 
 #### Cross-cutting
 

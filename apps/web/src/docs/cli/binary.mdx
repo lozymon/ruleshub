@@ -26,6 +26,28 @@ iwr -useb https://ruleshub.dev/install.ps1 | iex
 
 Installs to `%LOCALAPPDATA%\Programs\ruleshub\ruleshub.exe`. Override via `$env:RULESHUB_INSTALL_DIR` or `$env:RULESHUB_VERSION`.
 
+## Via pip / pipx
+
+For Python users — the wheel ships the binary already embedded; no runtime download:
+
+```bash
+pipx install ruleshub
+# or
+pip install ruleshub
+```
+
+Available as platform-specific wheels for Linux (glibc + musl, x86_64 + ARM64), macOS (Intel + Apple Silicon), and Windows. See [PyPI](https://pypi.org/project/ruleshub/) for all versions.
+
+## Via Composer
+
+For PHP projects (Laravel, Symfony, etc.):
+
+```bash
+composer require --dev ruleshub/cli
+```
+
+Composer prompts the first time about plugin permissions — say `y`. The plugin downloads the matching binary into `vendor/bin/ruleshub`. See [Packagist](https://packagist.org/packages/ruleshub/cli) for all versions.
+
 ## Via npm / npx
 
 If you already have Node, `npx` lets you run the CLI without a global install:
@@ -39,6 +61,8 @@ Or install once globally:
 ```bash
 npm install -g ruleshub
 ```
+
+> **Note**: as of writing, the npm package is still the v1 TypeScript implementation. v2 (binary-wrapper) is on the roadmap — see [Phase 4.7 of the plan](https://github.com/lozymon/ruleshub/blob/main/docs/plan.md).
 
 ## Manual download
 
@@ -114,10 +138,8 @@ If you installed with `npm install -g`, run `npm uninstall -g ruleshub`.
 
 ## Coming soon
 
-We're adding these channels in upcoming releases — see [Phase 4.7 of the plan](https://github.com/lozymon/ruleshub/blob/main/docs/plan.md):
-
-- Wrappers in **pip** and **Composer**
-- **Homebrew**, **Scoop**, **gem**, **NuGet** — added once there's user demand
+- **npm v2** — current `ruleshub@1.x` is the legacy TypeScript CLI; v2 will switch to a wrapper around the canonical binary (matches the pip + Composer pattern). See [Phase 4.7 of the plan](https://github.com/lozymon/ruleshub/blob/main/docs/plan.md).
+- **Homebrew**, **Scoop**, **gem**, **NuGet** — added once there's user demand. Until then, `curl | sh`, `pip install`, or `composer require` cover the macOS, Python, and PHP ecosystems respectively.
 
 ## Related
 

@@ -44,13 +44,15 @@ ruleshub/
 │       └── src/
 │           ├── main.rs     # ~80 lines: clap parse → dispatch → ExitCode
 │           └── lib.rs      # All command logic + types
-├── packages/cli/           # Legacy Node CLI (npm). v2 will become a thin wrapper around the Rust binary
+├── packages/cli/           # Legacy Node CLI (npm v1.x). v2 → wrapper around the Rust binary (pending)
+├── packages-php/cli/       # Composer plugin wrapper (ruleshub/cli on Packagist)
+├── packages-py/cli/        # pip wrapper with platform-specific wheels (ruleshub on PyPI)
 └── .github/workflows/
     ├── cli-rust.yml        # PR CI: fmt + clippy + build/test matrix (stable + beta × ubuntu/macos/windows)
-    └── cli-release.yml     # Tag-driven release: cross-compile + GitHub Release + checksums
+    ├── cli-php.yml         # PR CI: PHP lint + Composer install smoke (PHP 8.2/8.3/8.4 × ubuntu/macos/windows)
+    ├── cli-pip.yml         # PR CI: lint + per-platform smoke + build-all (Python 3.10/3.13 × ubuntu/macos/windows)
+    └── cli-release.yml     # Tag-driven release: cross-compile → GitHub Release → crates.io + Packagist + PyPI
 ```
-
-When the per-ecosystem wrapper packages land they will sit at `packages-php/`, `packages-py/`, `packages-rb/`, `packages-net/` (sibling to `packages-rs/`).
 
 ## Where to land changes
 

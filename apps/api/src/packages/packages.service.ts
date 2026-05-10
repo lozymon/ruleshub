@@ -372,6 +372,7 @@ export class PackagesService {
     namespace: string,
     name: string,
     version: string,
+    requestBaseUrl?: string,
   ): Promise<{ url: string }> {
     const pkgVersion = await this.findVersion(namespace, name, version);
 
@@ -379,10 +380,16 @@ export class PackagesService {
       throw new BadRequestException(`Version ${version} has been yanked`);
     }
 
-    const apiUrl = (
-      this.config.get<string>("apiUrl") ?? "http://localhost:3001/v1"
+    // Prefer the request's own origin so the URL we hand back is whatever
+    // host the client used to reach us (api.ruleshub.dev in prod,
+    // localhost:3001 in dev) — no per-deploy env coordination needed.
+    // Fall back to the API_URL env var, then to a localhost default.
+    const base = (
+      requestBaseUrl ??
+      this.config.get<string>("apiUrl") ??
+      "http://localhost:3001/v1"
     ).replace(/\/$/, "");
-    const url = `${apiUrl}/packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file`;
+    const url = `${base}/packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file`;
     return { url };
   }
 

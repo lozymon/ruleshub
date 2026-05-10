@@ -106,7 +106,7 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
           </div>
 
           {/* Content */}
-          <div className="overflow-hidden rounded-lg border border-border bg-bg-code">
+          <div className="overflow-hidden rounded-lg border border-[var(--code-border)] bg-[var(--code-bg)]">
             {isMarkdown ? (
               <div className="prose-readme max-h-[520px] overflow-y-auto p-5">
                 <ReadmeMarkdown>{current.content}</ReadmeMarkdown>

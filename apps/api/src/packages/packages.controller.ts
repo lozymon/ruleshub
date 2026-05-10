@@ -109,11 +109,18 @@ export class PackagesController {
   })
   @ApiResponse({ status: 404 })
   download(
+    @Req() req: Request,
     @Param("namespace") namespace: string,
     @Param("name") name: string,
     @Param("version") version: string,
   ) {
-    return this.packagesService.getDownloadUrl(namespace, name, version);
+    // Build the base from the request itself so the URL we return is
+    // reachable by whoever just called us. `trust proxy` is set in
+    // main.ts so req.protocol and req.get('host') reflect the
+    // public-facing values behind any reverse proxy. /v1 mirrors the
+    // global prefix in main.ts.
+    const base = `${req.protocol}://${req.get("host")}/v1`;
+    return this.packagesService.getDownloadUrl(namespace, name, version, base);
   }
 
   @Get(":namespace/:name/:version/file")

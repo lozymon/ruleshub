@@ -1,10 +1,13 @@
 use clap::{Parser, Subcommand};
-use ruleshub::Tool;
+use ruleshub::{InstallOptions, Tool};
 use std::process::ExitCode;
 
 #[derive(Parser, Debug)]
 #[command(name = "ruleshub", version, about, long_about = None)]
 struct Cli {
+    /// Print extra diagnostics (URLs, HTTP status, byte counts).
+    #[arg(short, long, global = true)]
+    verbose: bool,
     #[command(subcommand)]
     command: Commands,
 }
@@ -39,6 +42,9 @@ enum Commands {
         dry_run: bool,
         #[arg(long)]
         force: bool,
+        /// For pack installs, keep installing remaining assets after a failure.
+        #[arg(long)]
+        continue_on_error: bool,
     },
     /// Check installed packages for newer versions.
     Outdated {
@@ -94,15 +100,26 @@ async fn main() -> ExitCode {
             output,
             dry_run,
             force,
-        } => ruleshub::install(&name, version, tool, &output, dry_run, force)
-            .await
-            .map(|_| true),
+            continue_on_error,
+        } => {
+            let opts = InstallOptions {
+                dry_run,
+                force,
+                verbose: cli.verbose,
+                continue_on_error,
+            };
+            ruleshub::install(&name, version, tool, &output, opts)
+                .await
+                .map(|_| true)
+        }
         Commands::Outdated { output, json } => ruleshub::outdated(&output, json).await,
         Commands::Update {
             name,
             output,
             dry_run,
-        } => ruleshub::update(name, &output, dry_run).await.map(|_| true),
+        } => ruleshub::update(name, &output, dry_run, cli.verbose)
+            .await
+            .map(|_| true),
         Commands::Publish { token, dry_run } => {
             ruleshub::publish(token, dry_run).await.map(|_| true)
         }

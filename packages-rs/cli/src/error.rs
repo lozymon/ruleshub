@@ -22,6 +22,15 @@ pub enum CliError {
     UnsupportedTool { tool: String, available: String },
     #[error("file '{0}' not found in package archive")]
     FileNotInArchive(String),
+    #[error(
+        "download did not return a zip archive (status {status}, content-type {content_type}, {length} bytes, head: {head_hex})"
+    )]
+    DownloadNotZip {
+        status: String,
+        content_type: String,
+        length: usize,
+        head_hex: String,
+    },
     #[error("unknown tool '{0}' — cannot map to install paths")]
     UnknownTool(String),
     #[error("{0}")]

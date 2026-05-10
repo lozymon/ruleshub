@@ -146,29 +146,6 @@ export class PackagesController {
     });
   }
 
-  @Get(":namespace/:name/:version/file")
-  @ApiOperation({ summary: "Stream the package zip artifact" })
-  @ApiResponse({ status: 200, description: "application/zip stream" })
-  @ApiResponse({ status: 404 })
-  async file(
-    @Param("namespace") namespace: string,
-    @Param("name") name: string,
-    @Param("version") version: string,
-    @Res() res: Response,
-  ) {
-    const { stream, filename } = await this.packagesService.streamFile(
-      namespace,
-      name,
-      version,
-    );
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    stream.pipe(res);
-    stream.on("error", (err) => {
-      res.destroy(err);
-    });
-  }
-
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

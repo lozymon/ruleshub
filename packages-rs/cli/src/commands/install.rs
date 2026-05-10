@@ -224,7 +224,8 @@ pub(crate) fn install_inner(
         let mut content = Vec::new();
         entry.read_to_end(&mut content)?;
 
-        let dest_rel = destination_path(tool, &manifest.asset_type, &target.file);
+        let (_, pkg_name) = parse_full_name(&name)?;
+        let dest_rel = destination_path(tool, &manifest.asset_type, &target.file, pkg_name);
         let output_path = Path::new(&output);
         let dest_abs = output_path.join(&dest_rel);
 

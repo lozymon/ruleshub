@@ -45,32 +45,131 @@ impl FromStr for Tool {
     }
 }
 
-pub(crate) fn destination_path(tool: Tool, asset_type: &str, source_file: &str) -> PathBuf {
-    let base_name = Path::new(source_file)
-        .file_name()
+/// Compute the install path for an asset.
+///
+/// Every tool installs to `{tool_root}/{type_dir}/{pkg_name}.{ext}` so
+/// packages don't collide and every asset is grouped by type. The file is
+/// named after the package (`typescript-strict.md`), not the source filename.
+///
+///   .claude/rules/typescript-strict.md
+///   .cursor/rules/typescript-strict.mdc
+///   .continue/skills/no-secrets.md
+///   .github/copilot/commands/cleanup.md
+///   .windsurf/agents/reviewer.md
+///   .clinerules/workflows/ship.md
+///   .aider/rules/typescript-strict.md
+///
+/// Cursor rules use the `.mdc` extension because that's Cursor's convention;
+/// every other path preserves the source file's extension.
+pub(crate) fn destination_path(
+    tool: Tool,
+    asset_type: &str,
+    source_file: &str,
+    pkg_name: &str,
+) -> PathBuf {
+    let ext = Path::new(source_file)
+        .extension()
         .and_then(|s| s.to_str())
-        .unwrap_or(source_file);
+        .unwrap_or("md");
 
-    match tool {
-        Tool::ClaudeCode => match asset_type {
-            "rule" => PathBuf::from("CLAUDE.md"),
-            "command" | "workflow" | "agent" => PathBuf::from(".claude/commands").join(base_name),
-            _ => PathBuf::from(base_name),
-        },
-        Tool::Cursor => match asset_type {
-            "rule" => PathBuf::from(".cursorrules"),
-            _ => PathBuf::from(".cursor/rules").join(base_name),
-        },
-        Tool::Copilot => PathBuf::from(".github/copilot-instructions.md"),
-        Tool::Windsurf => PathBuf::from(".windsurfrules"),
-        Tool::Cline => PathBuf::from(".clinerules"),
-        Tool::Aider => {
-            if base_name == "CONVENTIONS.md" {
-                PathBuf::from("CONVENTIONS.md")
-            } else {
-                PathBuf::from(".aider.conf.yml")
-            }
-        }
-        Tool::Continue => PathBuf::from(".continue").join(base_name),
+    let tool_root = match tool {
+        Tool::ClaudeCode => ".claude",
+        Tool::Cursor => ".cursor",
+        Tool::Copilot => ".github/copilot",
+        Tool::Windsurf => ".windsurf",
+        Tool::Cline => ".clinerules",
+        Tool::Aider => ".aider",
+        Tool::Continue => ".continue",
+    };
+
+    let type_dir = match asset_type {
+        "rule" => "rules",
+        "skill" => "skills",
+        "command" => "commands",
+        "agent" => "agents",
+        "workflow" => "workflows",
+        "mcp-server" => "mcp-servers",
+        other => other,
+    };
+
+    let filename = if matches!(tool, Tool::Cursor) && asset_type == "rule" {
+        format!("{pkg_name}.mdc")
+    } else {
+        format!("{pkg_name}.{ext}")
+    };
+
+    PathBuf::from(tool_root).join(type_dir).join(filename)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn claude_code_rule_lands_in_rules_dir_named_after_package() {
+        let p = destination_path(Tool::ClaudeCode, "rule", "RULE.md", "typescript-strict");
+        assert_eq!(p, PathBuf::from(".claude/rules/typescript-strict.md"));
+    }
+
+    #[test]
+    fn claude_code_each_asset_type_gets_its_own_dir() {
+        assert_eq!(
+            destination_path(Tool::ClaudeCode, "skill", "x.md", "no-secrets-in-code"),
+            PathBuf::from(".claude/skills/no-secrets-in-code.md")
+        );
+        assert_eq!(
+            destination_path(Tool::ClaudeCode, "command", "x.md", "cleanup"),
+            PathBuf::from(".claude/commands/cleanup.md")
+        );
+        assert_eq!(
+            destination_path(Tool::ClaudeCode, "agent", "x.md", "reviewer"),
+            PathBuf::from(".claude/agents/reviewer.md")
+        );
+        assert_eq!(
+            destination_path(Tool::ClaudeCode, "workflow", "x.md", "ship"),
+            PathBuf::from(".claude/workflows/ship.md")
+        );
+    }
+
+    #[test]
+    fn extension_is_taken_from_source_file() {
+        let p = destination_path(Tool::ClaudeCode, "mcp-server", "server.json", "fs-mcp");
+        assert_eq!(p, PathBuf::from(".claude/mcp-servers/fs-mcp.json"));
+    }
+
+    #[test]
+    fn cursor_rule_uses_mdc_extension() {
+        let p = destination_path(Tool::Cursor, "rule", "RULE.md", "typescript-strict");
+        assert_eq!(p, PathBuf::from(".cursor/rules/typescript-strict.mdc"));
+    }
+
+    #[test]
+    fn cursor_non_rule_keeps_source_extension_and_type_dir() {
+        let p = destination_path(Tool::Cursor, "skill", "SKILL.md", "no-secrets");
+        assert_eq!(p, PathBuf::from(".cursor/skills/no-secrets.md"));
+    }
+
+    #[test]
+    fn every_tool_groups_by_type_under_its_own_root() {
+        assert_eq!(
+            destination_path(Tool::Continue, "rule", "x.md", "ts-strict"),
+            PathBuf::from(".continue/rules/ts-strict.md")
+        );
+        assert_eq!(
+            destination_path(Tool::Copilot, "command", "x.md", "cleanup"),
+            PathBuf::from(".github/copilot/commands/cleanup.md")
+        );
+        assert_eq!(
+            destination_path(Tool::Windsurf, "agent", "x.md", "reviewer"),
+            PathBuf::from(".windsurf/agents/reviewer.md")
+        );
+        assert_eq!(
+            destination_path(Tool::Cline, "workflow", "x.md", "ship"),
+            PathBuf::from(".clinerules/workflows/ship.md")
+        );
+        assert_eq!(
+            destination_path(Tool::Aider, "rule", "x.md", "ts-strict"),
+            PathBuf::from(".aider/rules/ts-strict.md")
+        );
     }
 }

@@ -5,7 +5,9 @@ import {
   ConflictException,
   BadRequestException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import AdmZip = require("adm-zip");
+import { Readable } from "stream";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { SearchPackagesDto } from "./dto/search-packages.dto";
@@ -113,6 +115,7 @@ export class PackagesService {
     private readonly storage: StorageService,
     private readonly webhooks: WebhooksService,
     private readonly securityAlerts: SecurityAlertsService,
+    private readonly config: ConfigService,
   ) {}
 
   async search(params: SearchPackagesDto) {
@@ -376,6 +379,24 @@ export class PackagesService {
       throw new BadRequestException(`Version ${version} has been yanked`);
     }
 
+    const apiUrl = (
+      this.config.get<string>("apiUrl") ?? "http://localhost:3001/v1"
+    ).replace(/\/$/, "");
+    const url = `${apiUrl}/packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file`;
+    return { url };
+  }
+
+  async streamFile(
+    namespace: string,
+    name: string,
+    version: string,
+  ): Promise<{ stream: Readable; filename: string }> {
+    const pkgVersion = await this.findVersion(namespace, name, version);
+
+    if (pkgVersion.yanked) {
+      throw new BadRequestException(`Version ${version} has been yanked`);
+    }
+
     await this.prisma.$transaction([
       this.prisma.packageVersion.update({
         where: { id: pkgVersion.id },
@@ -387,8 +408,8 @@ export class PackagesService {
       }),
     ]);
 
-    const url = await this.storage.getSignedUrl(pkgVersion.storageKey);
-    return { url };
+    const stream = await this.storage.download(pkgVersion.storageKey);
+    return { stream, filename: `${name}-${version}.zip` };
   }
 
   async getFilePreview(

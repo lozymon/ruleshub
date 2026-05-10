@@ -7,6 +7,7 @@ import {
   Query,
   Body,
   Req,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -15,6 +16,7 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Response } from "express";
 import {
   ApiTags,
   ApiOperation,
@@ -100,8 +102,11 @@ export class PackagesController {
   }
 
   @Get(":namespace/:name/:version/download")
-  @ApiOperation({ summary: "Get a signed download URL for a package version" })
-  @ApiResponse({ status: 200, description: "Signed download URL" })
+  @ApiOperation({ summary: "Get a download URL for a package version" })
+  @ApiResponse({
+    status: 200,
+    description: "JSON envelope { url } pointing at the streaming endpoint",
+  })
   @ApiResponse({ status: 404 })
   download(
     @Param("namespace") namespace: string,
@@ -109,6 +114,29 @@ export class PackagesController {
     @Param("version") version: string,
   ) {
     return this.packagesService.getDownloadUrl(namespace, name, version);
+  }
+
+  @Get(":namespace/:name/:version/file")
+  @ApiOperation({ summary: "Stream the package zip artifact" })
+  @ApiResponse({ status: 200, description: "application/zip stream" })
+  @ApiResponse({ status: 404 })
+  async file(
+    @Param("namespace") namespace: string,
+    @Param("name") name: string,
+    @Param("version") version: string,
+    @Res() res: Response,
+  ) {
+    const { stream, filename } = await this.packagesService.streamFile(
+      namespace,
+      name,
+      version,
+    );
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    stream.pipe(res);
+    stream.on("error", (err) => {
+      res.destroy(err);
+    });
   }
 
   @Post()

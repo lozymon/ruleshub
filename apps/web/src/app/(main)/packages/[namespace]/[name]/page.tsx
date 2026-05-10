@@ -1,34 +1,34 @@
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronRight, Clock, Download, ExternalLink } from 'lucide-react';
-import { getPackage, getPackagePreview } from '@/lib/api/packages';
-import { InstallBlock } from '@/components/packages/install-block';
-import { StarButton } from '@/components/packages/star-button';
-import { ToolBadge } from '@/components/ui/tool-badge';
-import { QualityBadge } from '@/components/ui/quality-badge';
-import { BadgeSnippets } from '@/components/packages/badge-snippets';
-import { PackageTabs } from '@/components/packages/package-tabs';
-import { config } from '@/lib/config';
-import { routes } from '@/lib/routes';
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ChevronRight, Clock, Download, ExternalLink } from "lucide-react";
+import { getPackage, getPackagePreview } from "@/lib/api/packages";
+import { InstallBlock } from "@/components/packages/install-block";
+import { StarButton } from "@/components/packages/star-button";
+import { ToolBadge } from "@/components/ui/tool-badge";
+import { QualityBadge } from "@/components/ui/quality-badge";
+import { BadgeSnippets } from "@/components/packages/badge-snippets";
+import { PackageTabs } from "@/components/packages/package-tabs";
+import { config } from "@/lib/config";
+import { routes } from "@/lib/routes";
 
 interface PackagePageProps {
   params: Promise<{ namespace: string; name: string }>;
 }
 
 const TYPE_ICONS: Record<string, string> = {
-  rule: '📄',
-  command: '>_',
-  workflow: '⇢',
-  agent: '◉',
-  mcp: '⬡',
-  pack: '▣',
+  rule: "📄",
+  command: ">_",
+  workflow: "⇢",
+  agent: "◉",
+  mcp: "⬡",
+  pack: "▣",
 };
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const h = Math.floor(diffMs / 3_600_000);
   const d = Math.floor(diffMs / 86_400_000);
-  if (h < 1) return 'just now';
+  if (h < 1) return "just now";
   if (h < 24) return `${h}h ago`;
   if (d < 7) return `${d}d ago`;
   return `${Math.floor(d / 7)}w ago`;
@@ -81,7 +81,7 @@ export default async function PackagePage({ params }: PackagePageProps) {
       {/* Header */}
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] border border-border bg-bg-elev text-[26px] text-fg-muted">
-          {TYPE_ICONS[pkg.type] ?? '□'}
+          {TYPE_ICONS[pkg.type] ?? "□"}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -194,12 +194,12 @@ export default async function PackagePage({ params }: PackagePageProps) {
             </div>
             {[
               {
-                label: 'Total downloads',
+                label: "Total downloads",
                 value: pkg.totalDownloads.toLocaleString(),
               },
-              { label: 'Stars', value: pkg.stars.toLocaleString() },
-              { label: 'Latest version', value: version ? `v${version}` : '—' },
-              { label: 'Type', value: pkg.type },
+              { label: "Stars", value: pkg.stars.toLocaleString() },
+              { label: "Latest version", value: version ? `v${version}` : "—" },
+              { label: "Type", value: pkg.type },
             ].map(({ label, value }) => (
               <div
                 key={label}
@@ -222,7 +222,7 @@ export default async function PackagePage({ params }: PackagePageProps) {
                 href: `https://github.com/${namespace}/${name}`,
               },
               {
-                label: 'Report issue',
+                label: "Report issue",
                 href: `https://github.com/${namespace}/${name}/issues`,
               },
             ].map(({ label, href }) => (
@@ -267,7 +267,8 @@ export default async function PackagePage({ params }: PackagePageProps) {
             <BadgeSnippets
               versionUrl={`${config.apiUrl}/badges/${namespace}/${name}/version`}
               downloadsUrl={`${config.apiUrl}/badges/${namespace}/${name}/downloads`}
-              fullName={pkg.fullName}
+              version={version}
+              downloads={downloads}
             />
           </div>
         </aside>

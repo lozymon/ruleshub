@@ -8,7 +8,29 @@ import { Copy, Check } from "lucide-react";
 interface BadgeSnippetsProps {
   versionUrl: string;
   downloadsUrl: string;
-  fullName: string;
+  version: string | null;
+  downloads: string;
+}
+
+function PreviewBadge({
+  label,
+  value,
+  valueBg,
+}: {
+  label: string;
+  value: string;
+  valueBg: string;
+}) {
+  return (
+    <span className="inline-flex items-stretch overflow-hidden rounded font-sans text-[11px] leading-none">
+      <span className="bg-[#e4e4e7] px-2 py-1 text-[#18181b] dark:bg-[#555] dark:text-white">
+        {label}
+      </span>
+      <span className="px-2 py-1 text-white" style={{ background: valueBg }}>
+        {value}
+      </span>
+    </span>
+  );
 }
 
 function CopyLine({ text }: { text: string }) {
@@ -43,7 +65,8 @@ function CopyLine({ text }: { text: string }) {
 export function BadgeSnippets({
   versionUrl,
   downloadsUrl,
-  fullName,
+  version,
+  downloads,
 }: BadgeSnippetsProps) {
   return (
     <div className="space-y-2">
@@ -58,10 +81,12 @@ export function BadgeSnippets({
         Preview
       </p>
       <div className="flex flex-wrap gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={versionUrl} alt={`${fullName} version`} height={20} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={downloadsUrl} alt={`${fullName} downloads`} height={20} />
+        <PreviewBadge
+          label="ruleshub"
+          value={version ? `v${version}` : "not found"}
+          valueBg={version ? "#007ec6" : "#9f9f9f"}
+        />
+        <PreviewBadge label="downloads" value={downloads} valueBg="#4c1" />
       </div>
     </div>
   );

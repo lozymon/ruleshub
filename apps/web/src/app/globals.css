@@ -530,8 +530,8 @@
   border: 1px solid var(--border);
 }
 .prose-readme pre {
-  background: var(--bg-code);
-  border: 1px solid var(--border);
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
   border-radius: 6px;
   padding: 14px;
   overflow-x: auto;
@@ -542,7 +542,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: #ededf0;
+  color: var(--code-fg);
 }
 .prose-readme a {
   color: var(--rh-accent);

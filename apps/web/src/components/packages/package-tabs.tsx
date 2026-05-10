@@ -9,10 +9,9 @@ import {
   MessageSquare,
   Package,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { PackageDto, PackageVersionPreviewDto } from "@ruleshub/types";
 import { FilePreviewTabs } from "./file-preview-tabs";
+import { ReadmeMarkdown } from "./readme-markdown";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -88,9 +87,7 @@ export function PackageTabs({
       {active === "readme" && (
         <div className="prose-readme py-6">
           {readmeContent ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {readmeContent}
-            </ReactMarkdown>
+            <ReadmeMarkdown>{readmeContent}</ReadmeMarkdown>
           ) : (
             <>
               <h1>

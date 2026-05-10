@@ -93,7 +93,6 @@ export function Footer() {
               Community
             </h5>
             {[
-              { href: "https://twitter.com/ruleshub", label: "Twitter" },
               {
                 href: "https://github.com/lozymon/ruleshub/issues",
                 label: "Report issue",

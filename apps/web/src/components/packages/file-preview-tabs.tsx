@@ -1,12 +1,11 @@
 "use client"; // needs useState for active tab
 
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { PackageFilePreviewDto } from "@ruleshub/types";
 import { TOOL_COLORS } from "@/lib/tool-colors";
 import type { SupportedTool } from "@ruleshub/types";
 import { cn } from "@/lib/utils";
+import { ReadmeMarkdown } from "./readme-markdown";
 
 interface FilePreviewTabsProps {
   previews: PackageFilePreviewDto[];
@@ -110,9 +109,7 @@ export function FilePreviewTabs({ previews }: FilePreviewTabsProps) {
           <div className="overflow-hidden rounded-lg border border-border bg-bg-code">
             {isMarkdown ? (
               <div className="prose-readme max-h-[520px] overflow-y-auto p-5">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {current.content}
-                </ReactMarkdown>
+                <ReadmeMarkdown>{current.content}</ReadmeMarkdown>
               </div>
             ) : (
               <pre className="max-h-[520px] overflow-auto p-4 font-mono text-[12.5px] leading-relaxed text-foreground">

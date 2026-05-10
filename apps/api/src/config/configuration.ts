@@ -1,6 +1,7 @@
 export default () => ({
   port: parseInt(process.env.PORT ?? "3001", 10),
   appUrl: process.env.APP_URL ?? "http://localhost:3000",
+  apiUrl: process.env.API_URL ?? "http://localhost:3001/v1",
   adminUsernames: (process.env.ADMIN_USERNAMES ?? "")
     .split(",")
     .map((s) => s.trim())

@@ -1,7 +1,7 @@
 "use client";
 // Needs client for interactive table actions (block/verify toggles + pagination)
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Search, UserX, UserCheck, BadgeCheck } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/admin";
 import { useAuth } from "@/context/auth-context";
 import { routes } from "@/lib/routes";
+import { config } from "@/lib/config";
 
 const LIMIT = 50;
 
@@ -91,12 +92,26 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (authLoading) return null;
+  // Redirects happen out of render to avoid the "side effect during render"
+  // warning. Anonymous visitors are pushed through the API's OAuth flow;
+  // logged-in non-admins are bounced back to the regular dashboard.
+  const redirected = useRef(false);
+  useEffect(() => {
+    if (authLoading || redirected.current) return;
+    if (!user) {
+      redirected.current = true;
+      window.location.href = `${config.apiUrl}/auth/github`;
+      return;
+    }
+    if (!user.isAdmin) {
+      redirected.current = true;
+      router.replace(routes.dashboard);
+    }
+  }, [authLoading, user, router]);
 
-  if (!user) {
-    router.replace(routes.login);
-    return null;
-  }
+  // Render-time gate. Strict admin check — even if a non-admin somehow
+  // landed here while the redirect is in flight, they see nothing.
+  if (authLoading || !user || !user.isAdmin) return null;
 
   const totalPages = Math.ceil(total / LIMIT);
 

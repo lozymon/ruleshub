@@ -4,7 +4,7 @@ import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { Request } from "express";
 import { UsersService } from "../../users/users.service";
-import { AUTH_COOKIE_NAME } from "../auth.constants";
+import { AUTH_COOKIE_NAME, requireJwtSecret } from "../auth.constants";
 
 interface JwtPayload {
   sub: string;
@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>("auth.jwt.secret") ?? "",
+      secretOrKey: requireJwtSecret(configService),
     });
   }
 

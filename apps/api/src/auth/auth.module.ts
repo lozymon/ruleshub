@@ -7,6 +7,7 @@ import { AuthService } from "./auth.service";
 import { GitHubStrategy } from "./strategies/github.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { requireJwtSecret } from "./auth.constants";
 import { UsersModule } from "../users/users.module";
 import { ApiKeysModule } from "../api-keys/api-keys.module";
 
@@ -19,7 +20,7 @@ import { ApiKeysModule } from "../api-keys/api-keys.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>("auth.jwt.secret"),
+        secret: requireJwtSecret(configService),
         signOptions: {
           expiresIn: configService.get<string>("auth.jwt.expiresIn") ?? "7d",
         },

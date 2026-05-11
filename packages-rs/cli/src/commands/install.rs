@@ -3,6 +3,7 @@ use crate::error::{CliError, Result};
 use crate::lockfile::{InstalledEntry, now_unix, record_install};
 use crate::manifest::Manifest;
 use crate::tool::{Tool, destination_path};
+use futures_util::StreamExt;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -11,6 +12,34 @@ use std::io::{Cursor, Read};
 use std::path::Path;
 use std::pin::Pin;
 use zip::ZipArchive;
+
+// Cap response bodies before collecting them into memory. Without this a
+// hostile API or compromised storage bucket could stream a multi-GB body
+// and OOM the CLI — `reqwest::Response::bytes()` has no built-in ceiling.
+const MAX_JSON_BYTES: u64 = 1024 * 1024; // 1 MB — package metadata / envelope
+const MAX_ARTIFACT_BYTES: u64 = 16 * 1024 * 1024; // 16 MB — published packages are 5 MB max
+
+async fn read_bounded(resp: reqwest::Response, max_bytes: u64) -> Result<Vec<u8>> {
+    if let Some(len) = resp.content_length()
+        && len > max_bytes
+    {
+        return Err(CliError::Other(format!(
+            "response body too large: server advertised {len} bytes, cap is {max_bytes}"
+        )));
+    }
+    let mut stream = resp.bytes_stream();
+    let mut buf: Vec<u8> = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        if (buf.len() as u64) + (chunk.len() as u64) > max_bytes {
+            return Err(CliError::Other(format!(
+                "response body exceeded cap of {max_bytes} bytes mid-stream"
+            )));
+        }
+        buf.extend_from_slice(&chunk);
+    }
+    Ok(buf)
+}
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct InstallOptions {
@@ -88,7 +117,8 @@ pub(crate) fn install_inner(
                 let body = resp.text().await.unwrap_or_default();
                 return Err(CliError::Other(format!("API returned {status}: {body}")));
             }
-            resp.json().await?
+            let bytes = read_bounded(resp, MAX_JSON_BYTES).await?;
+            serde_json::from_slice(&bytes)?
         };
 
         let version_data = match version {
@@ -181,11 +211,13 @@ pub(crate) fn install_inner(
                 let body = dl_resp.text().await.unwrap_or_default();
                 return Err(CliError::Other(format!("download failed {status}: {body}")));
             }
-            let envelope: DownloadEnvelope = dl_resp.json().await.map_err(|e| {
-                CliError::Other(format!(
-                    "download endpoint did not return JSON {{ url }}: {e}"
-                ))
-            })?;
+            let envelope_bytes = read_bounded(dl_resp, MAX_JSON_BYTES).await?;
+            let envelope: DownloadEnvelope =
+                serde_json::from_slice(&envelope_bytes).map_err(|e| {
+                    CliError::Other(format!(
+                        "download endpoint did not return JSON {{ url }}: {e}"
+                    ))
+                })?;
             if opts.verbose {
                 eprintln!("verbose: GET {} (signed)", envelope.url);
             }
@@ -208,7 +240,7 @@ pub(crate) fn install_inner(
                     "artifact fetch failed {status}: {preview}"
                 )));
             }
-            let body = zip_resp.bytes().await?;
+            let body = read_bounded(zip_resp, MAX_ARTIFACT_BYTES).await?;
             if opts.verbose {
                 eprintln!("verbose:   ↳ {} bytes", body.len());
             }

@@ -3,9 +3,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { routes } from "@/lib/routes";
 
-// Matches `namespace/name` or `/namespace/name` — exactly two simple segments,
-// so things like `docs/intro.md` or `foo/bar/baz` are left alone.
-const PACKAGE_LINK = /^\/?([a-z0-9][a-z0-9_-]*)\/([a-z0-9][a-z0-9_-]*)\/?$/i;
+// Matches a bare `namespace/name` reference (the convention READMEs use to
+// link to another RulesHub package). We only rewrite when there is *no*
+// leading slash — `/api/health` is an absolute path the author wrote
+// deliberately and shouldn't be silently hijacked to `/packages/api/health`.
+const PACKAGE_LINK = /^([a-z0-9][a-z0-9_-]*)\/([a-z0-9][a-z0-9_-]*)\/?$/i;
 
 // Explicit allowlist of schemes we'll honour in rendered READMEs. Everything
 // else (`javascript:`, `data:`, `vbscript:`, …) is dropped. react-markdown's

@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import AdmZip = require("adm-zip");
+import { createHash } from "crypto";
 import { Readable } from "stream";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
@@ -260,6 +261,10 @@ export class PackagesService {
     // Ensure ruleshub.json is present in the stored zip
     const enrichedBuffer = this.injectManifest(fileBuffer, manifest);
     const hasReadme = this.extractHasReadme(enrichedBuffer);
+    // Hash the exact bytes we're about to store — surfaced via the
+    // download envelope so clients can verify the artifact they fetch
+    // is the one the registry shipped.
+    const sha256 = createHash("sha256").update(enrichedBuffer).digest("hex");
 
     const storageKey = `packages/${namespace}/${packageName}/${manifest.version}.zip`;
     await this.storage.upload(storageKey, enrichedBuffer, "application/zip");
@@ -310,6 +315,7 @@ export class PackagesService {
           changelog: manifest.changelog ?? null,
           manifestJson: manifest as unknown as Prisma.InputJsonValue,
           storageKey,
+          sha256,
         },
       });
 
@@ -379,7 +385,7 @@ export class PackagesService {
     version: string,
     requestBaseUrl?: string,
     requesterId?: string,
-  ): Promise<{ url: string }> {
+  ): Promise<{ url: string; sha256: string | null }> {
     const pkgVersion = await this.findVersion(
       namespace,
       name,
@@ -401,7 +407,9 @@ export class PackagesService {
       "http://localhost:3001/v1"
     ).replace(/\/$/, "");
     const url = `${base}/packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file`;
-    return { url };
+    // sha256 is null for versions published before the column existed —
+    // clients should treat null as "unverifiable" and decide what to do.
+    return { url, sha256: pkgVersion.sha256 };
   }
 
   async streamFile(

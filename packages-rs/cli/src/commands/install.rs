@@ -4,6 +4,7 @@ use crate::lockfile::{InstalledEntry, now_unix, record_install};
 use crate::manifest::Manifest;
 use crate::tool::{Tool, destination_path};
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::future::Future;
 use std::io::{Cursor, Read};
@@ -22,6 +23,12 @@ pub struct InstallOptions {
 #[derive(Deserialize)]
 struct DownloadEnvelope {
     url: String,
+    // Hex-encoded SHA-256 of the artifact. Null for versions published
+    // before the registry started recording the digest; clients should
+    // refuse to install when the envelope omits it for a fresh release,
+    // but tolerate `None` for older versions so existing installs work.
+    #[serde(default)]
+    sha256: Option<String>,
 }
 
 fn strip_version_range(include: &str) -> String {
@@ -212,6 +219,26 @@ pub(crate) fn install_inner(
                     length: body.len(),
                     head_hex: hex_head(&body, 64),
                 });
+            }
+            if let Some(expected) = &envelope.sha256 {
+                let mut hasher = Sha256::new();
+                hasher.update(&body);
+                let actual = format!("{:x}", hasher.finalize());
+                if !actual.eq_ignore_ascii_case(expected) {
+                    return Err(CliError::Other(format!(
+                        "artifact checksum mismatch — registry said {expected} but download hashed to {actual}"
+                    )));
+                }
+                if opts.verbose {
+                    eprintln!(
+                        "verbose:   sha256 ok: {}…",
+                        &expected[..16.min(expected.len())]
+                    );
+                }
+            } else if opts.verbose {
+                eprintln!(
+                    "verbose:   no sha256 in envelope (version published before checksums were recorded)"
+                );
             }
             body
         };

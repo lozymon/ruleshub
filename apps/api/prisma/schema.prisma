@@ -122,6 +122,11 @@ model PackageVersion {
   version      String
   manifestJson Json
   storageKey   String
+  // Hex-encoded SHA-256 of the stored zip artifact. Computed at publish
+  // time and surfaced via the download envelope so clients can verify
+  // they got the bytes the registry intended to ship. Nullable for rows
+  // published before this column existed; new rows are always set.
+  sha256       String?
   changelog    String?
   downloads    Int      @default(0)
   yanked       Boolean  @default(false)

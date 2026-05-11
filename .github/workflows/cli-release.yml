@@ -42,10 +42,17 @@ jobs:
             os: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # Third-party actions are pinned to a full commit SHA so a moving
+      # tag (or compromised maintainer) can't silently change the code
+      # that runs with our publish tokens. The trailing comment captures
+      # the version this SHA corresponds to for future bumps.
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
+          # When pinned by SHA, the action no longer reads the channel
+          # from its own ref — pass it explicitly.
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           workspaces: packages-rs/cli
           key: ${{ matrix.target }}
@@ -106,7 +113,7 @@ jobs:
           sha256sum ruleshub-* > SHA256SUMS
           cat SHA256SUMS
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             artifacts/ruleshub-*
@@ -129,8 +136,10 @@ jobs:
     environment: ruleshub-env
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           workspaces: packages-rs/cli
 
@@ -266,7 +275,7 @@ jobs:
           python tools/build_wheels.py --version "$TAG_VERSION"
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: packages-py/cli/dist
 

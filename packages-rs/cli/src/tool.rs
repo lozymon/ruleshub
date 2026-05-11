@@ -89,7 +89,11 @@ pub(crate) fn destination_path(
         "agent" => "agents",
         "workflow" => "workflows",
         "mcp-server" => "mcp-servers",
-        other => other,
+        // Publisher-controlled string — constrain it before using as a
+        // path segment so `../escape` or `foo/bar` can't be smuggled in
+        // via a malicious manifest. Anything weird falls back to "misc".
+        other if is_safe_segment(other) => other,
+        _ => "misc",
     };
 
     let filename = if matches!(tool, Tool::Cursor) && asset_type == "rule" {
@@ -99,6 +103,14 @@ pub(crate) fn destination_path(
     };
 
     PathBuf::from(tool_root).join(type_dir).join(filename)
+}
+
+fn is_safe_segment(s: &str) -> bool {
+    if s.is_empty() || s.len() > 64 {
+        return false;
+    }
+    s.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 #[cfg(test)]
@@ -147,6 +159,24 @@ mod tests {
     fn cursor_non_rule_keeps_source_extension_and_type_dir() {
         let p = destination_path(Tool::Cursor, "skill", "SKILL.md", "no-secrets");
         assert_eq!(p, PathBuf::from(".cursor/skills/no-secrets.md"));
+    }
+
+    #[test]
+    fn malicious_asset_type_falls_back_to_misc() {
+        for bad in ["../etc", "foo/bar", "..", ".hidden", "with space"] {
+            let p = destination_path(Tool::ClaudeCode, bad, "x.md", "pkg");
+            assert_eq!(
+                p,
+                PathBuf::from(".claude/misc/pkg.md"),
+                "expected misc fallback for asset_type {bad:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn unknown_but_safe_asset_type_passes_through() {
+        let p = destination_path(Tool::ClaudeCode, "snippet", "x.md", "pkg");
+        assert_eq!(p, PathBuf::from(".claude/snippet/pkg.md"));
     }
 
     #[test]

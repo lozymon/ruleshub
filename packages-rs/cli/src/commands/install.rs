@@ -249,6 +249,27 @@ pub(crate) fn install_inner(
         if let Some(parent) = dest_abs.parent() {
             fs::create_dir_all(parent)?;
         }
+
+        // Defense in depth: even though parse_full_name and the
+        // destination_path table both refuse `..`/`/` segments, canonicalize
+        // the resolved destination and refuse to write anywhere that isn't
+        // beneath the requested output directory. Catches mistakes like
+        // future destination_path callers forgetting the input validation,
+        // and symlinks pointing out of `output_path`.
+        fs::create_dir_all(output_path)?;
+        let output_canon = output_path.canonicalize()?;
+        let parent_canon = dest_abs
+            .parent()
+            .ok_or_else(|| CliError::Other("destination has no parent".into()))?
+            .canonicalize()?;
+        if !parent_canon.starts_with(&output_canon) {
+            return Err(CliError::Other(format!(
+                "refusing to write outside output directory: {} is not under {}",
+                parent_canon.display(),
+                output_canon.display(),
+            )));
+        }
+
         fs::write(&dest_abs, &content)?;
         println!(
             "ok: wrote {} ({}@{})",

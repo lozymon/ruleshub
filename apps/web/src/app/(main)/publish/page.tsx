@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, ArrowRight, Upload, X, AlertCircle } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { config } from "@/lib/config";
 import { TOOL_LABELS } from "@ruleshub/types";
 import type { SupportedTool } from "@ruleshub/types";
 import { TOOL_COLORS } from "@/lib/tool-colors";
@@ -101,7 +102,7 @@ function validate(form: FormState) {
 
 export default function PublishPage() {
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,18 +122,27 @@ export default function PublishPage() {
   });
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Anonymous visitors land here directly (no middleware gate) — start OAuth.
+  const redirected = useRef(false);
   useEffect(() => {
-    if (!user?.username || !token) return;
+    if (!authLoading && !user && !redirected.current) {
+      redirected.current = true;
+      window.location.href = `${config.apiUrl}/auth/github`;
+    }
+  }, [authLoading, user]);
+
+  useEffect(() => {
+    if (!user?.username) return;
     const username = user.username;
     setForm((f) => (f.namespace ? f : { ...f, namespace: username }));
-    getMyOrgs(token)
+    getMyOrgs()
       .then((orgs) => {
         setNamespaceOptions([username, ...orgs.map((o) => o.slug)]);
       })
       .catch(() => {
         setNamespaceOptions([username]);
       });
-  }, [user?.username, token]);
+  }, [user?.username]);
 
   function update(patch: Partial<Omit<FormState, "tools">>) {
     setForm((f) => ({ ...f, ...patch }));
@@ -152,7 +162,7 @@ export default function PublishPage() {
   const allValid = checks.every((c) => c.ok);
 
   async function handlePublish() {
-    if (!allValid || !form.file || !token) return;
+    if (!allValid || !form.file || !user) return;
     setPublishing(true);
     setError(null);
     try {
@@ -178,7 +188,7 @@ export default function PublishPage() {
         ),
       };
 
-      await publishPackage(form.file, manifest, token);
+      await publishPackage(form.file, manifest);
       router.push(routes.package(`${form.namespace}/${form.name}`));
     } catch (e) {
       setError(

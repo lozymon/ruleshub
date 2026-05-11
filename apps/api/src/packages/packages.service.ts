@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import AdmZip = require("adm-zip");
+import { createHash } from "crypto";
 import { Readable } from "stream";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
@@ -17,6 +18,10 @@ import {
   DiffChange,
   type PackageManifest,
   type PackageVersionPreviewDto,
+  type PackageDto,
+  type PackageVersionDto,
+  type SupportedTool,
+  type AssetType,
 } from "@ruleshub/types";
 import {
   Package,
@@ -71,17 +76,46 @@ const packDepsInclude = {
   },
 } as const;
 
-function toPackageDto(p: PackageWithIncludes) {
+function toPackageVersionDto(v: PackageVersion): PackageVersionDto {
   return {
-    ...p,
+    id: v.id,
+    version: v.version,
+    changelog: v.changelog,
+    downloads: v.downloads,
+    yanked: v.yanked,
+    publishedAt: v.publishedAt.toISOString(),
+  };
+}
+
+// Explicit projection to PackageDto. Spreading the raw Prisma entity used
+// to leak internal fields like ownerUserId, ownerOrgId, forkedFromId,
+// ownerType, and hasReadme into every package detail / search response —
+// and similarly the version rows leaked manifestJson, storageKey, sha256,
+// and packageId. Keep this list aligned with PackageDto in @ruleshub/types.
+function toPackageDto(p: PackageWithIncludes): PackageDto {
+  return {
+    id: p.id,
+    namespace: p.namespace,
+    name: p.name,
     fullName: `${p.namespace}/${p.name}`,
-    latestVersion: p.versions[0] ?? null,
-    versions: p.versions,
+    type: p.type as AssetType,
+    description: p.description,
+    tags: p.tags,
+    projectTypes: p.projectTypes,
+    supportedTools: p.supportedTools as SupportedTool[],
+    totalDownloads: p.totalDownloads,
+    stars: p.stars,
+    qualityScore: p.qualityScore,
+    isPrivate: p.isPrivate,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+    latestVersion: p.versions[0] ? toPackageVersionDto(p.versions[0]) : null,
+    versions: p.versions.map(toPackageVersionDto),
     includes: p.packDependencies.map((d) => ({
       fullName: `${d.dep.namespace}/${d.dep.name}`,
       namespace: d.dep.namespace,
       name: d.dep.name,
-      type: d.dep.type,
+      type: d.dep.type as AssetType,
       description: d.dep.description,
       versionRange: d.versionRange,
       latestVersion: d.dep.versions[0]?.version ?? null,
@@ -93,7 +127,7 @@ function toPackageDto(p: PackageWithIncludes) {
           avatarUrl: p.owner.avatarUrl,
           bio: p.owner.bio,
           verified: p.owner.verified,
-          isAdmin: false,
+          isAdmin: p.owner.isAdmin,
           createdAt: p.owner.createdAt.toISOString(),
         }
       : {
@@ -181,7 +215,7 @@ export class PackagesService {
     };
   }
 
-  async findByFullName(namespace: string, name: string) {
+  async findByFullName(namespace: string, name: string, requesterId?: string) {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
       include: {
@@ -194,6 +228,8 @@ export class PackagesService {
     if (!pkg)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
+    await this.assertCanReadPackage(pkg, requesterId);
+
     return toPackageDto(pkg);
   }
 
@@ -201,12 +237,15 @@ export class PackagesService {
     namespace: string,
     name: string,
     version: string,
+    requesterId?: string,
   ): Promise<PackageVersion> {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
-    if (!pkg || pkg.isPrivate)
+    if (!pkg)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    await this.assertCanReadPackage(pkg, requesterId);
 
     const pkgVersion = await this.prisma.packageVersion.findUnique({
       where: { packageId_version: { packageId: pkg.id, version } },
@@ -255,6 +294,10 @@ export class PackagesService {
     // Ensure ruleshub.json is present in the stored zip
     const enrichedBuffer = this.injectManifest(fileBuffer, manifest);
     const hasReadme = this.extractHasReadme(enrichedBuffer);
+    // Hash the exact bytes we're about to store — surfaced via the
+    // download envelope so clients can verify the artifact they fetch
+    // is the one the registry shipped.
+    const sha256 = createHash("sha256").update(enrichedBuffer).digest("hex");
 
     const storageKey = `packages/${namespace}/${packageName}/${manifest.version}.zip`;
     await this.storage.upload(storageKey, enrichedBuffer, "application/zip");
@@ -305,6 +348,7 @@ export class PackagesService {
           changelog: manifest.changelog ?? null,
           manifestJson: manifest as unknown as Prisma.InputJsonValue,
           storageKey,
+          sha256,
         },
       });
 
@@ -373,8 +417,17 @@ export class PackagesService {
     name: string,
     version: string,
     requestBaseUrl?: string,
-  ): Promise<{ url: string }> {
-    const pkgVersion = await this.findVersion(namespace, name, version);
+    requesterId?: string,
+  ): Promise<{ url: string; sha256: string | null }> {
+    // Keep the audit's `requesterId` (C1 — private package access) AND the
+    // sha256 in the return shape (M11 — CLI verifies before unzip). Main
+    // had neither yet.
+    const pkgVersion = await this.findVersion(
+      namespace,
+      name,
+      version,
+      requesterId,
+    );
 
     if (pkgVersion.yanked) {
       throw new BadRequestException(`Version ${version} has been yanked`);
@@ -390,15 +443,23 @@ export class PackagesService {
       "http://localhost:3001/v1"
     ).replace(/\/$/, "");
     const url = `${base}/packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file`;
-    return { url };
+    // sha256 is null for versions published before the column existed —
+    // clients should treat null as "unverifiable" and decide what to do.
+    return { url, sha256: pkgVersion.sha256 };
   }
 
   async streamFile(
     namespace: string,
     name: string,
     version: string,
+    requesterId?: string,
   ): Promise<{ stream: Readable; filename: string }> {
-    const pkgVersion = await this.findVersion(namespace, name, version);
+    const pkgVersion = await this.findVersion(
+      namespace,
+      name,
+      version,
+      requesterId,
+    );
 
     if (pkgVersion.yanked) {
       throw new BadRequestException(`Version ${version} has been yanked`);
@@ -423,8 +484,14 @@ export class PackagesService {
     namespace: string,
     name: string,
     version: string,
+    requesterId?: string,
   ): Promise<PackageVersionPreviewDto> {
-    const pkgVersion = await this.findVersion(namespace, name, version);
+    const pkgVersion = await this.findVersion(
+      namespace,
+      name,
+      version,
+      requesterId,
+    );
 
     if (pkgVersion.yanked) {
       throw new BadRequestException(`Version ${version} has been yanked`);
@@ -484,6 +551,8 @@ export class PackagesService {
     });
     if (!source)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    await this.assertCanReadPackage(source, userId);
 
     const existing = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace: user.username, name } },
@@ -584,12 +653,15 @@ export class PackagesService {
     name: string,
     from: string,
     to: string,
+    requesterId?: string,
   ): Promise<VersionDiffDto> {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
     if (!pkg)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    await this.assertCanReadPackage(pkg, requesterId);
 
     const [fromVersion, toVersion] = await Promise.all([
       this.prisma.packageVersion.findUnique({
@@ -676,6 +748,37 @@ export class PackagesService {
     });
 
     return changes;
+  }
+
+  // Throws NotFoundException (not Forbidden) when a private package is
+  // accessed by a non-owner — keeps existence of private packages opaque.
+  private async assertCanReadPackage(
+    pkg: {
+      isPrivate: boolean;
+      ownerUserId: string | null;
+      ownerOrgId: string | null;
+      namespace: string;
+      name: string;
+    },
+    requesterId?: string,
+  ): Promise<void> {
+    if (!pkg.isPrivate) return;
+    if (!requesterId) {
+      throw new NotFoundException(
+        `Package ${pkg.namespace}/${pkg.name} not found`,
+      );
+    }
+    if (pkg.ownerUserId && pkg.ownerUserId === requesterId) return;
+    if (pkg.ownerOrgId) {
+      const member = await this.prisma.orgMember.findFirst({
+        where: { orgId: pkg.ownerOrgId, userId: requesterId },
+        select: { userId: true },
+      });
+      if (member) return;
+    }
+    throw new NotFoundException(
+      `Package ${pkg.namespace}/${pkg.name} not found`,
+    );
   }
 
   private async assertOwnership(

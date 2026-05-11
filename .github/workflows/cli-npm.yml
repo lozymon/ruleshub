@@ -12,6 +12,10 @@ on:
       - "packages/cli/**"
       - ".github/workflows/cli-npm.yml"
 
+# Read-only by default. The publish path lives in cli-release.yml.
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: packages/cli

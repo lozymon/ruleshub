@@ -8,3 +8,4 @@ process.env.GITHUB_CLIENT_SECRET ??= "test-client-secret";
 process.env.GITHUB_CALLBACK_URL ??=
   "http://localhost:3001/v1/auth/github/callback";
 process.env.APP_URL ??= "http://localhost:3000";
+process.env.DISABLE_THROTTLER ??= "true";

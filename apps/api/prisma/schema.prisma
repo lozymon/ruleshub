@@ -27,6 +27,11 @@ model User {
   bio        String?
   verified   Boolean  @default(false)
   blocked    Boolean  @default(false)
+  isAdmin    Boolean  @default(false)
+  // Set this to "now" via `UsersService.revokeAllTokens` to invalidate every
+  // previously-issued JWT for this user without flipping `blocked`. JwtStrategy
+  // refuses any token whose `iat` is older than this timestamp.
+  tokensInvalidAfter DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -121,6 +126,11 @@ model PackageVersion {
   version      String
   manifestJson Json
   storageKey   String
+  // Hex-encoded SHA-256 of the stored zip artifact. Computed at publish
+  // time and surfaced via the download envelope so clients can verify
+  // they got the bytes the registry intended to ship. Nullable for rows
+  // published before this column existed; new rows are always set.
+  sha256       String?
   changelog    String?
   downloads    Int      @default(0)
   yanked       Boolean  @default(false)

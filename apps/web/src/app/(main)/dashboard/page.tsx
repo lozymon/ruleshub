@@ -25,6 +25,7 @@ import { listApiKeys, createApiKey, revokeApiKey } from "@/lib/api/api-keys";
 import { createImport, listMyImports, deleteImport } from "@/lib/api/imports";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { routes } from "@/lib/routes";
+import { config } from "@/lib/config";
 import { useAuth } from "@/context/auth-context";
 import type {
   ApiKeyDto,
@@ -61,7 +62,7 @@ function fmtNum(n: number) {
 }
 
 export default function DashboardPage() {
-  const { user, token, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [packages, setPackages] = useState<PackageDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [yankingId, setYankingId] = useState<string | null>(null);
@@ -95,10 +96,10 @@ export default function DashboardPage() {
   }, [user]);
 
   const fetchOrgs = useCallback(async () => {
-    if (!token) return;
-    const data = await getMyOrgs(token).catch(() => []);
+    if (!user) return;
+    const data = await getMyOrgs().catch(() => []);
     setOrgs(data);
-  }, [token]);
+  }, [user]);
 
   const [apiKeys, setApiKeys] = useState<ApiKeyDto[]>([]);
   const [newKeyName, setNewKeyName] = useState("");
@@ -108,17 +109,17 @@ export default function DashboardPage() {
   const [revokingKeyId, setRevokingKeyId] = useState<string | null>(null);
 
   const fetchApiKeys = useCallback(async () => {
-    if (!token) return;
-    const data = await listApiKeys(token).catch(() => []);
+    if (!user) return;
+    const data = await listApiKeys().catch(() => []);
     setApiKeys(data);
-  }, [token]);
+  }, [user]);
 
   async function handleCreateKey(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !newKeyName.trim()) return;
+    if (!user || !newKeyName.trim()) return;
     setCreatingKey(true);
     try {
-      const created = await createApiKey(newKeyName.trim(), token);
+      const created = await createApiKey(newKeyName.trim());
       setNewKeySecret(created.key);
       setNewKeyName("");
       await fetchApiKeys();
@@ -128,7 +129,7 @@ export default function DashboardPage() {
   }
 
   function handleRevokeKey(id: string) {
-    if (!token) return;
+    if (!user) return;
     setPendingConfirm({
       title: "Revoke API key?",
       description: "Any CI/CD using it will stop working.",
@@ -137,7 +138,7 @@ export default function DashboardPage() {
         setPendingConfirm(null);
         setRevokingKeyId(id);
         try {
-          await revokeApiKey(id, token);
+          await revokeApiKey(id);
           await fetchApiKeys();
         } finally {
           setRevokingKeyId(null);
@@ -163,19 +164,19 @@ export default function DashboardPage() {
   const [copiedWebhookSecret, setCopiedWebhookSecret] = useState(false);
 
   const fetchImports = useCallback(async () => {
-    if (!token) return;
-    const data = await listMyImports(token).catch(() => []);
+    if (!user) return;
+    const data = await listMyImports().catch(() => []);
     setGhImports(data);
-  }, [token]);
+  }, [user]);
 
   async function handleCreateImport(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !newRepoUrl.trim()) return;
+    if (!user || !newRepoUrl.trim()) return;
     setCreatingImport(true);
     setImportError("");
     setNewImport(null);
     try {
-      const created = await createImport(newRepoUrl.trim(), token);
+      const created = await createImport(newRepoUrl.trim());
       setNewImport(created);
       setNewRepoUrl("");
       await fetchImports();
@@ -189,7 +190,7 @@ export default function DashboardPage() {
   }
 
   function handleDeleteImport(namespace: string, name: string) {
-    if (!token) return;
+    if (!user) return;
     setPendingConfirm({
       title: `Disconnect ${namespace}/${name}?`,
       description:
@@ -198,7 +199,7 @@ export default function DashboardPage() {
       onConfirm: async () => {
         setPendingConfirm(null);
         try {
-          await deleteImport(namespace, name, token);
+          await deleteImport(namespace, name);
           await fetchImports();
         } catch {
           // ignore
@@ -213,17 +214,17 @@ export default function DashboardPage() {
     setTimeout(() => setter(false), 2000);
   }
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+  const apiBase = config.apiUrl;
 
-  // Only redirect when auth has resolved, there is no user, AND no stored token.
-  // A stored token with no user means the API was unreachable — don't log the user out.
+  // Once auth has resolved and there is no user, kick off the OAuth flow.
+  // (A transient API failure would also land here; the redirect is idempotent.)
   const redirected = useRef(false);
   useEffect(() => {
-    if (!authLoading && !user && !token && !redirected.current) {
+    if (!authLoading && !user && !redirected.current) {
       redirected.current = true;
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1"}/auth/github`;
+      window.location.href = `${config.apiUrl}/auth/github`;
     }
-  }, [authLoading, user, token]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     fetchPackages();
@@ -234,7 +235,7 @@ export default function DashboardPage() {
 
   async function handleCreateOrg(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) {
+    if (!user) {
       setCreateOrgError("You must be signed in to create an organisation.");
       return;
     }
@@ -242,10 +243,10 @@ export default function DashboardPage() {
     setCreatingOrg(true);
     setCreateOrgError("");
     try {
-      await createOrg(
-        { slug: newOrgSlug.trim(), displayName: newOrgName.trim() },
-        token,
-      );
+      await createOrg({
+        slug: newOrgSlug.trim(),
+        displayName: newOrgName.trim(),
+      });
       setNewOrgSlug("");
       setNewOrgName("");
       setShowNewOrg(false);
@@ -260,7 +261,7 @@ export default function DashboardPage() {
   }
 
   function handleYank(pkg: PackageDto) {
-    if (!token || !pkg.latestVersion) return;
+    if (!user || !pkg.latestVersion) return;
     setPendingConfirm({
       title: `Yank ${pkg.namespace}/${pkg.name}@${pkg.latestVersion.version}?`,
       description: "This removes it from the registry and cannot be undone.",
@@ -273,7 +274,6 @@ export default function DashboardPage() {
             pkg.namespace,
             pkg.name,
             pkg.latestVersion!.version,
-            token,
           );
           await fetchPackages();
         } finally {
@@ -467,6 +467,7 @@ export default function DashboardPage() {
               <input
                 type="text"
                 placeholder="slug (e.g. acmecorp)"
+                aria-label="Organisation slug"
                 value={newOrgSlug}
                 onChange={(e) =>
                   setNewOrgSlug(
@@ -478,6 +479,7 @@ export default function DashboardPage() {
               <input
                 type="text"
                 placeholder="Display name"
+                aria-label="Organisation display name"
                 value={newOrgName}
                 onChange={(e) => setNewOrgName(e.target.value)}
                 className="h-[34px] flex-1 rounded-md border border-border bg-background px-3 text-[13px] outline-none focus:border-primary"
@@ -594,6 +596,7 @@ export default function DashboardPage() {
           <input
             type="text"
             placeholder="Key name (e.g. GitHub Actions)"
+            aria-label="API key name"
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 text-[13px] outline-none focus:border-primary"
@@ -689,6 +692,7 @@ export default function DashboardPage() {
           <input
             type="url"
             placeholder="https://github.com/you/your-rules"
+            aria-label="GitHub repository URL"
             value={newRepoUrl}
             onChange={(e) => setNewRepoUrl(e.target.value)}
             className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 font-mono text-[13px] outline-none focus:border-primary"

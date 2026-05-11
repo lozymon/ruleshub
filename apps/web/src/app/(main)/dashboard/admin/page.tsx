@@ -1,7 +1,7 @@
 "use client";
 // Needs client for interactive table actions (block/verify toggles + pagination)
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Search, UserX, UserCheck, BadgeCheck } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/admin";
 import { useAuth } from "@/context/auth-context";
 import { routes } from "@/lib/routes";
+import { config } from "@/lib/config";
 
 const LIMIT = 50;
 
@@ -25,7 +26,7 @@ function timeAgo(iso: string) {
 }
 
 export default function AdminDashboardPage() {
-  const { user, token, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [users, setUsers] = useState<AdminUserDto[]>([]);
@@ -38,16 +39,11 @@ export default function AdminDashboardPage() {
 
   const load = useCallback(
     async (nextPage: number, search: string) => {
-      if (!token) return;
+      if (!user) return;
       setLoading(true);
       setError(null);
       try {
-        const res = await listAdminUsers(
-          nextPage,
-          LIMIT,
-          search || undefined,
-          token,
-        );
+        const res = await listAdminUsers(nextPage, LIMIT, search || undefined);
         setUsers(res.data);
         setTotal(res.total);
         setPage(nextPage);
@@ -58,7 +54,7 @@ export default function AdminDashboardPage() {
         setInitialized(true);
       }
     },
-    [token],
+    [user],
   );
 
   const handleSearch = (e: React.FormEvent) => {
@@ -67,13 +63,13 @@ export default function AdminDashboardPage() {
   };
 
   const toggleVerified = async (u: AdminUserDto) => {
-    if (!token) return;
+    if (!user) return;
     const next = !u.verified;
     setUsers((prev) =>
       prev.map((x) => (x.id === u.id ? { ...x, verified: next } : x)),
     );
     try {
-      await setUserVerified(u.username, next, token);
+      await setUserVerified(u.username, next);
     } catch {
       setUsers((prev) =>
         prev.map((x) => (x.id === u.id ? { ...x, verified: u.verified } : x)),
@@ -82,13 +78,13 @@ export default function AdminDashboardPage() {
   };
 
   const toggleBlocked = async (u: AdminUserDto) => {
-    if (!token) return;
+    if (!user) return;
     const next = !u.blocked;
     setUsers((prev) =>
       prev.map((x) => (x.id === u.id ? { ...x, blocked: next } : x)),
     );
     try {
-      await setUserBlocked(u.username, next, token);
+      await setUserBlocked(u.username, next);
     } catch {
       setUsers((prev) =>
         prev.map((x) => (x.id === u.id ? { ...x, blocked: u.blocked } : x)),
@@ -96,12 +92,26 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (authLoading) return null;
+  // Redirects happen out of render to avoid the "side effect during render"
+  // warning. Anonymous visitors are pushed through the API's OAuth flow;
+  // logged-in non-admins are bounced back to the regular dashboard.
+  const redirected = useRef(false);
+  useEffect(() => {
+    if (authLoading || redirected.current) return;
+    if (!user) {
+      redirected.current = true;
+      window.location.href = `${config.apiUrl}/auth/github`;
+      return;
+    }
+    if (!user.isAdmin) {
+      redirected.current = true;
+      router.replace(routes.dashboard);
+    }
+  }, [authLoading, user, router]);
 
-  if (!user) {
-    router.replace(routes.login);
-    return null;
-  }
+  // Render-time gate. Strict admin check — even if a non-admin somehow
+  // landed here while the redirect is in flight, they see nothing.
+  if (authLoading || !user || !user.isAdmin) return null;
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -125,6 +135,7 @@ export default function AdminDashboardPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by username…"
+            aria-label="Search users by username"
             className="w-full rounded-[8px] border border-border bg-bg-elev py-2 pl-9 pr-3 text-sm outline-none placeholder:text-fg-dim focus:border-fg-dim"
           />
         </div>

@@ -251,6 +251,76 @@ describe("PackageManifestSchema — additional edge cases", () => {
   });
 });
 
+describe("PackageManifestSchema — bounds (M10)", () => {
+  it("rejects more than 20 tags", () => {
+    const tags = Array.from({ length: 21 }, (_, i) => `t${i}`);
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, tags }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a tag over 32 characters", () => {
+    expect(
+      PackageManifestSchema.safeParse({
+        ...validRule,
+        tags: ["a".repeat(33)],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a tag with uppercase or spaces", () => {
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, tags: ["NestJS"] })
+        .success,
+    ).toBe(false);
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, tags: ["foo bar"] })
+        .success,
+    ).toBe(false);
+  });
+
+  it("rejects more than 20 projectTypes", () => {
+    const projectTypes = Array.from({ length: 21 }, (_, i) => `p${i}`);
+    expect(
+      PackageManifestSchema.safeParse({ ...validRule, projectTypes }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a name longer than 72 characters", () => {
+    expect(
+      PackageManifestSchema.safeParse({
+        ...validRule,
+        name: `${"a".repeat(40)}/${"b".repeat(40)}`,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a license over 64 characters", () => {
+    expect(
+      PackageManifestSchema.safeParse({
+        ...validRule,
+        license: "a".repeat(65),
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a target file path over 256 characters", () => {
+    expect(
+      PackageManifestSchema.safeParse({
+        ...validRule,
+        targets: { "claude-code": { file: "a".repeat(257) } },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects more than 100 includes", () => {
+    const includes = Array.from({ length: 101 }, (_, i) => `lozymon/pkg-${i}`);
+    expect(
+      PackageManifestSchema.safeParse({ ...validPack, includes }).success,
+    ).toBe(false);
+  });
+});
+
 describe("AssetTypeSchema", () => {
   const validTypes = [
     "rule",

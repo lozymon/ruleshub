@@ -31,7 +31,9 @@ import { User } from "@prisma/client";
 import { PackagesService } from "./packages.service";
 import { SearchPackagesDto } from "./dto/search-packages.dto";
 import { DiffVersionsQueryDto } from "./dto/diff-versions.dto";
+import { Throttle } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
 
 @ApiTags("packages")
 @Controller("packages")
@@ -46,22 +48,35 @@ export class PackagesController {
   }
 
   @Get(":namespace/:name")
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Get package details and latest version" })
   @ApiResponse({ status: 200 })
   @ApiResponse({ status: 404 })
   @ApiParam({ name: "namespace" })
   @ApiParam({ name: "name" })
-  findOne(@Param("namespace") namespace: string, @Param("name") name: string) {
-    return this.packagesService.findByFullName(namespace, name);
+  findOne(
+    @Req() req: Request,
+    @Param("namespace") namespace: string,
+    @Param("name") name: string,
+  ) {
+    return this.packagesService.findByFullName(
+      namespace,
+      name,
+      (req.user as User | undefined)?.id,
+    );
   }
 
   @Get(":namespace/:name/diff")
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Diff two versions of a package" })
   @ApiResponse({ status: 200, description: "Structured manifest diff" })
   @ApiResponse({ status: 404 })
   @ApiParam({ name: "namespace" })
   @ApiParam({ name: "name" })
   diff(
+    @Req() req: Request,
     @Param("namespace") namespace: string,
     @Param("name") name: string,
     @Query() query: DiffVersionsQueryDto,
@@ -71,22 +86,33 @@ export class PackagesController {
       name,
       query.from,
       query.to,
+      (req.user as User | undefined)?.id,
     );
   }
 
   @Get(":namespace/:name/:version")
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Get a specific package version" })
   @ApiResponse({ status: 200 })
   @ApiResponse({ status: 404 })
   findVersion(
+    @Req() req: Request,
     @Param("namespace") namespace: string,
     @Param("name") name: string,
     @Param("version") version: string,
   ) {
-    return this.packagesService.findVersion(namespace, name, version);
+    return this.packagesService.findVersion(
+      namespace,
+      name,
+      version,
+      (req.user as User | undefined)?.id,
+    );
   }
 
   @Get(":namespace/:name/:version/preview")
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Get file contents preview for all tool targets" })
   @ApiResponse({ status: 200, description: "File previews per tool" })
   @ApiResponse({ status: 404 })
@@ -94,14 +120,22 @@ export class PackagesController {
   @ApiParam({ name: "name" })
   @ApiParam({ name: "version" })
   preview(
+    @Req() req: Request,
     @Param("namespace") namespace: string,
     @Param("name") name: string,
     @Param("version") version: string,
   ) {
-    return this.packagesService.getFilePreview(namespace, name, version);
+    return this.packagesService.getFilePreview(
+      namespace,
+      name,
+      version,
+      (req.user as User | undefined)?.id,
+    );
   }
 
   @Get(":namespace/:name/:version/download")
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Get a download URL for a package version" })
   @ApiResponse({
     status: 200,
@@ -120,14 +154,26 @@ export class PackagesController {
     // public-facing values behind any reverse proxy. /v1 mirrors the
     // global prefix in main.ts.
     const base = `${req.protocol}://${req.get("host")}/v1`;
-    return this.packagesService.getDownloadUrl(namespace, name, version, base);
+    // Keep the audit's `requesterId` thread — private-package access (C1)
+    // depends on it; main's signature dropped it because main hadn't picked
+    // up the privacy fix yet.
+    return this.packagesService.getDownloadUrl(
+      namespace,
+      name,
+      version,
+      base,
+      (req.user as User | undefined)?.id,
+    );
   }
 
   @Get(":namespace/:name/:version/file")
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Stream the package zip artifact" })
   @ApiResponse({ status: 200, description: "application/zip stream" })
   @ApiResponse({ status: 404 })
   async file(
+    @Req() req: Request,
     @Param("namespace") namespace: string,
     @Param("name") name: string,
     @Param("version") version: string,
@@ -137,6 +183,7 @@ export class PackagesController {
       namespace,
       name,
       version,
+      (req.user as User | undefined)?.id,
     );
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
@@ -148,6 +195,7 @@ export class PackagesController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiBearerAuth()
   @UseInterceptors(
     FileInterceptor("file", { limits: { fileSize: 5 * 1024 * 1024 } }),
@@ -188,6 +236,7 @@ export class PackagesController {
 
   @Post(":namespace/:name/fork")
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Fork a package into own namespace" })
   @ApiResponse({ status: 201 })

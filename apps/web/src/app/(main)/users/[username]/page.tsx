@@ -1,4 +1,6 @@
-export const dynamic = "force-dynamic";
+// Public profile data updates infrequently (badge counts, package totals).
+// 60s revalidation gives near-fresh results without rendering on every hit.
+export const revalidate = 60;
 
 import { notFound } from "next/navigation";
 import { Check, Star, Download, Settings } from "lucide-react";

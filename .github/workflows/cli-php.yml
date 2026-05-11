@@ -12,13 +12,17 @@ on:
       - "packages-php/**"
       - ".github/workflows/cli-php.yml"
 
+# Read-only by default. The publish path lives in cli-release.yml.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: PHP lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
           php-version: "8.3"
           tools: composer:v2
@@ -39,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: zip, openssl

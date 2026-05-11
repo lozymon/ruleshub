@@ -4,14 +4,13 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
-  BadRequestException,
 } from "@nestjs/common";
 import { createHmac, randomBytes } from "crypto";
-import { lookup } from "dns/promises";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 import { CreateWebhookDto } from "./dto/create-webhook.dto";
 import type { WebhookEvent } from "@ruleshub/types";
+import { safePostJson } from "./safe-request";
 
 @Injectable()
 export class WebhooksService {
@@ -179,22 +178,22 @@ export class WebhooksService {
     let statusCode: number | null = null;
     let success = false;
 
-    await this.assertPublicUrl(url);
-
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
+      const res = await safePostJson(
+        url,
+        {
           "Content-Type": "application/json",
           "X-RulesHub-Event": event,
           "X-RulesHub-Signature": `sha256=${sig}`,
         },
         body,
-        signal: AbortSignal.timeout(10_000),
-      });
-      statusCode = res.status;
+        10_000,
+      );
+      statusCode = res.statusCode;
       success = res.ok;
     } catch {
+      // Includes PrivateAddressError, DNS failure, TLS error, timeout —
+      // all recorded as failed deliveries below.
       success = false;
     }
 
@@ -209,42 +208,6 @@ export class WebhooksService {
     });
 
     return { statusCode, success };
-  }
-
-  private async assertPublicUrl(url: string): Promise<void> {
-    const hostname = new URL(url).hostname;
-    let address: string;
-    try {
-      const result = await lookup(hostname);
-      address = result.address;
-    } catch {
-      throw new BadRequestException("Unable to resolve webhook URL hostname");
-    }
-    if (this.isPrivateIp(address)) {
-      throw new BadRequestException(
-        "Webhook URL must not resolve to a private or reserved IP address",
-      );
-    }
-  }
-
-  private isPrivateIp(ip: string): boolean {
-    if (ip === "::1") return true;
-    if (/^fe80:/i.test(ip)) return true;
-    // IPv4-mapped IPv6 ::ffff:a.b.c.d
-    const mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
-    if (mapped) ip = mapped[1];
-
-    const parts = ip.split(".").map(Number);
-    if (parts.length !== 4 || parts.some((n) => isNaN(n))) return false;
-    const [a, b] = parts;
-    return (
-      a === 10 ||
-      a === 127 ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      (a === 169 && b === 254) ||
-      (a === 100 && b >= 64 && b <= 127)
-    );
   }
 
   private toDto(

@@ -17,12 +17,13 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { User } from "@prisma/client";
+import { Throttle } from "@nestjs/throttler";
 import { WebhooksService } from "./webhooks.service";
 import { CreateWebhookDto } from "./dto/create-webhook.dto";
+import { ListWebhooksDto } from "./dto/list-webhooks.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 @ApiTags("webhooks")
@@ -49,17 +50,11 @@ export class WebhooksController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "List webhooks for the authenticated user" })
   @ApiResponse({ status: 200, description: "Paginated webhook list" })
-  @ApiQuery({ name: "page", required: false, type: Number })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  list(
-    @Req() req: Request,
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-  ) {
+  list(@Req() req: Request, @Query() query: ListWebhooksDto) {
     return this.webhooksService.list(
       (req.user as User).id,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
+      query.page ?? 1,
+      query.limit ?? 20,
     );
   }
 
@@ -82,24 +77,26 @@ export class WebhooksController {
   @ApiOperation({ summary: "List recent deliveries for a webhook" })
   @ApiResponse({ status: 200, description: "Paginated delivery log" })
   @ApiParam({ name: "id" })
-  @ApiQuery({ name: "page", required: false, type: Number })
-  @ApiQuery({ name: "limit", required: false, type: Number })
   listDeliveries(
     @Req() req: Request,
     @Param("id") id: string,
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
+    @Query() query: ListWebhooksDto,
   ) {
     return this.webhooksService.listDeliveries(
       (req.user as User).id,
       id,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
+      query.page ?? 1,
+      query.limit ?? 20,
     );
   }
 
+  // Pings trigger an outbound HTTP request to a user-supplied URL — the
+  // exact thing SSRF protections defend against. Even with safe-request
+  // in place, we tighten the dispatch rate so this can't be abused as a
+  // probe amplifier.
   @Post(":id/ping")
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Send a test ping to verify the webhook URL" })
   @ApiResponse({ status: 201, description: "Ping dispatched" })

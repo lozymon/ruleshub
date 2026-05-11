@@ -32,6 +32,7 @@ export function BrowseSearch({ defaultValue = "" }: { defaultValue?: string }) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Search packages..."
+        aria-label="Search packages"
         className="h-11 w-full rounded-sm border border-border bg-bg-elev pl-9 pr-4 text-[14px] text-foreground placeholder:text-fg-dim focus:border-border-hover focus:outline-none transition-colors"
       />
     </div>

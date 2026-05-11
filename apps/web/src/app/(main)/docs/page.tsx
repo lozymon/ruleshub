@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { routes } from "@/lib/routes";
 
 export default function DocsIndexPage() {
-  redirect("/docs/getting-started/introduction");
+  redirect(routes.docsPage("getting-started", "introduction"));
 }

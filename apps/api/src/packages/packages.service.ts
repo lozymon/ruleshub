@@ -419,6 +419,9 @@ export class PackagesService {
     requestBaseUrl?: string,
     requesterId?: string,
   ): Promise<{ url: string; sha256: string | null }> {
+    // Keep the audit's `requesterId` (C1 — private package access) AND the
+    // sha256 in the return shape (M11 — CLI verifies before unzip). Main
+    // had neither yet.
     const pkgVersion = await this.findVersion(
       namespace,
       name,

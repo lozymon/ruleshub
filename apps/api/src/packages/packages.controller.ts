@@ -154,6 +154,9 @@ export class PackagesController {
     // public-facing values behind any reverse proxy. /v1 mirrors the
     // global prefix in main.ts.
     const base = `${req.protocol}://${req.get("host")}/v1`;
+    // Keep the audit's `requesterId` thread — private-package access (C1)
+    // depends on it; main's signature dropped it because main hadn't picked
+    // up the privacy fix yet.
     return this.packagesService.getDownloadUrl(
       namespace,
       name,

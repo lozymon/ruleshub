@@ -1,8 +1,37 @@
 "use client"; // keyboard shortcuts, dynamic script load, controlled input
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { docNav } from "@/docs/nav";
+
+// Pagefind excerpts are text with `<mark>matched</mark>` spans wrapping
+// query hits. The previous render used `dangerouslySetInnerHTML`, which
+// is fine as long as Pagefind's output is trusted — but the whole point
+// of the html sink is that we can't prove that statically. Tokenise into
+// React nodes so injecting `<script>` or any other tag is impossible
+// regardless of what Pagefind returns.
+function decodeEntities(s: string): string {
+  return s
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
+}
+
+function renderExcerpt(html: string): ReactNode {
+  return html.split(/(<mark>[\s\S]*?<\/mark>)/).map((part, i) => {
+    const m = part.match(/^<mark>([\s\S]*?)<\/mark>$/);
+    if (m) return <mark key={i}>{decodeEntities(m[1])}</mark>;
+    return decodeEntities(part);
+  });
+}
 
 interface PagefindResult {
   url: string;
@@ -195,10 +224,9 @@ export function DocsSearch() {
                       <span className="text-sm font-medium">
                         {r.meta.title}
                       </span>
-                      <span
-                        className="text-xs text-muted-foreground line-clamp-2 [&_mark]:bg-transparent [&_mark]:text-foreground [&_mark]:font-medium"
-                        dangerouslySetInnerHTML={{ __html: r.excerpt }}
-                      />
+                      <span className="text-xs text-muted-foreground line-clamp-2 [&_mark]:bg-transparent [&_mark]:text-foreground [&_mark]:font-medium">
+                        {renderExcerpt(r.excerpt)}
+                      </span>
                     </a>
                   </li>
                 ))}

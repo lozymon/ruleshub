@@ -89,15 +89,13 @@ export class AuthController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   me(@Req() req: Request) {
     const user = req.user as User;
-    const adminUsernames: string[] =
-      this.configService.get("adminUsernames") ?? [];
     return {
       id: user.id,
       username: user.username,
       avatarUrl: user.avatarUrl,
       bio: user.bio,
       verified: user.verified,
-      isAdmin: adminUsernames.includes(user.username),
+      isAdmin: user.isAdmin,
       createdAt: user.createdAt.toISOString(),
     };
   }

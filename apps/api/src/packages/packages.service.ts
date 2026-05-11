@@ -93,7 +93,7 @@ function toPackageDto(p: PackageWithIncludes) {
           avatarUrl: p.owner.avatarUrl,
           bio: p.owner.bio,
           verified: p.owner.verified,
-          isAdmin: false,
+          isAdmin: p.owner.isAdmin,
           createdAt: p.owner.createdAt.toISOString(),
         }
       : {

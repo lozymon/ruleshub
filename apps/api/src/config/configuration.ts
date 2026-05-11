@@ -2,7 +2,10 @@ export default () => ({
   port: parseInt(process.env.PORT ?? "3001", 10),
   appUrl: process.env.APP_URL ?? "http://localhost:3000",
   apiUrl: process.env.API_URL ?? "http://localhost:3001/v1",
-  adminUsernames: (process.env.ADMIN_USERNAMES ?? "")
+  // GitHub numeric IDs that should be auto-elevated to admin on login.
+  // Keyed by githubId (not username) so reusing a deleted username can't
+  // re-grant admin privileges.
+  adminGithubIds: (process.env.ADMIN_GITHUB_IDS ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),

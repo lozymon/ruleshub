@@ -52,20 +52,51 @@ function extract(archivePath, destDir, ext) {
   // Expand-Archive instead — works on every Windows 10+ runner.
   // *nix: tar -xzf is rock solid for tar.gz everywhere.
   if (process.platform === "win32" && ext === "zip") {
-    const result = spawnSync(
-      "powershell",
-      [
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        `Expand-Archive -LiteralPath '${archivePath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`,
-      ],
-      { encoding: "utf8" },
+    // Write a tiny script file and invoke PowerShell with -File so
+    // archivePath / destDir cross the boundary as proper $args, not via
+    // -Command string interpolation. The previous approach single-quote-
+    // escaped both paths inline; safe for typical temp paths but fragile
+    // on anything containing embedded newlines or unusual quoting.
+    const scriptPath = path.join(
+      os.tmpdir(),
+      `ruleshub-extract-${process.pid}.ps1`,
     );
-    if (result.status !== 0) {
-      throw new Error(
-        `Expand-Archive failed (rc=${result.status}): ${result.stderr || result.stdout}`,
+    fs.writeFileSync(
+      scriptPath,
+      "param([Parameter(Mandatory)][string]$ArchivePath," +
+        "[Parameter(Mandatory)][string]$DestDir)\r\n" +
+        "$ErrorActionPreference = 'Stop'\r\n" +
+        "Expand-Archive -LiteralPath $ArchivePath -DestinationPath $DestDir -Force\r\n",
+    );
+    try {
+      const result = spawnSync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-NonInteractive",
+          // Bypass only the current invocation — needed where a host
+          // policy of Restricted would otherwise refuse to run scripts.
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          scriptPath,
+          archivePath,
+          destDir,
+        ],
+        { encoding: "utf8" },
       );
+      if (result.status !== 0) {
+        throw new Error(
+          `Expand-Archive failed (rc=${result.status}): ${result.stderr || result.stdout}`,
+        );
+      }
+    } finally {
+      try {
+        fs.unlinkSync(scriptPath);
+      } catch {
+        // Best-effort cleanup; the temp dir gets rotated by Windows
+        // periodically anyway.
+      }
     }
     return;
   }

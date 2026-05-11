@@ -25,7 +25,7 @@ function timeAgo(iso: string) {
 }
 
 export default function AdminDashboardPage() {
-  const { user, token, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [users, setUsers] = useState<AdminUserDto[]>([]);
@@ -38,16 +38,11 @@ export default function AdminDashboardPage() {
 
   const load = useCallback(
     async (nextPage: number, search: string) => {
-      if (!token) return;
+      if (!user) return;
       setLoading(true);
       setError(null);
       try {
-        const res = await listAdminUsers(
-          nextPage,
-          LIMIT,
-          search || undefined,
-          token,
-        );
+        const res = await listAdminUsers(nextPage, LIMIT, search || undefined);
         setUsers(res.data);
         setTotal(res.total);
         setPage(nextPage);
@@ -58,7 +53,7 @@ export default function AdminDashboardPage() {
         setInitialized(true);
       }
     },
-    [token],
+    [user],
   );
 
   const handleSearch = (e: React.FormEvent) => {
@@ -67,13 +62,13 @@ export default function AdminDashboardPage() {
   };
 
   const toggleVerified = async (u: AdminUserDto) => {
-    if (!token) return;
+    if (!user) return;
     const next = !u.verified;
     setUsers((prev) =>
       prev.map((x) => (x.id === u.id ? { ...x, verified: next } : x)),
     );
     try {
-      await setUserVerified(u.username, next, token);
+      await setUserVerified(u.username, next);
     } catch {
       setUsers((prev) =>
         prev.map((x) => (x.id === u.id ? { ...x, verified: u.verified } : x)),
@@ -82,13 +77,13 @@ export default function AdminDashboardPage() {
   };
 
   const toggleBlocked = async (u: AdminUserDto) => {
-    if (!token) return;
+    if (!user) return;
     const next = !u.blocked;
     setUsers((prev) =>
       prev.map((x) => (x.id === u.id ? { ...x, blocked: next } : x)),
     );
     try {
-      await setUserBlocked(u.username, next, token);
+      await setUserBlocked(u.username, next);
     } catch {
       setUsers((prev) =>
         prev.map((x) => (x.id === u.id ? { ...x, blocked: u.blocked } : x)),

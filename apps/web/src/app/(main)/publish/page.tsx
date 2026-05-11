@@ -101,7 +101,7 @@ function validate(form: FormState) {
 
 export default function PublishPage() {
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,17 +122,17 @@ export default function PublishPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user?.username || !token) return;
+    if (!user?.username) return;
     const username = user.username;
     setForm((f) => (f.namespace ? f : { ...f, namespace: username }));
-    getMyOrgs(token)
+    getMyOrgs()
       .then((orgs) => {
         setNamespaceOptions([username, ...orgs.map((o) => o.slug)]);
       })
       .catch(() => {
         setNamespaceOptions([username]);
       });
-  }, [user?.username, token]);
+  }, [user?.username]);
 
   function update(patch: Partial<Omit<FormState, "tools">>) {
     setForm((f) => ({ ...f, ...patch }));
@@ -152,7 +152,7 @@ export default function PublishPage() {
   const allValid = checks.every((c) => c.ok);
 
   async function handlePublish() {
-    if (!allValid || !form.file || !token) return;
+    if (!allValid || !form.file || !user) return;
     setPublishing(true);
     setError(null);
     try {
@@ -178,7 +178,7 @@ export default function PublishPage() {
         ),
       };
 
-      await publishPackage(form.file, manifest, token);
+      await publishPackage(form.file, manifest);
       router.push(routes.package(`${form.namespace}/${form.name}`));
     } catch (e) {
       setError(

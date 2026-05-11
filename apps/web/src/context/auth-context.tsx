@@ -9,61 +9,58 @@ import {
 } from "react";
 import type { UserDto } from "@ruleshub/types";
 import { authStorage } from "@/lib/auth-storage";
-import { getMe } from "@/lib/api/auth";
+import { getMe, logout as apiLogout } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 
 interface AuthState {
   user: UserDto | null;
-  token: string | null;
   loading: boolean;
-  login: (token: string) => Promise<void>;
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserDto | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const login = useCallback(async (newToken: string) => {
-    authStorage.setToken(newToken);
-    setToken(newToken);
-    const me = await getMe(newToken);
+  const login = useCallback(async () => {
+    const me = await getMe();
     setUser(me);
+    authStorage.markSignedIn();
   }, []);
 
-  const logout = useCallback(() => {
-    authStorage.clearToken();
-    setToken(null);
+  const logout = useCallback(async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // best-effort — clear local state regardless
+    }
+    authStorage.markSignedOut();
     setUser(null);
   }, []);
 
   useEffect(() => {
-    const stored = authStorage.getToken();
-    if (!stored) {
-      setLoading(false);
-      return;
-    }
-    getMe(stored)
+    getMe()
       .then((me) => {
-        setToken(stored);
         setUser(me);
+        authStorage.markSignedIn();
       })
       .catch((err) => {
-        // Only clear the token on 401 — network failures should not log the user out
+        // 401 means we're not signed in — leave user null. Other errors
+        // (network, 5xx) should also keep user null but not flip the
+        // session flag, so a transient outage doesn't show a phantom
+        // signed-in state.
         if (err instanceof ApiError && err.status === 401) {
-          authStorage.clearToken();
-        } else {
-          setToken(stored);
+          authStorage.markSignedOut();
         }
       })
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

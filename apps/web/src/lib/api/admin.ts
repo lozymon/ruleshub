@@ -21,36 +21,25 @@ export function listAdminUsers(
   page: number,
   limit: number,
   q: string | undefined,
-  token: string,
 ): Promise<AdminUsersResponse> {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
   if (q) params.set("q", q);
-  return apiClient.get(`/admin/users?${params}`, { token });
+  return apiClient.get(`/admin/users?${params}`);
 }
 
 export function setUserVerified(
   username: string,
   verified: boolean,
-  token: string,
 ): Promise<void> {
-  return apiClient.patch(
-    `/admin/users/${username}/verify`,
-    { verified },
-    { token },
-  );
+  return apiClient.patch(`/admin/users/${username}/verify`, { verified });
 }
 
 export function setUserBlocked(
   username: string,
   blocked: boolean,
-  token: string,
 ): Promise<void> {
-  return apiClient.patch(
-    `/admin/users/${username}/block`,
-    { blocked },
-    { token },
-  );
+  return apiClient.patch(`/admin/users/${username}/block`, { blocked });
 }

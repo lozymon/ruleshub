@@ -52,7 +52,7 @@ function fmtNum(n: number) {
 export default function OrgDashboardPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   const [org, setOrg] = useState<OrgDto | null>(null);
   const [members, setMembers] = useState<OrgMemberDto[]>([]);
@@ -96,11 +96,11 @@ export default function OrgDashboardPage() {
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !inviteUsername.trim()) return;
+    if (!user || !inviteUsername.trim()) return;
     setInviting(true);
     setInviteError("");
     try {
-      await addOrgMember(slug, inviteUsername.trim(), token);
+      await addOrgMember(slug, inviteUsername.trim());
       setInviteUsername("");
       await load();
     } catch (err) {
@@ -111,11 +111,11 @@ export default function OrgDashboardPage() {
   }
 
   async function handleRoleToggle(member: OrgMemberDto) {
-    if (!token) return;
+    if (!user) return;
     setActionTarget(member.user.username);
     try {
       const newRole = member.role === "admin" ? "member" : "admin";
-      await updateOrgMemberRole(slug, member.user.username, newRole, token);
+      await updateOrgMemberRole(slug, member.user.username, newRole);
       await load();
     } finally {
       setActionTarget(null);
@@ -123,7 +123,7 @@ export default function OrgDashboardPage() {
   }
 
   function handleRemoveMember(username: string) {
-    if (!token) return;
+    if (!user) return;
     setPendingConfirm({
       title: `Remove ${username}?`,
       description: "They will lose access to this organisation immediately.",
@@ -132,7 +132,7 @@ export default function OrgDashboardPage() {
         setPendingConfirm(null);
         setActionTarget(username);
         try {
-          await removeOrgMember(slug, username, token);
+          await removeOrgMember(slug, username);
           await load();
         } finally {
           setActionTarget(null);
@@ -142,7 +142,7 @@ export default function OrgDashboardPage() {
   }
 
   function handleDeleteOrg() {
-    if (!token || !org) return;
+    if (!user || !org) return;
     setPendingConfirm({
       title: `Delete "${org.displayName}"?`,
       description:
@@ -151,7 +151,7 @@ export default function OrgDashboardPage() {
       onConfirm: async () => {
         setPendingConfirm(null);
         try {
-          await deleteOrg(slug, token);
+          await deleteOrg(slug);
           router.replace(routes.dashboard);
         } catch (err) {
           setPendingConfirm({

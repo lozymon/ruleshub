@@ -12,24 +12,24 @@ export class ApiError extends Error {
 
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
-  token?: string;
 };
 
 async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { body, token, ...rest } = options;
+  const { body, ...rest } = options;
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...rest.headers,
   };
 
   const response = await fetch(`${config.apiUrl}${path}`, {
     ...rest,
     headers,
+    // Send the httpOnly auth cookie set by the API on protected requests.
+    credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 

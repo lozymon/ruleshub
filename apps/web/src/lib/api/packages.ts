@@ -45,11 +45,8 @@ export function yankVersion(
   namespace: string,
   name: string,
   version: string,
-  token: string,
 ): Promise<void> {
-  return apiClient.delete(`/packages/${namespace}/${name}/${version}`, {
-    token,
-  });
+  return apiClient.delete(`/packages/${namespace}/${name}/${version}`);
 }
 
 export function getPackageDiff(
@@ -74,7 +71,6 @@ export function getPackagePreview(
 export async function publishPackage(
   file: File,
   manifest: Record<string, unknown>,
-  token: string,
 ): Promise<unknown> {
   const { config } = await import("../config");
   const form = new FormData();
@@ -82,7 +78,7 @@ export async function publishPackage(
   form.append("manifest", JSON.stringify(manifest));
   const r = await fetch(`${config.apiUrl}/packages`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
     body: form,
   });
   if (!r.ok) {

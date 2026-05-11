@@ -101,7 +101,7 @@ function validate(form: FormState) {
 
 export default function PublishPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +120,15 @@ export default function PublishPage() {
     dragging: false,
   });
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Anonymous visitors land here directly (no middleware gate) — start OAuth.
+  const redirected = useRef(false);
+  useEffect(() => {
+    if (!authLoading && !user && !redirected.current) {
+      redirected.current = true;
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1"}/auth/github`;
+    }
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (!user?.username) return;

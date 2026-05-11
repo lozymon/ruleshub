@@ -8,9 +8,7 @@ import {
   useCallback,
 } from "react";
 import type { UserDto } from "@ruleshub/types";
-import { authStorage } from "@/lib/auth-storage";
 import { getMe, logout as apiLogout } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/client";
 
 interface AuthState {
   user: UserDto | null;
@@ -28,7 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async () => {
     const me = await getMe();
     setUser(me);
-    authStorage.markSignedIn();
   }, []);
 
   const logout = useCallback(async () => {
@@ -37,24 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // best-effort — clear local state regardless
     }
-    authStorage.markSignedOut();
     setUser(null);
   }, []);
 
   useEffect(() => {
     getMe()
-      .then((me) => {
-        setUser(me);
-        authStorage.markSignedIn();
-      })
-      .catch((err) => {
-        // 401 means we're not signed in — leave user null. Other errors
-        // (network, 5xx) should also keep user null but not flip the
-        // session flag, so a transient outage doesn't show a phantom
-        // signed-in state.
-        if (err instanceof ApiError && err.status === 401) {
-          authStorage.markSignedOut();
-        }
+      .then((me) => setUser(me))
+      .catch(() => {
+        // Any error (401, network, 5xx) → treat as anonymous. The API is
+        // authoritative; there's no client-side credential to clear.
       })
       .finally(() => setLoading(false));
   }, []);

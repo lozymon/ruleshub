@@ -61,7 +61,7 @@ Severity scale: **critical** (data/auth bypass, exploitable today) · **high** (
 - [x] **L6. External links in rendered READMEs lack `target=_blank rel=noopener`** — [apps/web/src/components/packages/readme-markdown.tsx:18](../apps/web/src/components/packages/readme-markdown.tsx#L18). Fix: add `target`/`rel` for `http(s)` hrefs. _Done as part of C6._
 - [x] **L7. README link rewrite preserves case** — [apps/web/src/components/packages/readme-markdown.tsx:8](../apps/web/src/components/packages/readme-markdown.tsx#L8). Mixed-case input 404s. Fix: lowercase the matched segments. _Done as part of C6._
 - [x] **L8. `redirect()` to magic string in `/docs`** — [apps/web/src/app/(main)/docs/page.tsx:4](<../apps/web/src/app/(main)/docs/page.tsx#L4>). Fix: use `routes.*` constant. _Done: replaced the hardcoded `"/docs/getting-started/introduction"` with `routes.docsPage("getting-started", "introduction")` so the redirect tracks the single source of truth in `lib/routes.ts`._
-- [ ] **L9. `packages/types/package.json` exports map non-idiomatic** — [packages/types/package.json:7](../packages/types/package.json#L7). `exports.require` and `main` both point to `.js`; ESM falls through to require. Fix: clean up exports.
+- [x] **L9. `packages/types/package.json` exports map non-idiomatic** — [packages/types/package.json:7](../packages/types/package.json#L7). `exports.require` and `main` both point to `.js`; ESM falls through to require. Fix: clean up exports. _Done: reordered to put `types` first (Node convention) and added an explicit `default` entry. Same shape as L5's `@ruleshub/kit` fix so consumers see one consistent exports pattern across the shared packages._
 
 ---
 

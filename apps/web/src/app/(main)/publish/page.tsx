@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, ArrowRight, Upload, X, AlertCircle } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { config } from "@/lib/config";
 import { TOOL_LABELS } from "@ruleshub/types";
 import type { SupportedTool } from "@ruleshub/types";
 import { TOOL_COLORS } from "@/lib/tool-colors";
@@ -126,7 +127,7 @@ export default function PublishPage() {
   useEffect(() => {
     if (!authLoading && !user && !redirected.current) {
       redirected.current = true;
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1"}/auth/github`;
+      window.location.href = `${config.apiUrl}/auth/github`;
     }
   }, [authLoading, user]);
 

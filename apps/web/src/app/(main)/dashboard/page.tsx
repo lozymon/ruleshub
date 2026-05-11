@@ -25,6 +25,7 @@ import { listApiKeys, createApiKey, revokeApiKey } from "@/lib/api/api-keys";
 import { createImport, listMyImports, deleteImport } from "@/lib/api/imports";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { routes } from "@/lib/routes";
+import { config } from "@/lib/config";
 import { useAuth } from "@/context/auth-context";
 import type {
   ApiKeyDto,
@@ -213,7 +214,7 @@ export default function DashboardPage() {
     setTimeout(() => setter(false), 2000);
   }
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+  const apiBase = config.apiUrl;
 
   // Once auth has resolved and there is no user, kick off the OAuth flow.
   // (A transient API failure would also land here; the redirect is idempotent.)
@@ -221,7 +222,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!authLoading && !user && !redirected.current) {
       redirected.current = true;
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1"}/auth/github`;
+      window.location.href = `${config.apiUrl}/auth/github`;
     }
   }, [authLoading, user]);
 

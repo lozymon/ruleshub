@@ -22,6 +22,7 @@ import { AuthService } from "./auth.service";
 import { GitHubOAuthGuard } from "./guards/github-oauth.guard";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME } from "./auth.constants";
+import { UsersService } from "../users/users.service";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -29,6 +30,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get("github")
@@ -68,11 +70,21 @@ export class AuthController {
     res.redirect(`${appUrl}/auth/callback`);
   }
 
+  // Authenticated logout: also revoke every token for this user via
+  // `tokensInvalidAfter`, so a stolen-but-still-unexpired JWT can't be
+  // replayed even if the attacker captured it before the user signed out.
+  // Anonymous callers just get the cookie cleared.
   @Post("logout")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: "Logout — clears the auth cookie" })
+  @ApiOperation({ summary: "Logout — clears the auth cookie and revokes JWTs" })
   @ApiResponse({ status: 204 })
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const user = req.user as User | undefined;
+    if (user) {
+      await this.usersService.revokeAllTokens(user.id);
+    }
     res.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

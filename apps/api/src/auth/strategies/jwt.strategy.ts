@@ -9,6 +9,10 @@ import { AUTH_COOKIE_NAME, requireJwtSecret } from "../auth.constants";
 interface JwtPayload {
   sub: string;
   username: string;
+  // Issued-at, set by `jsonwebtoken` automatically. Compared against
+  // `User.tokensInvalidAfter` so administrative revocation can invalidate
+  // every existing token for a user without flipping `blocked`.
+  iat: number;
 }
 
 function fromAuthCookie(req: Request): string | null {
@@ -36,6 +40,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     const user = await this.usersService.findById(payload.sub);
     if (!user) throw new UnauthorizedException();
     if (user.blocked) throw new UnauthorizedException("Account is blocked");
+    // Reject any token issued before the user's last revocation. `iat` is in
+    // seconds; tokensInvalidAfter is a Date — convert once and compare.
+    if (
+      user.tokensInvalidAfter &&
+      payload.iat * 1000 < user.tokensInvalidAfter.getTime()
+    ) {
+      throw new UnauthorizedException("Token has been revoked");
+    }
     return user;
   }
 }

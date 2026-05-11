@@ -28,6 +28,10 @@ model User {
   verified   Boolean  @default(false)
   blocked    Boolean  @default(false)
   isAdmin    Boolean  @default(false)
+  // Set this to "now" via `UsersService.revokeAllTokens` to invalidate every
+  // previously-issued JWT for this user without flipping `blocked`. JwtStrategy
+  // refuses any token whose `iat` is older than this timestamp.
+  tokensInvalidAfter DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

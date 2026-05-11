@@ -51,4 +51,16 @@ export class UsersService {
   async findByUsername(username: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { username } });
   }
+
+  // Invalidate every previously-issued JWT for this user without flipping
+  // `blocked`. The JwtStrategy refuses tokens whose `iat` (seconds-resolution)
+  // is older than `tokensInvalidAfter`. The cutoff is "now + 1s" so a token
+  // issued in the same wall-clock second as this call still falls on the
+  // "older" side of the comparison and is correctly revoked.
+  async revokeAllTokens(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { tokensInvalidAfter: new Date(Date.now() + 1000) },
+    });
+  }
 }

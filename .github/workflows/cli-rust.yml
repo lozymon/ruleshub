@@ -12,6 +12,10 @@ on:
       - "packages-rs/**"
       - ".github/workflows/cli-rust.yml"
 
+# Read-only by default. The publish path lives in cli-release.yml.
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: packages-rs/cli

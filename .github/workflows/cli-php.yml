@@ -12,6 +12,10 @@ on:
       - "packages-php/**"
       - ".github/workflows/cli-php.yml"
 
+# Read-only by default. The publish path lives in cli-release.yml.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: PHP lint

@@ -12,6 +12,10 @@ on:
       - "packages-py/**"
       - ".github/workflows/cli-pip.yml"
 
+# Read-only by default. The publish path lives in cli-release.yml.
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: packages-py/cli

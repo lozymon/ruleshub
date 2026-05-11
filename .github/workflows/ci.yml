@@ -6,6 +6,11 @@ on:
   push:
     branches: [develop]
 
+# Lock down the GITHUB_TOKEN scope. CI only needs to read the repo;
+# everything else (releases, registry publishes) lives in cli-release.yml.
+permissions:
+  contents: read
+
 jobs:
   Lint:
     runs-on: ubuntu-latest

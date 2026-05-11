@@ -31,6 +31,7 @@ import { User } from "@prisma/client";
 import { PackagesService } from "./packages.service";
 import { SearchPackagesDto } from "./dto/search-packages.dto";
 import { DiffVersionsQueryDto } from "./dto/diff-versions.dto";
+import { Throttle } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
 
@@ -191,6 +192,7 @@ export class PackagesController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiBearerAuth()
   @UseInterceptors(
     FileInterceptor("file", { limits: { fileSize: 5 * 1024 * 1024 } }),
@@ -231,6 +233,7 @@ export class PackagesController {
 
   @Post(":namespace/:name/fork")
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Fork a package into own namespace" })
   @ApiResponse({ status: 201 })

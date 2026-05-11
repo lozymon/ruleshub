@@ -15,6 +15,7 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
+import { Throttle } from "@nestjs/throttler";
 import { Request, Response } from "express";
 import { User } from "@prisma/client";
 import { AuthService } from "./auth.service";
@@ -38,8 +39,10 @@ export class AuthController {
     // Guard handles the redirect
   }
 
+  // Auth endpoints are the highest-value brute target — cap them per-IP.
   @Get("github/callback")
   @UseGuards(GitHubOAuthGuard)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({ summary: "GitHub OAuth callback" })
   @ApiResponse({
     status: 302,

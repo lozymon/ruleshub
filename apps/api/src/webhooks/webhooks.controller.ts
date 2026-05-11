@@ -21,6 +21,7 @@ import {
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { User } from "@prisma/client";
+import { Throttle } from "@nestjs/throttler";
 import { WebhooksService } from "./webhooks.service";
 import { CreateWebhookDto } from "./dto/create-webhook.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -98,8 +99,13 @@ export class WebhooksController {
     );
   }
 
+  // Pings trigger an outbound HTTP request to a user-supplied URL — the
+  // exact thing SSRF protections defend against. Even with safe-request
+  // in place, we tighten the dispatch rate so this can't be abused as a
+  // probe amplifier.
   @Post(":id/ping")
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Send a test ping to verify the webhook URL" })
   @ApiResponse({ status: 201, description: "Ping dispatched" })

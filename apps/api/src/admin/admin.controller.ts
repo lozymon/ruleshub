@@ -16,13 +16,13 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
-  ApiQuery,
   ApiProperty,
 } from "@nestjs/swagger";
 import { IsBoolean } from "class-validator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { AdminGuard } from "./admin.guard";
 import { AdminService } from "./admin.service";
+import { ListAdminUsersDto } from "./dto/list-admin-users.dto";
 
 class SetVerifiedDto {
   @ApiProperty({ example: true })
@@ -45,16 +45,13 @@ export class AdminController {
 
   @Get("users")
   @ApiOperation({ summary: "List all users (paginated)" })
-  @ApiQuery({ name: "page", required: false, example: 1 })
-  @ApiQuery({ name: "limit", required: false, example: 50 })
-  @ApiQuery({ name: "q", required: false, description: "Search by username" })
   @ApiResponse({ status: 200 })
-  listUsers(
-    @Query("page") page = 1,
-    @Query("limit") limit = 50,
-    @Query("q") q?: string,
-  ) {
-    return this.adminService.listUsers(+page, +limit, q);
+  listUsers(@Query() query: ListAdminUsersDto) {
+    return this.adminService.listUsers(
+      query.page ?? 1,
+      query.limit ?? 20,
+      query.q,
+    );
   }
 
   @Patch("users/:username/block")

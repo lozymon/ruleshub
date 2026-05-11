@@ -13,8 +13,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Wire up email service (SendGrid, Resend, etc.) here
-  console.info("[waitlist]", email);
+  // TODO: wire up email service (SendGrid, Resend, etc.) — until then
+  // the email is validated and dropped. Logging it would violate the
+  // root CLAUDE.md no-console.log rule and would also log a PII-shaped
+  // string on every signup.
+  void email;
 
   return NextResponse.json({ success: true });
 }

@@ -1,4 +1,8 @@
-export const dynamic = "force-dynamic";
+// `revalidate` instead of `force-dynamic`: the browse page is the same for
+// everyone (no per-user data), so we cache the rendered HTML for a minute
+// and let Next regenerate it lazily on the next request. Search-query
+// permutations are still rendered on demand because the URL changes.
+export const revalidate = 60;
 
 import { Suspense } from "react";
 import Link from "next/link";

@@ -12,10 +12,36 @@ import { CreateImportDto } from "./dto/create-import.dto";
 import { PackageManifestSchema } from "@ruleshub/types";
 import type { GitHubImportCreatedDto, GitHubImportDto } from "@ruleshub/types";
 
-function parseGitHubUrl(url: string): { owner: string; repo: string } {
-  const match = url.match(/github\.com\/([^/]+)\/([^/.]+)/);
+// Anchored — the previous version matched anywhere in the string, so a stored
+// URL like `https://github.com/owner/repo#anything` or trailing junk would
+// still parse out an `owner/repo` pair.
+const GITHUB_URL_RE =
+  /^https:\/\/github\.com\/([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)\/([A-Za-z0-9._-]+?)(?:\.git)?\/?$/;
+
+export function parseGitHubUrl(url: string): { owner: string; repo: string } {
+  const match = url.match(GITHUB_URL_RE);
   if (!match) throw new BadRequestException("Invalid GitHub repository URL");
   return { owner: match[1], repo: match[2] };
+}
+
+// Tag names come from webhook payloads and are interpolated into upstream
+// URLs. We mirror enough of git's own rules to keep them safe and well-formed:
+// no `..`, no leading `-` or `.`, no trailing `/` or `.`, only the character
+// set git itself permits. We still `encodeURIComponent` at the call site so
+// even an unexpected character can't break out of the URL path.
+const TAG_NAME_RE = /^[A-Za-z0-9_][A-Za-z0-9._\-/]*$/;
+
+export function validateTagName(tag: string): void {
+  if (
+    !tag ||
+    tag.length > 200 ||
+    !TAG_NAME_RE.test(tag) ||
+    tag.includes("..") ||
+    tag.endsWith("/") ||
+    tag.endsWith(".")
+  ) {
+    throw new BadRequestException(`Invalid tag name: ${tag}`);
+  }
 }
 
 function toDto(
@@ -146,6 +172,7 @@ export class ImportsService {
     if (typeof ref !== "string" || !ref.startsWith("refs/tags/")) return;
 
     const tagName = ref.replace("refs/tags/", "");
+    validateTagName(tagName);
     const { owner, repo } = parseGitHubUrl(ghImport.repoUrl);
 
     this.logger.log(
@@ -210,7 +237,14 @@ export class ImportsService {
     repo: string,
     tag: string,
   ): Promise<Buffer> {
-    const url = `https://api.github.com/repos/${owner}/${repo}/zipball/refs/tags/${tag}`;
+    // owner/repo were extracted by the anchored GITHUB_URL_RE; tag was
+    // validated by validateTagName. encodeURIComponent on each segment is
+    // belt-and-braces so no character can break out of the URL path even
+    // if the regexes ever drift.
+    const safeOwner = encodeURIComponent(owner);
+    const safeRepo = encodeURIComponent(repo);
+    const safeTag = encodeURIComponent(tag);
+    const url = `https://api.github.com/repos/${safeOwner}/${safeRepo}/zipball/refs/tags/${safeTag}`;
     const res = await fetch(url, {
       headers: {
         "User-Agent": "RulesHub/1.0",

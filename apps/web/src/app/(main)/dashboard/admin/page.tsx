@@ -135,6 +135,7 @@ export default function AdminDashboardPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by username…"
+            aria-label="Search users by username"
             className="w-full rounded-[8px] border border-border bg-bg-elev py-2 pl-9 pr-3 text-sm outline-none placeholder:text-fg-dim focus:border-fg-dim"
           />
         </div>

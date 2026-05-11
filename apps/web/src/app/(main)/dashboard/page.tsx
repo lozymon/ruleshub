@@ -467,6 +467,7 @@ export default function DashboardPage() {
               <input
                 type="text"
                 placeholder="slug (e.g. acmecorp)"
+                aria-label="Organisation slug"
                 value={newOrgSlug}
                 onChange={(e) =>
                   setNewOrgSlug(
@@ -478,6 +479,7 @@ export default function DashboardPage() {
               <input
                 type="text"
                 placeholder="Display name"
+                aria-label="Organisation display name"
                 value={newOrgName}
                 onChange={(e) => setNewOrgName(e.target.value)}
                 className="h-[34px] flex-1 rounded-md border border-border bg-background px-3 text-[13px] outline-none focus:border-primary"
@@ -594,6 +596,7 @@ export default function DashboardPage() {
           <input
             type="text"
             placeholder="Key name (e.g. GitHub Actions)"
+            aria-label="API key name"
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 text-[13px] outline-none focus:border-primary"
@@ -689,6 +692,7 @@ export default function DashboardPage() {
           <input
             type="url"
             placeholder="https://github.com/you/your-rules"
+            aria-label="GitHub repository URL"
             value={newRepoUrl}
             onChange={(e) => setNewRepoUrl(e.target.value)}
             className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 font-mono text-[13px] outline-none focus:border-primary"

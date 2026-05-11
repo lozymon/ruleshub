@@ -198,6 +198,7 @@ export function DocsSearch() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search documentation…"
+                aria-label="Search documentation"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               {loading && (

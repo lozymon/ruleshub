@@ -315,6 +315,7 @@ export default function OrgDashboardPage() {
                 <input
                   type="text"
                   placeholder="GitHub username"
+                  aria-label="GitHub username to invite"
                   value={inviteUsername}
                   onChange={(e) => setInviteUsername(e.target.value)}
                   className="h-[34px] flex-1 rounded-md border border-border bg-bg-elev px-3 font-mono text-[13px] outline-none focus:border-primary"

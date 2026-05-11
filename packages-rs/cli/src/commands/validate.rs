@@ -2,12 +2,36 @@ use crate::config::SCHEMA_URL;
 use crate::error::{CliError, Result};
 use crate::manifest::{Manifest, VALID_ASSET_TYPES, ValidateReport};
 use jsonschema::Validator;
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-async fn fetch_schema() -> Result<Validator> {
+// Snapshot of the live schema, baked into the binary. Generated from
+// `packages/types/src/manifest.ts` via the Next.js route at
+// `/schema/ruleshub.json`. Pulling the schema over the network on every
+// invocation (the previous behaviour) made every `validate` and `publish`
+// rely on `ruleshub.dev` being reachable — slow, flaky offline, and a
+// silent downgrade to no-schema-check on any fetch failure. To intentionally
+// re-fetch, set `RULESHUB_REFRESH_SCHEMA=1`.
+const EMBEDDED_SCHEMA: &str = include_str!("../../schema/ruleshub.schema.json");
+
+const ENV_REFRESH_SCHEMA: &str = "RULESHUB_REFRESH_SCHEMA";
+
+fn embedded_schema() -> Result<Validator> {
+    let value: serde_json::Value = serde_json::from_str(EMBEDDED_SCHEMA)?;
+    jsonschema::validator_for(&value).map_err(|e| CliError::SchemaCompile(e.to_string()))
+}
+
+async fn fetch_schema_remote() -> Result<Validator> {
     let value: serde_json::Value = reqwest::get(SCHEMA_URL).await?.json().await?;
     jsonschema::validator_for(&value).map_err(|e| CliError::SchemaCompile(e.to_string()))
+}
+
+async fn load_schema() -> Result<Validator> {
+    if env::var(ENV_REFRESH_SCHEMA).ok().as_deref() == Some("1") {
+        return fetch_schema_remote().await;
+    }
+    embedded_schema()
 }
 
 pub async fn validate(path: &str) -> Result<ValidateReport> {
@@ -27,7 +51,7 @@ pub async fn validate(path: &str) -> Result<ValidateReport> {
         obj.remove("$schema");
     }
 
-    match fetch_schema().await {
+    match load_schema().await {
         Ok(validator) => {
             for err in validator.iter_errors(&raw) {
                 issues.push(format!("schema: {err}"));

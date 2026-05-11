@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ruleshub.dev/schema/ruleshub.json",
+  "title": "RulesHub Package Manifest",
+  "description": "Schema for ruleshub.json — the manifest file for RulesHub packages",
+  "$ref": "#/$defs/PackageManifest",
+  "$defs": {
+    "PackageManifest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 72,
+          "pattern": "^[a-z0-9_-]+\\/[a-z0-9_-]+$"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^\\d+\\.\\d+\\.\\d+"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "rule",
+            "command",
+            "workflow",
+            "agent",
+            "mcp-server",
+            "pack",
+            "skill"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "maxItems": 20,
+          "default": []
+        },
+        "projectTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "maxItems": 20,
+          "default": []
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "file"
+            ],
+            "additionalProperties": false
+          },
+          "propertyNames": {
+            "enum": [
+              "claude-code",
+              "cursor",
+              "copilot",
+              "windsurf",
+              "cline",
+              "aider",
+              "continue"
+            ]
+          }
+        },
+        "includes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "maxItems": 100
+        },
+        "changelog": {
+          "type": "string",
+          "maxLength": 5000
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "type",
+        "description",
+        "license"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

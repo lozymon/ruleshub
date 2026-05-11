@@ -181,7 +181,7 @@ export class PackagesService {
     };
   }
 
-  async findByFullName(namespace: string, name: string) {
+  async findByFullName(namespace: string, name: string, requesterId?: string) {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
       include: {
@@ -194,6 +194,8 @@ export class PackagesService {
     if (!pkg)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
 
+    await this.assertCanReadPackage(pkg, requesterId);
+
     return toPackageDto(pkg);
   }
 
@@ -201,12 +203,15 @@ export class PackagesService {
     namespace: string,
     name: string,
     version: string,
+    requesterId?: string,
   ): Promise<PackageVersion> {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
-    if (!pkg || pkg.isPrivate)
+    if (!pkg)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    await this.assertCanReadPackage(pkg, requesterId);
 
     const pkgVersion = await this.prisma.packageVersion.findUnique({
       where: { packageId_version: { packageId: pkg.id, version } },
@@ -373,8 +378,14 @@ export class PackagesService {
     name: string,
     version: string,
     requestBaseUrl?: string,
+    requesterId?: string,
   ): Promise<{ url: string }> {
-    const pkgVersion = await this.findVersion(namespace, name, version);
+    const pkgVersion = await this.findVersion(
+      namespace,
+      name,
+      version,
+      requesterId,
+    );
 
     if (pkgVersion.yanked) {
       throw new BadRequestException(`Version ${version} has been yanked`);
@@ -397,8 +408,14 @@ export class PackagesService {
     namespace: string,
     name: string,
     version: string,
+    requesterId?: string,
   ): Promise<{ stream: Readable; filename: string }> {
-    const pkgVersion = await this.findVersion(namespace, name, version);
+    const pkgVersion = await this.findVersion(
+      namespace,
+      name,
+      version,
+      requesterId,
+    );
 
     if (pkgVersion.yanked) {
       throw new BadRequestException(`Version ${version} has been yanked`);
@@ -423,8 +440,14 @@ export class PackagesService {
     namespace: string,
     name: string,
     version: string,
+    requesterId?: string,
   ): Promise<PackageVersionPreviewDto> {
-    const pkgVersion = await this.findVersion(namespace, name, version);
+    const pkgVersion = await this.findVersion(
+      namespace,
+      name,
+      version,
+      requesterId,
+    );
 
     if (pkgVersion.yanked) {
       throw new BadRequestException(`Version ${version} has been yanked`);
@@ -484,6 +507,8 @@ export class PackagesService {
     });
     if (!source)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    await this.assertCanReadPackage(source, userId);
 
     const existing = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace: user.username, name } },
@@ -584,12 +609,15 @@ export class PackagesService {
     name: string,
     from: string,
     to: string,
+    requesterId?: string,
   ): Promise<VersionDiffDto> {
     const pkg = await this.prisma.package.findUnique({
       where: { namespace_name: { namespace, name } },
     });
     if (!pkg)
       throw new NotFoundException(`Package ${namespace}/${name} not found`);
+
+    await this.assertCanReadPackage(pkg, requesterId);
 
     const [fromVersion, toVersion] = await Promise.all([
       this.prisma.packageVersion.findUnique({
@@ -676,6 +704,37 @@ export class PackagesService {
     });
 
     return changes;
+  }
+
+  // Throws NotFoundException (not Forbidden) when a private package is
+  // accessed by a non-owner — keeps existence of private packages opaque.
+  private async assertCanReadPackage(
+    pkg: {
+      isPrivate: boolean;
+      ownerUserId: string | null;
+      ownerOrgId: string | null;
+      namespace: string;
+      name: string;
+    },
+    requesterId?: string,
+  ): Promise<void> {
+    if (!pkg.isPrivate) return;
+    if (!requesterId) {
+      throw new NotFoundException(
+        `Package ${pkg.namespace}/${pkg.name} not found`,
+      );
+    }
+    if (pkg.ownerUserId && pkg.ownerUserId === requesterId) return;
+    if (pkg.ownerOrgId) {
+      const member = await this.prisma.orgMember.findFirst({
+        where: { orgId: pkg.ownerOrgId, userId: requesterId },
+        select: { userId: true },
+      });
+      if (member) return;
+    }
+    throw new NotFoundException(
+      `Package ${pkg.namespace}/${pkg.name} not found`,
+    );
   }
 
   private async assertOwnership(

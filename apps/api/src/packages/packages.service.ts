@@ -18,6 +18,10 @@ import {
   DiffChange,
   type PackageManifest,
   type PackageVersionPreviewDto,
+  type PackageDto,
+  type PackageVersionDto,
+  type SupportedTool,
+  type AssetType,
 } from "@ruleshub/types";
 import {
   Package,
@@ -72,17 +76,46 @@ const packDepsInclude = {
   },
 } as const;
 
-function toPackageDto(p: PackageWithIncludes) {
+function toPackageVersionDto(v: PackageVersion): PackageVersionDto {
   return {
-    ...p,
+    id: v.id,
+    version: v.version,
+    changelog: v.changelog,
+    downloads: v.downloads,
+    yanked: v.yanked,
+    publishedAt: v.publishedAt.toISOString(),
+  };
+}
+
+// Explicit projection to PackageDto. Spreading the raw Prisma entity used
+// to leak internal fields like ownerUserId, ownerOrgId, forkedFromId,
+// ownerType, and hasReadme into every package detail / search response —
+// and similarly the version rows leaked manifestJson, storageKey, sha256,
+// and packageId. Keep this list aligned with PackageDto in @ruleshub/types.
+function toPackageDto(p: PackageWithIncludes): PackageDto {
+  return {
+    id: p.id,
+    namespace: p.namespace,
+    name: p.name,
     fullName: `${p.namespace}/${p.name}`,
-    latestVersion: p.versions[0] ?? null,
-    versions: p.versions,
+    type: p.type as AssetType,
+    description: p.description,
+    tags: p.tags,
+    projectTypes: p.projectTypes,
+    supportedTools: p.supportedTools as SupportedTool[],
+    totalDownloads: p.totalDownloads,
+    stars: p.stars,
+    qualityScore: p.qualityScore,
+    isPrivate: p.isPrivate,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+    latestVersion: p.versions[0] ? toPackageVersionDto(p.versions[0]) : null,
+    versions: p.versions.map(toPackageVersionDto),
     includes: p.packDependencies.map((d) => ({
       fullName: `${d.dep.namespace}/${d.dep.name}`,
       namespace: d.dep.namespace,
       name: d.dep.name,
-      type: d.dep.type,
+      type: d.dep.type as AssetType,
       description: d.dep.description,
       versionRange: d.versionRange,
       latestVersion: d.dep.versions[0]?.version ?? null,

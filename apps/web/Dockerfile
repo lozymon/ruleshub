@@ -26,6 +26,9 @@ RUN pnpm install --frozen-lockfile --prod=false --filter web... --filter @rulesh
 FROM deps AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY packages/types ./packages/types
+# Just the CLI's package.json — apps/web imports its `version` for the
+# homepage banner. The rest of packages/cli is excluded via dockerignore.
+COPY packages/cli/package.json ./packages/cli/package.json
 COPY apps/web ./apps/web
 RUN pnpm --filter @ruleshub/types build \
  && pnpm --filter web build

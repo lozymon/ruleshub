@@ -6,7 +6,10 @@
 # build context — but explicit exclusion keeps the context smaller and
 # guards against accidental future COPYs.
 apps/api
-packages/cli
+# Exclude packages/cli wholesale, but keep its package.json — the homepage
+# imports the CLI version from there for the "CLI vX.Y.Z now available" banner.
+packages/cli/*
+!packages/cli/package.json
 packages/create-ruleshub
 packages/ruleshub-kit
 

@@ -4,6 +4,11 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
+# Force devDeps in install. Coolify (and other build platforms) inject
+# NODE_ENV=production as a build-time env var, which makes pnpm skip
+# devDependencies — but the build stage needs `tsc`/`prisma` which live
+# there. The runner stage below resets NODE_ENV=production for runtime.
+ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/types/package.json ./packages/types/

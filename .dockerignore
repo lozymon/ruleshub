@@ -1,9 +1,34 @@
-node_modules
+# Root .dockerignore — applied to every build context unless a more specific
+# `<Dockerfile>.dockerignore` overrides it.
+
+# Build outputs and caches
 **/node_modules
 **/dist
 **/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+
+# Logs and OS junk
+*.log
+**/*.log
+.DS_Store
+
+# VCS and CI
 .git
 .github
-.turbo
-coverage
-*.log
+
+# Local env files — never bake into images. Keep .env.example so apps that
+# document required envs at build time can still resolve them.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Repo docs / agent rules (not needed inside any image)
+**/CLAUDE.md
+**/audit.md
+
+# Tests
+**/*.spec.ts
+**/*.e2e-spec.ts
+**/*.test.ts

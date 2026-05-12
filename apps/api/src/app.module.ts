@@ -20,6 +20,7 @@ import { ImportsModule } from "./imports/imports.module";
 import { AdminModule } from "./admin/admin.module";
 import { WebhooksModule } from "./webhooks/webhooks.module";
 import { SecurityAlertsModule } from "./security-alerts/security-alerts.module";
+import { HealthModule } from "./health/health.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -58,6 +59,7 @@ import configuration from "./config/configuration";
     AdminModule,
     WebhooksModule,
     SecurityAlertsModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

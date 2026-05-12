@@ -74,7 +74,9 @@ export default async function HomePage() {
               <span className="text-fg-faint">$</span>
               <span className="text-foreground">
                 npx ruleshub install{" "}
-                <span className="text-primary">vercel/nextjs-rules</span>
+                <span className="text-primary">
+                  {trending[0]?.fullName ?? "your-name/your-package"}
+                </span>
               </span>
             </span>
           </div>

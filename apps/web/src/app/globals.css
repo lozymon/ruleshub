@@ -130,6 +130,11 @@
   --code-tok-num: #6cb6ff;
   --code-tok-type: #5eb5f5;
   --code-tok-comment: #768390;
+
+  /* scrollbar */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
+  --scrollbar-track: transparent;
 }
 
 /* ─── Light ───────────────────────────────────────────────── */
@@ -193,6 +198,11 @@
   --code-tok-num: #1d4ed8;
   --code-tok-type: #0369a1;
   --code-tok-comment: #71717a;
+
+  /* scrollbar */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.22);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.38);
+  --scrollbar-track: transparent;
 }
 
 @layer base {
@@ -290,23 +300,39 @@
   animation: pulse-dot 2s infinite;
 }
 
-/* ─── Slim scrollbar (sidebar, panels) ───────────────────── */
-.scrollbar-thin {
+/* ─── Global scrollbar (auto-themed) ─────────────────────── */
+* {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
-.scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
-.scrollbar-thin::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
   background: transparent;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 2px;
+
+/* Slim variant (sidebar, narrow panels) */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hover);
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-width: 1px;
 }
 
 /* ─── Code block ──────────────────────────────────────────── */

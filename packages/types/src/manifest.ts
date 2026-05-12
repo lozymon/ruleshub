@@ -21,6 +21,25 @@ export const TargetConfigSchema = z.object({
 
 export type TargetConfig = z.infer<typeof TargetConfigSchema>;
 
+// `url` is the canonical repository URL (https://, git://, or SSH). `directory`
+// lets monorepos point at a subfolder; `branch` overrides the default branch
+// when building tree links. Length caps are deliberately tight — git URLs and
+// branch names in the wild fit comfortably under these.
+export const RepositorySchema = z.object({
+  url: z
+    .string()
+    .min(1)
+    .max(512)
+    .regex(
+      /^(https?:\/\/|git@|git:\/\/|ssh:\/\/)/,
+      "Repository URL must start with http://, https://, git://, git@, or ssh://",
+    ),
+  directory: z.string().min(1).max(256).optional(),
+  branch: z.string().min(1).max(128).optional(),
+});
+
+export type Repository = z.infer<typeof RepositorySchema>;
+
 // Bound every user-provided list and string. Without these caps a publisher
 // could submit a manifest with 100k tags or a multi-megabyte string and force
 // the API + database to fan that out across the system. The numbers below are
@@ -59,6 +78,7 @@ export const PackageManifestSchema = z
     targets: z.record(SupportedToolSchema, TargetConfigSchema).optional(),
     includes: z.array(z.string().min(1).max(128)).max(100).optional(),
     changelog: z.string().max(5000).optional(),
+    repository: RepositorySchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (

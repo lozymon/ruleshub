@@ -17,6 +17,15 @@ pub struct Target {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+pub struct Repository {
+    pub url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub directory: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub name: String,
@@ -34,6 +43,8 @@ pub struct Manifest {
     pub tags: Vec<String>,
     #[serde(default)]
     pub project_types: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<Repository>,
 }
 
 #[derive(Serialize, Debug)]

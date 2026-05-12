@@ -139,6 +139,15 @@ pub fn print_report_human(report: &ValidateReport) {
             report.manifest.includes.len()
         );
     }
+    if let Some(repo) = &report.manifest.repository {
+        match (&repo.directory, &repo.branch) {
+            (Some(dir), Some(branch)) => {
+                println!("  repository:  {} ({}, {})", repo.url, dir, branch)
+            }
+            (Some(dir), None) => println!("  repository:  {} ({})", repo.url, dir),
+            (None, _) => println!("  repository:  {}", repo.url),
+        }
+    }
 }
 
 pub fn print_report_json(report: &ValidateReport) -> Result<()> {

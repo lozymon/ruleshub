@@ -8,7 +8,11 @@
     "start": "node dist/main",
     "lint": "echo 'ESLint not configured for API yet'",
     "typecheck": "tsc --noEmit",
-    "test": "jest --config jest-e2e.json --passWithNoTests"
+    "test": "jest --config jest-e2e.json --passWithNoTests",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -50,6 +54,7 @@
     "jest": "^30.3.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.0.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.4.0"
   }
 }

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   PackageManifestSchema,
   AssetTypeSchema,
+  RepositorySchema,
   TargetConfigSchema,
 } from "./manifest";
 import { SupportedToolSchema } from "./tools";
@@ -362,6 +363,76 @@ describe("TargetConfigSchema", () => {
 
   it("rejects a missing file field", () => {
     expect(TargetConfigSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("RepositorySchema", () => {
+  it("accepts a bare https URL", () => {
+    expect(
+      RepositorySchema.safeParse({
+        url: "https://github.com/lozymon/airules",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("accepts url + directory + branch (monorepo case)", () => {
+    expect(
+      RepositorySchema.safeParse({
+        url: "https://github.com/lozymon/airules",
+        directory: "commands/pr-review",
+        branch: "main",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("accepts git@ SSH URLs", () => {
+    expect(
+      RepositorySchema.safeParse({
+        url: "git@github.com:lozymon/airules.git",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an unrecognized URL scheme", () => {
+    expect(
+      RepositorySchema.safeParse({ url: "ftp://example.com/repo" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an empty url", () => {
+    expect(RepositorySchema.safeParse({ url: "" }).success).toBe(false);
+  });
+
+  it("rejects a directory over 256 characters", () => {
+    expect(
+      RepositorySchema.safeParse({
+        url: "https://github.com/x/y",
+        directory: "a".repeat(257),
+      }).success,
+    ).toBe(false);
+  });
+
+  it("is accepted as an optional field in PackageManifestSchema", () => {
+    const result = PackageManifestSchema.safeParse({
+      ...validRule,
+      repository: {
+        url: "https://github.com/lozymon/airules",
+        directory: "commands/pr-review",
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.repository?.directory).toBe("commands/pr-review");
+    }
+  });
+
+  it("rejects a malformed repository URL in PackageManifestSchema", () => {
+    expect(
+      PackageManifestSchema.safeParse({
+        ...validRule,
+        repository: { url: "not-a-url" },
+      }).success,
+    ).toBe(false);
   });
 });
 

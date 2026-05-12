@@ -72,9 +72,7 @@
                 "maxLength": 256
               }
             },
-            "required": [
-              "file"
-            ],
+            "required": ["file"],
             "additionalProperties": false
           },
           "propertyNames": {
@@ -101,15 +99,33 @@
         "changelog": {
           "type": "string",
           "maxLength": 5000
+        },
+        "repository": {
+          "type": "object",
+          "description": "Source repository for this package. `directory` and `branch` let monorepos deep-link to a subfolder.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^(https?:\\/\\/|git@|git:\\/\\/|ssh:\\/\\/)"
+            },
+            "directory": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "branch": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          "required": ["url"],
+          "additionalProperties": false
         }
       },
-      "required": [
-        "name",
-        "version",
-        "type",
-        "description",
-        "license"
-      ],
+      "required": ["name", "version", "type", "description", "license"],
       "additionalProperties": false
     }
   }

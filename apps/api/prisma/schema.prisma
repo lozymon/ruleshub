@@ -81,6 +81,12 @@ model Package {
   stars          Int       @default(0)
   qualityScore   Int       @default(0)
   hasReadme      Boolean   @default(false)
+  // Source-of-truth for the "Repository" sidebar link. Populated from the
+  // latest version's manifest `repository` field, so monorepos can deep-link
+  // to a subfolder via `repoDirectory` (and optionally a non-default branch).
+  repoUrl        String?
+  repoDirectory  String?
+  repoBranch     String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

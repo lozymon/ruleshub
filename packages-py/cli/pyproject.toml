@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ruleshub"
-version = "0.1.3"
+version = "0.2.0"
 description = "RulesHub CLI — install, publish, and manage AI coding tool assets. Wrapper that ships the canonical Rust binary."
 readme = "README.md"
 license = { text = "MIT" }

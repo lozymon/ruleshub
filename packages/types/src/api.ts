@@ -1,4 +1,4 @@
-import { AssetType } from "./manifest";
+import { AssetType, Repository } from "./manifest";
 import { SupportedTool } from "./tools";
 
 export interface PaginatedResponse<T> {
@@ -55,6 +55,7 @@ export interface PackageDto {
   latestVersion: PackageVersionDto | null;
   versions: PackageVersionDto[];
   includes: PackageSummaryDto[];
+  repository: Repository | null;
   createdAt: string;
   updatedAt: string;
 }

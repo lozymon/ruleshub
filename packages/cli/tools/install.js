@@ -15,7 +15,7 @@ const os = require("node:os");
 const { spawnSync } = require("node:child_process");
 
 const REPO = "lozymon/ruleshub";
-const BINARY_VERSION = "0.1.3";
+const BINARY_VERSION = "0.2.0";
 
 const TARGET_MAP = {
   "linux-x64": "x86_64-unknown-linux-musl",

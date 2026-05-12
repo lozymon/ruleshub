@@ -6,4 +6,4 @@ import time; running ``ruleshub`` invokes ``ruleshub._launcher:main``
 which exec's the platform-matching binary.
 """
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"

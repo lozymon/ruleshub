@@ -111,6 +111,13 @@ function toPackageDto(p: PackageWithIncludes): PackageDto {
     updatedAt: p.updatedAt.toISOString(),
     latestVersion: p.versions[0] ? toPackageVersionDto(p.versions[0]) : null,
     versions: p.versions.map(toPackageVersionDto),
+    repository: p.repoUrl
+      ? {
+          url: p.repoUrl,
+          ...(p.repoDirectory ? { directory: p.repoDirectory } : {}),
+          ...(p.repoBranch ? { branch: p.repoBranch } : {}),
+        }
+      : null,
     includes: p.packDependencies.map((d) => ({
       fullName: `${d.dep.namespace}/${d.dep.name}`,
       namespace: d.dep.namespace,
@@ -302,6 +309,10 @@ export class PackagesService {
     const storageKey = `packages/${namespace}/${packageName}/${manifest.version}.zip`;
     await this.storage.upload(storageKey, enrichedBuffer, "application/zip");
 
+    const repoUrl = manifest.repository?.url ?? null;
+    const repoDirectory = manifest.repository?.directory ?? null;
+    const repoBranch = manifest.repository?.branch ?? null;
+
     return this.prisma.$transaction(async (tx) => {
       const pkg = await tx.package.upsert({
         where: { namespace_name: { namespace, name: packageName } },
@@ -312,6 +323,9 @@ export class PackagesService {
           supportedTools,
           type: manifest.type,
           hasReadme,
+          repoUrl,
+          repoDirectory,
+          repoBranch,
         },
         create: {
           namespace,
@@ -322,6 +336,9 @@ export class PackagesService {
           projectTypes: manifest.projectTypes,
           supportedTools,
           hasReadme,
+          repoUrl,
+          repoDirectory,
+          repoBranch,
           ownerType: "user",
           ownerUserId,
         },

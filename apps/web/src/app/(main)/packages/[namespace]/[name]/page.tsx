@@ -24,6 +24,51 @@ const TYPE_ICONS: Record<string, string> = {
   pack: "▣",
 };
 
+// Convert any supported manifest `repository.url` form into a browser-openable
+// https URL, stripping a trailing `.git`. Returns null for shapes we can't
+// safely linkify (so the UI can omit the link rather than ship a broken one).
+function normalizeRepoUrl(raw: string): string | null {
+  let url = raw.trim();
+  const sshMatch = url.match(/^git@([^:]+):(.+)$/);
+  if (sshMatch) url = `https://${sshMatch[1]}/${sshMatch[2]}`;
+  else if (url.startsWith("ssh://git@"))
+    url = `https://${url.slice("ssh://git@".length)}`;
+  else if (url.startsWith("git://"))
+    url = `https://${url.slice("git://".length)}`;
+  if (!/^https?:\/\//.test(url)) return null;
+  return url.replace(/\.git$/, "");
+}
+
+type RepoLinks = {
+  primary: { href: string; label: string };
+  issues: string | null;
+};
+
+function buildRepoLinks(repo: {
+  url: string;
+  directory?: string;
+  branch?: string;
+}): RepoLinks | null {
+  const base = normalizeRepoUrl(repo.url);
+  if (!base) return null;
+  let host: string;
+  let path: string;
+  try {
+    const parsed = new URL(base);
+    host = parsed.host;
+    path = parsed.pathname.replace(/^\/|\/$/g, "");
+  } catch {
+    return null;
+  }
+  const branch = repo.branch ?? "main";
+  const isGitHub = host === "github.com";
+  const dir = repo.directory?.replace(/^\/|\/$/g, "");
+  const primaryHref = isGitHub && dir ? `${base}/tree/${branch}/${dir}` : base;
+  const primaryLabel = dir ? `${host}/${path}/${dir}` : `${host}/${path}`;
+  const issues = isGitHub ? `${base}/issues` : null;
+  return { primary: { href: primaryHref, label: primaryLabel }, issues };
+}
+
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const h = Math.floor(diffMs / 3_600_000);
@@ -212,32 +257,36 @@ export default async function PackagePage({ params }: PackagePageProps) {
           </div>
 
           {/* Repository */}
-          <div className="rounded-lg border border-border bg-bg-elev p-4">
-            <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
-              Repository
-            </h4>
-            {[
-              {
-                label: `github.com/${namespace}/${name}`,
-                href: `https://github.com/${namespace}/${name}`,
-              },
-              {
-                label: "Report issue",
-                href: `https://github.com/${namespace}/${name}/issues`,
-              },
-            ].map(({ label, href }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 py-1.5 text-[13px] text-fg-muted transition-colors hover:text-foreground"
-              >
-                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                {label}
-              </a>
-            ))}
-          </div>
+          {(() => {
+            const links = pkg.repository
+              ? buildRepoLinks(pkg.repository)
+              : null;
+            if (!links) return null;
+            const entries: Array<{ label: string; href: string }> = [
+              links.primary,
+            ];
+            if (links.issues)
+              entries.push({ label: "Report issue", href: links.issues });
+            return (
+              <div className="rounded-lg border border-border bg-bg-elev p-4">
+                <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+                  Repository
+                </h4>
+                {entries.map(({ label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 py-1.5 text-[13px] text-fg-muted transition-colors hover:text-foreground"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{label}</span>
+                  </a>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* License */}
           <div className="rounded-lg border border-border bg-bg-elev p-4">

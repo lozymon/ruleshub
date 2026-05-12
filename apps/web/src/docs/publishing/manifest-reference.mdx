@@ -14,6 +14,9 @@ Every RulesHub package must include a `ruleshub.json` at its root.
   "tags": ["nestjs", "typescript"],
   "projectTypes": ["nestjs", "node"],
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/lozymon/nestjs-rules"
+  },
   "targets": {
     "claude-code": { "file": "targets/claude-code/CLAUDE.md" },
     "cursor": { "file": "targets/cursor/.cursorrules" },
@@ -34,6 +37,10 @@ Every RulesHub package must include a `ruleshub.json` at its root.
   "tags": ["nestjs", "typescript", "prisma"],
   "projectTypes": ["nestjs"],
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/lozymon/airules",
+    "directory": "packs/nestjs-starter"
+  },
   "includes": [
     "lozymon/nestjs-rules@^1.0.0",
     "lozymon/nestjs-generate-module@^1.0.0",
@@ -56,8 +63,36 @@ Every RulesHub package must include a `ruleshub.json` at its root.
 | `targets`      | `object`   | Yes\*    | Map of tool → file path. Required for non-pack assets                   |
 | `includes`     | `string[]` | Yes\*    | Dependency list. Required for packs                                     |
 | `changelog`    | `string`   | No       | Release notes for this version, max 5000 characters                     |
+| `repository`   | `object`   | No       | Source repository — see [Repository](#repository) below                 |
 
 \* `targets` is required when `type` is not `pack`. `includes` is required when `type` is `pack`.
+
+## Repository
+
+Declare where the package's source lives. RulesHub uses this to render the "Repository" link on the package page, and to deep-link to the right subfolder for monorepos.
+
+| Field       | Type     | Required | Description                                                                          |
+| ----------- | -------- | -------- | ------------------------------------------------------------------------------------ |
+| `url`       | `string` | Yes      | Repo URL — `https://`, `git://`, `git@`, or `ssh://`                                 |
+| `directory` | `string` | No       | Subfolder inside the repo. Use this for monorepos where one repo holds many packages |
+| `branch`    | `string` | No       | Branch used when building tree links. Defaults to `main`                             |
+
+A package whose source lives at the root of its own repo only needs `url`:
+
+```json
+"repository": {
+  "url": "https://github.com/lozymon/nestjs-rules"
+}
+```
+
+A package inside a monorepo points `url` at the repo and `directory` at the subfolder. RulesHub deep-links to `tree/<branch>/<directory>` automatically:
+
+```json
+"repository": {
+  "url": "https://github.com/lozymon/airules",
+  "directory": "commands/pr-review"
+}
+```
 
 ## `$schema` support
 

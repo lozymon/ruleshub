@@ -8,6 +8,10 @@ import { routes } from "@/lib/routes";
 import { TOOL_LABELS } from "@ruleshub/types";
 import type { SupportedTool } from "@ruleshub/types";
 import { TOOL_COLORS as toolColors } from "@/lib/tool-colors";
+// Single source of truth for the CLI version banner — pulled from the npm
+// wrapper's package.json so a release bump in `scripts/bump-cli-version.py`
+// updates the homepage automatically.
+import { version as CLI_VERSION } from "../../../../../packages/cli/package.json";
 
 const TOOLS = Object.entries(TOOL_LABELS) as [SupportedTool, string][];
 
@@ -39,7 +43,7 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-[1240px] px-6">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--rh-accent-border)] bg-[var(--rh-accent-tint)] px-2.5 py-1 font-mono text-[12px] text-[var(--rh-accent)]">
             <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-[var(--rh-accent)]" />
-            CLI v0.1.0 now available
+            CLI v{CLI_VERSION} now available
           </div>
 
           <h1 className="mb-[18px] max-w-[820px] text-[56px] font-semibold leading-[1.05] tracking-[-0.035em]">

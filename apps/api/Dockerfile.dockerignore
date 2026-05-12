@@ -1,0 +1,38 @@
+# Per-Dockerfile ignore (BuildKit). Applied when building with
+# `-f apps/api/Dockerfile`. Takes precedence over the root .dockerignore.
+
+# Workspace members not needed for the API image. The Dockerfile only
+# COPYs the api + types package.json files, so the rest never reaches the
+# build context — but explicit exclusion keeps the context smaller and
+# guards against accidental future COPYs.
+apps/web
+packages/cli
+packages/create-ruleshub
+packages/ruleshub-kit
+
+# Test artifacts (image runs only built src/)
+apps/api/test
+**/*.spec.ts
+**/*.e2e-spec.ts
+
+# Caches and local clutter
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+
+# Repo metadata
+.git
+.github
+**/CLAUDE.md
+**/README.md
+**/audit.md
+**/Dockerfile*
+
+# Local env files — never bake into images
+**/.env
+**/.env.*
+!**/.env.example

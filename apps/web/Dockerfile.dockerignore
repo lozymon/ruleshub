@@ -1,0 +1,33 @@
+# Per-Dockerfile ignore (BuildKit). Applied when building with
+# `-f apps/web/Dockerfile`. Takes precedence over the root .dockerignore.
+
+# Workspace members not needed for the web image. The Dockerfile only
+# COPYs the web + types package.json files, so the rest never reaches the
+# build context — but explicit exclusion keeps the context smaller and
+# guards against accidental future COPYs.
+apps/api
+packages/cli
+packages/create-ruleshub
+packages/ruleshub-kit
+
+# Caches and local clutter
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+
+# Repo metadata
+.git
+.github
+**/CLAUDE.md
+**/README.md
+**/audit.md
+**/Dockerfile*
+
+# Local env files — never bake into images
+**/.env
+**/.env.*
+!**/.env.example

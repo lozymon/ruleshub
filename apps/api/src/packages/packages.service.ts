@@ -84,14 +84,20 @@ function toPackageVersionDto(v: PackageVersion): PackageVersionDto {
     downloads: v.downloads,
     yanked: v.yanked,
     publishedAt: v.publishedAt.toISOString(),
+    // Public by definition — this is the manifest the publisher submitted.
+    // The CLI relies on `targets` (which file in the zip maps to which tool)
+    // and `includes` (pack contents) to perform installs.
+    manifestJson: v.manifestJson as Record<string, unknown>,
   };
 }
 
 // Explicit projection to PackageDto. Spreading the raw Prisma entity used
 // to leak internal fields like ownerUserId, ownerOrgId, forkedFromId,
 // ownerType, and hasReadme into every package detail / search response —
-// and similarly the version rows leaked manifestJson, storageKey, sha256,
-// and packageId. Keep this list aligned with PackageDto in @ruleshub/types.
+// and similarly the version rows leaked storageKey, sha256, and packageId.
+// (manifestJson is intentionally exposed via toPackageVersionDto: it's
+// public publisher metadata that the CLI needs to install.)
+// Keep this list aligned with PackageDto in @ruleshub/types.
 function toPackageDto(p: PackageWithIncludes): PackageDto {
   return {
     id: p.id,

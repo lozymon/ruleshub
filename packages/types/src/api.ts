@@ -25,6 +25,10 @@ export interface PackageVersionDto {
   downloads: number;
   yanked: boolean;
   publishedAt: string;
+  // The published manifest as submitted by the publisher. Public by
+  // definition — the CLI needs `targets` to know which file in the zip
+  // to extract for a given tool, and `includes` to expand packs.
+  manifestJson: Record<string, unknown>;
 }
 
 export interface PackageSummaryDto {

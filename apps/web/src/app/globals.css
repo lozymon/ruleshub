@@ -559,10 +559,11 @@
   background: var(--code-bg);
   border: 1px solid var(--code-border);
   border-radius: 6px;
-  padding: 14px;
+  padding: 10px 14px;
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.55;
+  margin: 0 0 0.5em;
 }
 .prose-readme pre code {
   background: none;

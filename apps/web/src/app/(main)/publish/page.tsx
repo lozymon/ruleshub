@@ -28,6 +28,7 @@ const ASSET_TYPES = [
   { id: "workflow", label: "Workflow" },
   { id: "agent", label: "Agent" },
   { id: "mcp-server", label: "MCP Server" },
+  { id: "output-style", label: "Output Style" },
   { id: "pack", label: "Pack" },
   { id: "skill", label: "Skill" },
 ] as const;

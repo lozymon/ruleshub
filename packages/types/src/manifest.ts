@@ -7,6 +7,7 @@ export const AssetTypeSchema = z.enum([
   "workflow",
   "agent",
   "mcp-server",
+  "output-style",
   "pack",
   "skill",
 ]);

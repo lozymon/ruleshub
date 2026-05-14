@@ -17,6 +17,7 @@ type AssetType =
   | "workflow"
   | "agent"
   | "mcp-server"
+  | "output-style"
   | "pack"
   | "skill";
 
@@ -179,6 +180,20 @@ const PACKAGES: SeedPackage[] = [
       directory: "skills/code-review",
       branch: "main",
     },
+  },
+  {
+    namespace: "alice",
+    name: "terse-output-style",
+    ownerUsername: "alice",
+    type: "output-style",
+    description:
+      "Terse Claude Code output style — code-only, minimal prose, no preamble.",
+    tags: ["output-style", "terse"],
+    projectTypes: ["any"],
+    tools: ["claude-code"],
+    downloads: 184,
+    qualityScore: 74,
+    versions: [{ version: "0.1.0" }],
   },
   {
     namespace: "bob",

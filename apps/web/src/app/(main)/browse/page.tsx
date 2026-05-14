@@ -29,6 +29,7 @@ const TYPE_IDS: AssetType[] = [
   "workflow",
   "agent",
   "mcp-server",
+  "output-style",
   "pack",
   "skill",
 ];

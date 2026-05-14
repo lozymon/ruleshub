@@ -13,6 +13,7 @@ export class SearchPackagesDto {
       "workflow",
       "agent",
       "mcp-server",
+      "output-style",
       "pack",
       "skill",
     ],
@@ -24,6 +25,7 @@ export class SearchPackagesDto {
     "workflow",
     "agent",
     "mcp-server",
+    "output-style",
     "pack",
     "skill",
   ])

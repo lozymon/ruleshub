@@ -21,6 +21,7 @@ const TYPE_ICONS: Record<string, string> = {
   workflow: "⇢",
   agent: "◉",
   mcp: "⬡",
+  "output-style": "◐",
   pack: "▣",
 };
 

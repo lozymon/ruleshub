@@ -8,6 +8,7 @@ pub(crate) const VALID_ASSET_TYPES: &[&str] = &[
     "workflow",
     "agent",
     "mcp-server",
+    "output-style",
     "pack",
 ];
 

@@ -43,6 +43,7 @@ describe("PackageManifestSchema", () => {
       "workflow",
       "agent",
       "mcp-server",
+      "output-style",
       "skill",
     ] as const;
     for (const type of types) {
@@ -330,6 +331,7 @@ describe("AssetTypeSchema", () => {
     "workflow",
     "agent",
     "mcp-server",
+    "output-style",
     "pack",
   ];
 

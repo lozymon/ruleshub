@@ -600,3 +600,25 @@
 .prose-readme tbody tr:last-child td {
   border-bottom: none;
 }
+
+/* JSON syntax highlighting for the /settings-builder editor.
+   Uses prismjs token classes. Scoped to the editor wrapper so the
+   palette doesn't leak into MDX code blocks (those are highlighted by
+   Shiki, which inlines its own colours). */
+.json-editor .token.property {
+  color: #7dd3fc; /* sky-300 — JSON keys */
+}
+.json-editor .token.string {
+  color: #fbbf24; /* amber-400 — string values */
+}
+.json-editor .token.number {
+  color: #a3e635; /* lime-400 — numeric literals */
+}
+.json-editor .token.boolean,
+.json-editor .token.null {
+  color: #f472b6; /* pink-400 — true / false / null */
+}
+.json-editor .token.punctuation,
+.json-editor .token.operator {
+  color: var(--fg-faint); /* {}[],: — quiet */
+}

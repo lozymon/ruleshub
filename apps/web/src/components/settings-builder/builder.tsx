@@ -5,6 +5,10 @@
 // side re-serializes the other). No data fetching, no server state.
 
 import { useEffect, useMemo, useState } from "react";
+import Editor from "react-simple-code-editor";
+import Prism from "prismjs";
+// Side-effect import: registers the JSON grammar on `Prism.languages.json`.
+import "prismjs/components/prism-json";
 import {
   Check,
   Copy,
@@ -317,16 +321,29 @@ export function SettingsBuilder({
         )}
       </TabsContent>
 
-      {/* JSON tab — textarea + action toolbar. */}
+      {/* JSON tab — react-simple-code-editor (overlay technique: a
+          transparent textarea on top of a Prism-highlighted <pre>) with
+          a Prism JSON tokeniser. */}
       <TabsContent value="json" className="space-y-3">
-        <textarea
-          value={rawJson}
-          onChange={(e) => setRawJson(e.target.value)}
-          placeholder="Paste your .claude/settings.json here, or click Load sample…"
-          spellCheck={false}
-          aria-label="settings.json content"
-          className="min-h-[520px] w-full resize-y rounded-[4px] border border-border bg-bg-elev p-3 font-mono text-[12.5px] leading-relaxed outline-none transition-colors focus:border-border-hover"
-        />
+        <div className="json-editor min-h-[520px] w-full overflow-auto rounded-[4px] border border-border bg-bg-elev font-mono text-[12.5px] leading-relaxed focus-within:border-border-hover">
+          <Editor
+            value={rawJson}
+            onValueChange={setRawJson}
+            highlight={(code) =>
+              Prism.highlight(code, Prism.languages.json, "json")
+            }
+            padding={12}
+            textareaId="settings-json-editor"
+            aria-label="settings.json content"
+            style={{
+              fontFamily: "inherit",
+              fontSize: "inherit",
+              lineHeight: "inherit",
+              minHeight: 520,
+              outline: "none",
+            }}
+          />
+        </div>
         {parsed?.ok === false && (
           <p className="rounded-[3px] border border-red-500/30 bg-red-500/5 px-2.5 py-2 font-mono text-[12px] text-red-400">
             {parsed.error}

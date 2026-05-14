@@ -21,11 +21,13 @@ export default function SettingsBuilderPage() {
           Claude Code Settings Builder
         </h1>
         <p className="mt-1.5 max-w-[760px] text-fg-dim">
-          Paste your{" "}
+          Browse every key your{" "}
           <code className="font-mono text-[13px]">.claude/settings.json</code>{" "}
-          on the left to see every key it supports — what each one does, its
-          type, and a link to the canonical docs. Snapshot of{" "}
-          <span className="font-mono">{totalKeys}</span> settings across{" "}
+          supports — what each one does, its type, and a link to the canonical
+          docs. Edit in the Settings tab or paste raw JSON in the{" "}
+          <span className="font-mono">settings.json</span> tab; the two stay in
+          sync. Snapshot of <span className="font-mono">{totalKeys}</span>{" "}
+          settings across{" "}
           <span className="font-mono">{SETTINGS_CATEGORIES.length}</span>{" "}
           categories.
         </p>

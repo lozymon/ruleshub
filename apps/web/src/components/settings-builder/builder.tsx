@@ -920,9 +920,20 @@ function TypePill({ type }: { type: string }) {
 }
 
 function ScopePill({ scope }: { scope: SettingScope }) {
+  // Settings without a scope pill work in all three files
+  // (~/.claude/settings.json, project .claude/settings.json,
+  // .claude/settings.local.json) and merge with precedence
+  // local > project > user > managed. The pill flags the exceptions.
+  const tooltip =
+    scope === "user-only"
+      ? "Only takes effect in ~/.claude/settings.json (the user file). Ignored if set in project or local files."
+      : "Only takes effect in the enterprise-managed config. Ignored in user / project / local files.";
   return (
-    <span className="rounded-[3px] border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.5 font-mono text-[10px] text-amber-400">
-      {scope === "user-only" ? "user-only" : "managed"}
+    <span
+      title={tooltip}
+      className="cursor-help rounded-[3px] border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.5 font-mono text-[10px] text-amber-400"
+    >
+      {scope === "user-only" ? "user only" : "managed only"}
     </span>
   );
 }

@@ -546,6 +546,7 @@ export const SETTINGS_CATEGORIES: SettingCategory[] = [
             ],
           },
         ],
+        scope: "user-only",
       },
       {
         key: "disableAutoMode",
@@ -1030,6 +1031,7 @@ export const SETTINGS_CATEGORIES: SettingCategory[] = [
         docsUrl: "https://code.claude.com/docs/en/settings.md#memory--context",
         example: '{"autoMemoryDirectory": "~/.claude/memory"}',
         nested: null,
+        scope: "user-only",
       },
       {
         key: "claudeMd",
@@ -1350,6 +1352,7 @@ export const SETTINGS_CATEGORIES: SettingCategory[] = [
         docsUrl: "https://code.claude.com/docs/en/settings.md#agent-teams",
         example: '{"useAutoModeDuringPlan": false}',
         nested: null,
+        scope: "user-only",
       },
     ],
   },

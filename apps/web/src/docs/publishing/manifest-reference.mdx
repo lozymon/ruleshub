@@ -51,19 +51,19 @@ Every RulesHub package must include a `ruleshub.json` at its root.
 
 ## Field reference
 
-| Field          | Type       | Required | Description                                                             |
-| -------------- | ---------- | -------- | ----------------------------------------------------------------------- |
-| `name`         | `string`   | Yes      | Package name in `owner/package-name` format                             |
-| `version`      | `string`   | Yes      | Semantic version (`1.0.0`)                                              |
-| `type`         | `string`   | Yes      | One of: `rule` `command` `skill` `workflow` `agent` `mcp-server` `pack` |
-| `description`  | `string`   | Yes      | Short description, max 200 characters                                   |
-| `license`      | `string`   | Yes      | SPDX license identifier (e.g. `MIT`, `Apache-2.0`)                      |
-| `tags`         | `string[]` | No       | Searchable tags                                                         |
-| `projectTypes` | `string[]` | No       | Project types this asset targets (e.g. `nestjs`, `react`)               |
-| `targets`      | `object`   | Yes\*    | Map of tool → file path. Required for non-pack assets                   |
-| `includes`     | `string[]` | Yes\*    | Dependency list. Required for packs                                     |
-| `changelog`    | `string`   | No       | Release notes for this version, max 5000 characters                     |
-| `repository`   | `object`   | No       | Source repository — see [Repository](#repository) below                 |
+| Field          | Type       | Required | Description                                                                            |
+| -------------- | ---------- | -------- | -------------------------------------------------------------------------------------- |
+| `name`         | `string`   | Yes      | Package name in `owner/package-name` format                                            |
+| `version`      | `string`   | Yes      | Semantic version (`1.0.0`)                                                             |
+| `type`         | `string`   | Yes      | One of: `rule` `command` `skill` `workflow` `agent` `mcp-server` `output-style` `pack` |
+| `description`  | `string`   | Yes      | Short description, max 200 characters                                                  |
+| `license`      | `string`   | Yes      | SPDX license identifier (e.g. `MIT`, `Apache-2.0`)                                     |
+| `tags`         | `string[]` | No       | Searchable tags                                                                        |
+| `projectTypes` | `string[]` | No       | Project types this asset targets (e.g. `nestjs`, `react`)                              |
+| `targets`      | `object`   | Yes\*    | Map of tool → file path. Required for non-pack assets                                  |
+| `includes`     | `string[]` | Yes\*    | Dependency list. Required for packs                                                    |
+| `changelog`    | `string`   | No       | Release notes for this version, max 5000 characters                                    |
+| `repository`   | `object`   | No       | Source repository — see [Repository](#repository) below                                |
 
 \* `targets` is required when `type` is not `pack`. `includes` is required when `type` is `pack`.
 

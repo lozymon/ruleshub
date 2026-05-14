@@ -26,14 +26,15 @@ Two tiers — individual assets (installable on their own) and packs that bundle
 
 **Individual assets:**
 
-| Type           | Description                                                                     |
-| -------------- | ------------------------------------------------------------------------------- |
-| **Rule**       | A single instruction file fed to the AI (CLAUDE.md snippet, .cursorrules, etc.) |
-| **Command**    | A single custom slash command / prompt                                          |
-| **Skill**      | A reusable Claude Code skill (triggered via slash commands)                     |
-| **Workflow**   | A single multi-step agent playbook                                              |
-| **Agent**      | A single custom agent configuration                                             |
-| **MCP Server** | A single MCP server config + install instructions                               |
+| Type             | Description                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| **Rule**         | A single instruction file fed to the AI (CLAUDE.md snippet, .cursorrules, etc.)                   |
+| **Command**      | A single custom slash command / prompt                                                            |
+| **Skill**        | A reusable Claude Code skill (triggered via slash commands)                                       |
+| **Workflow**     | A single multi-step agent playbook                                                                |
+| **Agent**        | A single custom agent configuration                                                               |
+| **MCP Server**   | A single MCP server config + install instructions                                                 |
+| **Output Style** | A Claude Code output style — controls response format (terse, code-only, structured tables, etc.) |
 
 **Bundles:**
 
@@ -46,15 +47,15 @@ Users can also browse and install any individual asset on its own without needin
 
 ### Supported AI Tools (initial)
 
-| Tool           | Config files targeted                                     |
-| -------------- | --------------------------------------------------------- |
-| Claude Code    | `CLAUDE.md`, `.claude/commands/`, `.claude/settings.json` |
-| Cursor         | `.cursorrules`, `.cursor/rules/`                          |
-| GitHub Copilot | `.github/copilot-instructions.md`                         |
-| Windsurf       | `.windsurfrules`                                          |
-| Cline          | `.clinerules`                                             |
-| Aider          | `.aider.conf.yml`, `CONVENTIONS.md`                       |
-| Continue       | `.continue/` config                                       |
+| Tool           | Config files targeted                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| Claude Code    | `CLAUDE.md`, `.claude/commands/`, `.claude/skills/`, `.claude/agents/`, `.claude/output-styles/`, `.mcp.json` |
+| Cursor         | `.cursorrules`, `.cursor/rules/`                                                                              |
+| GitHub Copilot | `.github/copilot-instructions.md`                                                                             |
+| Windsurf       | `.windsurfrules`                                                                                              |
+| Cline          | `.clinerules`                                                                                                 |
+| Aider          | `.aider.conf.yml`, `CONVENTIONS.md`                                                                           |
+| Continue       | `.continue/` config                                                                                           |
 
 New tools can be added over time without breaking the manifest format.
 
@@ -186,7 +187,7 @@ Every published asset ships with a `ruleshub.json` at its root.
 }
 ```
 
-Valid `type` values: `rule` | `command` | `skill` | `workflow` | `agent` | `mcp-server` | `pack`
+Valid `type` values: `rule` | `command` | `skill` | `workflow` | `agent` | `mcp-server` | `output-style` | `pack`
 
 The `targets` map is open-ended — new tools can be added without a manifest version bump.
 Packs have no `targets` of their own; they delegate to the individual assets they include.
@@ -639,6 +640,24 @@ MINIO_BUCKET=ruleshub-packages
 - [x] Package detail — "Contents" tab listing each included asset as a linked mini-card (type icon, name, description, version)
 - [x] Samples split — `nestjs-rules` (rule) · `nestjs-generate-module` (command) · `nestjs-pr-review-workflow` (workflow) · `nestjs-starter-pack` (pack referencing all three)
 
+#### Output style support (new asset type)
+
+Claude Code's output styles (`.claude/output-styles/*.md`) control response format — small
+markdown files (terse mode, code-only, structured tables, etc.) that are easy to share.
+Adding `output-style` as a first-class asset type is a type-system + install-path change
+with no new infrastructure; the `targets` map only needs `claude-code` since the feature is
+Claude Code-specific (other tools will simply have no target entry).
+
+- [x] `output-style` added to the `type` enum in `packages/types` (Zod schema + TypeScript union, mirrors the existing `rule` / `command` / `skill` shape)
+- [x] JSON Schema at `https://ruleshub.dev/schema/ruleshub.json` updated to allow the new type (auto-generated from the Zod schema via `zodToJsonSchema`)
+- [x] `apps/api` publish validator accepts the new type (no DB migration — `Package.type` is a free string; validator calls `PackageManifestSchema.safeParse` so the Zod update propagates)
+- [x] CLI install path mapping in `packages-rs/cli` — Claude Code writes to `.claude/output-styles/<asset-name>.md`; non-Claude tools fail at the existing missing-target check rather than reaching `destination_path`
+- [x] Browse filter UI — new "Output Style" pill in the type filter (uses lucide `Palette` icon)
+- [x] Type badge + icon — `◐` glyph added to `PackageCard` and the package detail header
+- [x] Sample asset seeded — `alice/terse-output-style` in `prisma/seed.ts` (matches the seed's existing namespace convention)
+- [x] Docs updated — `docs/publishing/manifest-reference.mdx` lists the new type; `docs/tools/claude-code.mdx` documents the install path (also corrected the pre-existing `skill`/`workflow` rows that pointed at `.claude/commands/`)
+- [x] `packages/create-ruleshub` template — `--template output-style` works automatically (the CLI iterates `AssetTypeSchema.options`); template path emits `targets/claude-code/output-style.md` instead of the generic `command.md`
+
 ### Phase 3 — Discovery & Community
 
 - [x] Stars and ratings
@@ -808,6 +827,28 @@ Cross-cutting infrastructure that keeps the wrapper model honest.
 - [x] Verified publisher badges — `ADMIN_USERNAMES` env var gates `PATCH /admin/users/:username/verify` and `PATCH /admin/orgs/:slug/verify`
 - [x] Admin dashboard (`/dashboard/admin`) — paginated user table with search, toggle verified + blocked; visible only to `ADMIN_USERNAMES`; `isAdmin` flag on `/auth/me` response
 - [x] User blocking — `blocked` flag on User prevents login and publishing; admin can set via dashboard
+
+#### Admin traffic dashboard (`/dashboard/admin/traffic`)
+
+Site-wide traffic analytics for admins, modelled on the `furevikstrand-cloud` `/admin` panel.
+Visible only to `ADMIN_USERNAMES`. Self-hosted (no third-party analytics) — events written to
+Postgres by a lightweight request logger so we own the data and avoid client-side trackers.
+
+- [ ] `PageView` table in Prisma — `id`, `path`, `referrerHost` (nullable), `country` (ISO-2, nullable), `device` (`desktop` | `mobile` | `tablet` | `bot`), `utmSource` (nullable), `sessionId` (uuid cookie), `createdAt`. Indexed on `(createdAt)` and `(path, createdAt)`
+- [ ] Page tracker — Next.js middleware on `apps/web` emits a `POST /v1/internal/pageviews` to the API on each non-static GET; API does geo lookup (Cloudflare `cf-ipcountry` header or a bundled MaxMind lite DB), parses UA for device class, persists row. Bots filtered via UA regex
+- [ ] Session cookie — first-party `rh_sid` (uuid, 30-day) issued on first request; used to dedupe unique visitors without IP storage
+- [ ] Retention job — daily cron prunes `PageView` rows older than 90 days (configurable via `TRAFFIC_RETENTION_DAYS`); keeps the table small enough to query unindexed for ad-hoc analysis
+- [ ] `GET /v1/admin/traffic/*` endpoints — one per panel, all return `{ data: [...], windowDays }`; all guarded by the existing admin guard (`ADMIN_USERNAMES`)
+- [ ] Page itself — server component grid of panels matching the prototype's layout (rounded `--border` cards, monospace, horizontal `<Bar>` per row):
+  - **Visits & conversion** — unique visitors / sessions / install conversion rate (sessions that hit an `Install` action) over last 30 days
+  - **Top referrers** — host + count + share bar
+  - **Top countries** — flag emoji + region name (via `Intl.DisplayNames`) + count + share bar
+  - **Top pages** — path + count + bar
+  - **Device split** — desktop/mobile/tablet/bot + count + share
+  - **Top UTM sources** — `utm_source` + count + bar
+  - **Top installs (RulesHub-specific)** — package + downloads in window + bar; complements the user-table-only admin view
+- [ ] Empty states — match the prototype: helpful copy when a panel has no data ("No external referrers yet — every visit so far is direct or internal")
+- [ ] `DATABASE_URL`-gated render — if tracking is disabled, show the same "tracking not configured" panel the prototype uses, so the page doesn't error
 - [x] Quality score — auto-calculated per asset, shown on browse and detail pages
 - [x] Version diff viewer — side-by-side diff between versions
 - [x] Structured changelogs — per-version release notes field
@@ -967,6 +1008,32 @@ useful for tools, scripts, and IDE extensions that need to read or write `rulesh
 - [x] Re-exports the Zod schema and all types from `packages/types` — single import for consumers
 - [x] MIT licensed (same as `packages/types` and `packages/cli`)
 - [x] Fully tree-shakeable, zero runtime dependencies beyond `zod`
+
+#### `/settings-builder` — Visual Claude Code settings editor
+
+A split-pane page modelled on VS Code's settings UI: visual controls on the left, the
+raw `settings.json` on the right. The primary goal of **v1 is discoverability** — paste
+your existing `settings.json` and see every key rendered with inline documentation, so
+you can learn what's configurable without reading the full Claude Code docs. Install
+and publish flows come in later iterations once the settings asset type lands.
+
+- [ ] **v1 — paste-and-explore (read mostly)**
+  - [ ] `/settings-builder` route on `apps/web`, no auth required
+  - [ ] Two-column layout — left: visual controls, right: JSON editor (read-only for v1, paste-only at the top)
+  - [ ] Settings schema catalogue — TypeScript file in `apps/web` enumerating known `settings.json` keys with `{ key, type, default, description, docsUrl, example }` for each (`permissions`, `model`, `env`, `hooks`, `statusLine`, `apiKeyHelper`, `includeCoAuthoredBy`, etc.)
+  - [ ] Control rendering per type — boolean → toggle · string → input · enum → select · object → expandable section · array → list with add/remove
+  - [ ] Unknown keys preserved in a "Custom" section so paste → render → re-export is lossless
+  - [ ] Inline `?` tooltip per setting linking to the official docs page
+  - [ ] Copy-to-clipboard button on the JSON pane
+  - [ ] No persistence yet — pure client-side scratchpad (sessionStorage at most)
+- [ ] **v2 — two-way editing**
+  - [ ] Edits on the visual side update the JSON live; edits on the JSON side update the visual side (debounced, with parse-error pill)
+  - [ ] Diff view against the originally pasted JSON
+  - [ ] Validation against the settings schema with inline error chips on each control
+- [ ] **v3 — install / publish (depends on `settings` asset type landing)**
+  - [ ] "Download as `ruleshub.json`" — wraps the settings into a publishable asset of type `settings`
+  - [ ] "Install with CLI" — copy-paste `ruleshub install …` snippet once the asset is published
+  - [ ] CLI install merges into the user's existing `settings.json` rather than overwriting; conflict prompt for keys that already differ
 
 ---
 

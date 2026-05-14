@@ -9,6 +9,7 @@ import {
   Bot,
   Plug,
   Package,
+  Palette,
   Wand2,
   Flame,
   Clock,
@@ -40,6 +41,7 @@ const ASSET_TYPES: { id: AssetType; label: string; Icon: React.ElementType }[] =
     { id: "workflow", label: "Workflows", Icon: GitBranch },
     { id: "agent", label: "Agents", Icon: Bot },
     { id: "mcp-server", label: "MCP Servers", Icon: Plug },
+    { id: "output-style", label: "Output Styles", Icon: Palette },
     { id: "pack", label: "Packs", Icon: Package },
   ];
 

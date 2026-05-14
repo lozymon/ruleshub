@@ -22,6 +22,9 @@ const COMMAND_TOOL_TARGET_PATHS: Record<SupportedTool, string> = {
 
 export function targetPath(type: AssetType, tool: SupportedTool): string {
   if (type === "rule") return TOOL_TARGET_PATHS[tool];
+  if (type === "output-style" && tool === "claude-code") {
+    return "targets/claude-code/output-style.md";
+  }
   return COMMAND_TOOL_TARGET_PATHS[tool];
 }
 

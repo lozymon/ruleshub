@@ -89,6 +89,7 @@ pub(crate) fn destination_path(
         "agent" => "agents",
         "workflow" => "workflows",
         "mcp-server" => "mcp-servers",
+        "output-style" => "output-styles",
         // Publisher-controlled string — constrain it before using as a
         // path segment so `../escape` or `foo/bar` can't be smuggled in
         // via a malicious manifest. Anything weird falls back to "misc".
@@ -140,6 +141,10 @@ mod tests {
         assert_eq!(
             destination_path(Tool::ClaudeCode, "workflow", "x.md", "ship"),
             PathBuf::from(".claude/workflows/ship.md")
+        );
+        assert_eq!(
+            destination_path(Tool::ClaudeCode, "output-style", "x.md", "terse"),
+            PathBuf::from(".claude/output-styles/terse.md")
         );
     }
 

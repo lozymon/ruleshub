@@ -23,6 +23,7 @@ const TYPE_ICONS: Record<string, string> = {
   workflow: "⇢",
   agent: "◉",
   "mcp-server": "⬡",
+  "output-style": "◐",
   pack: "▣",
   skill: "✦",
 };

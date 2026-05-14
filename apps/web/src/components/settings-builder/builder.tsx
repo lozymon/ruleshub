@@ -813,12 +813,22 @@ function UnsetActions({
   disabled: boolean;
   onSet: (value: unknown) => void;
 }) {
-  const hasSuggestions = !!entry.suggestions && entry.suggestions.length > 0;
+  // For multi-value enums we already know every valid value — surface
+  // them as one-click chips in the unset row (same UX as the curated
+  // `suggestions` field on strings). The single-value `enum:disable`
+  // case is intercepted higher up in SettingRow, so we never see it
+  // here.
+  const enumChips =
+    isEnum(entry.type) && enumValues(entry.type).length > 1
+      ? enumValues(entry.type)
+      : null;
+  const chips = entry.suggestions ?? enumChips;
+  const hasSuggestions = !!chips && chips.length > 0;
   return (
     <div className="mt-1.5 flex items-center gap-3">
-      {hasSuggestions ? (
+      {hasSuggestions && chips ? (
         <div className="flex min-w-0 flex-1 flex-wrap gap-1">
-          {entry.suggestions!.map((opt) => (
+          {chips.map((opt) => (
             <button
               key={opt}
               type="button"

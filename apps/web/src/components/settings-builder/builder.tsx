@@ -436,7 +436,11 @@ function SettingRow({
   const error = present ? validate(entry.type, value) : null;
 
   return (
-    <div className="px-4 py-3">
+    <div className="px-4 py-2.5">
+      {/* Header row: identity pills, description (filling the available
+          space), docs link. The description sits inline with the type
+          pills now that the tabs give us full page width — saves a line
+          per setting. */}
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
           className={cn(
@@ -456,16 +460,18 @@ function SettingRow({
             <TriangleAlert className="h-2.5 w-2.5" /> {error}
           </span>
         )}
+        <span className="min-w-0 flex-1 text-[12px] text-fg-dim">
+          {entry.description}
+        </span>
         <a
           href={entry.docsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-auto inline-flex items-center gap-0.5 text-[11px] text-fg-dim transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-0.5 text-[11px] text-fg-dim transition-colors hover:text-foreground"
         >
           docs <ExternalLink className="h-2.5 w-2.5" />
         </a>
       </div>
-      <p className="mt-1 text-[12px] text-fg-dim">{entry.description}</p>
       {present ? (
         <ValueEditor
           entry={entry}
@@ -676,21 +682,18 @@ function UnsetActions({
   onSet: () => void;
 }) {
   return (
-    <div className="mt-1.5 space-y-1.5">
-      {entry.example && (
-        <details>
-          <summary className="cursor-pointer text-[11px] text-fg-dim hover:text-fg-muted">
-            example
-          </summary>
-          <pre className="mt-1 overflow-x-auto rounded-[3px] bg-bg-elev-2 px-2 py-1.5 font-mono text-[11.5px] text-fg-faint">
-            {entry.example}
-          </pre>
-        </details>
+    <div className="mt-1.5 flex items-center gap-3">
+      {entry.example ? (
+        <code className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-fg-faint">
+          {entry.example}
+        </code>
+      ) : (
+        <span className="flex-1" />
       )}
       <button
         onClick={onSet}
         disabled={disabled}
-        className="inline-flex items-center gap-1 rounded-[3px] border border-border bg-bg-elev-2 px-2 py-1 text-[11px] text-fg-muted transition-colors hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex shrink-0 items-center gap-1 rounded-[3px] border border-border bg-bg-elev-2 px-2 py-1 text-[11px] text-fg-muted transition-colors hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Plus className="h-3 w-3" /> set
       </button>

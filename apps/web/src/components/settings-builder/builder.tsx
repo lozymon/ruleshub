@@ -813,30 +813,40 @@ function UnsetActions({
   disabled: boolean;
   onSet: (value: unknown) => void;
 }) {
-  // For multi-value enums we already know every valid value — surface
-  // them as one-click chips in the unset row (same UX as the curated
-  // `suggestions` field on strings). The single-value `enum:disable`
-  // case is intercepted higher up in SettingRow, so we never see it
-  // here.
-  const enumChips =
-    isEnum(entry.type) && enumValues(entry.type).length > 1
-      ? enumValues(entry.type)
-      : null;
-  const chips = entry.suggestions ?? enumChips;
+  // Compute one-click chips for the unset row. We surface clickable
+  // values when the catalogue knows the full set:
+  //   - explicit `suggestions` on the entry (curated string aliases)
+  //   - multi-value enums (every allowed value)
+  //   - booleans (true / false)
+  // Single-value `enum:disable` flags are intercepted higher up in
+  // SettingRow (rendered as an enabled/disabled toggle) so we never
+  // see them here.
+  type Chip = { label: string; value: unknown };
+  let chips: Chip[] | null = null;
+  if (entry.suggestions && entry.suggestions.length > 0) {
+    chips = entry.suggestions.map((s) => ({ label: s, value: s }));
+  } else if (isEnum(entry.type) && enumValues(entry.type).length > 1) {
+    chips = enumValues(entry.type).map((v) => ({ label: v, value: v }));
+  } else if (entry.type === "boolean") {
+    chips = [
+      { label: "true", value: true },
+      { label: "false", value: false },
+    ];
+  }
   const hasSuggestions = !!chips && chips.length > 0;
   return (
     <div className="mt-1.5 flex items-center gap-3">
       {hasSuggestions && chips ? (
         <div className="flex min-w-0 flex-1 flex-wrap gap-1">
-          {chips.map((opt) => (
+          {chips.map((chip) => (
             <button
-              key={opt}
+              key={chip.label}
               type="button"
-              onClick={() => onSet(opt)}
+              onClick={() => onSet(chip.value)}
               disabled={disabled}
               className="rounded-[3px] border border-border bg-bg-elev-2 px-2 py-0.5 font-mono text-[11px] text-fg-muted transition-colors hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {opt}
+              {chip.label}
             </button>
           ))}
         </div>

@@ -1026,10 +1026,12 @@ and publish flows come in later iterations once the settings asset type lands.
   - [x] Inline docs link per setting (direct "docs ↗" link rather than `?` tooltip — same destination, less UI chrome)
   - [x] Copy-to-clipboard button on the JSON pane (+ Load sample + Clear)
   - [x] No persistence — pure client-side `useState`, no sessionStorage
-- [ ] **v2 — two-way editing**
-  - [ ] Edits on the visual side update the JSON live; edits on the JSON side update the visual side (debounced, with parse-error pill)
-  - [ ] Diff view against the originally pasted JSON
-  - [ ] Validation against the settings schema with inline error chips on each control
+- [x] **v2 — two-way editing**
+  - [x] Edits on the visual side update the JSON immediately (re-serialized); edits on the JSON side update the visual side via React's `useMemo` reparse (no debounce needed at small sizes; parse-error pill shown when invalid)
+  - [x] "Modified N" pill against the first-paste baseline; "Mark as baseline" action to snapshot the current state
+  - [x] Per-row validation chips — type mismatch (`expected boolean`, etc.) and enum violations render an inline red chip in place of the "set" badge
+  - [x] Per-type controls — boolean → checkbox, string → text input, number → number input, enum → select. Object/array/union types fall back to the JSON viewer with an "edit via JSON pane" hint
+  - [x] Set/unset affordances — `+ set` button on unset rows (initialises from the catalogue example when possible, otherwise type default); `unset` button on set rows; `remove` on Custom keys
 - [ ] **v3 — install / publish (depends on `settings` asset type landing)**
   - [ ] "Download as `ruleshub.json`" — wraps the settings into a publishable asset of type `settings`
   - [ ] "Install with CLI" — copy-paste `ruleshub install …` snippet once the asset is published

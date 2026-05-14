@@ -147,6 +147,14 @@ export const SETTINGS_CATEGORIES: SettingCategory[] = [
           "Response language (e.g., 'japanese', 'spanish', 'english').",
         docsUrl: "https://code.claude.com/docs/en/settings.md#ui--display",
         example: '{"language": "japanese"}',
+        suggestions: [
+          "english",
+          "japanese",
+          "spanish",
+          "french",
+          "german",
+          "chinese",
+        ],
         nested: null,
       },
       {

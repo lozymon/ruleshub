@@ -435,6 +435,15 @@ function SettingRow({
   const value = present ? obj[entry.key] : undefined;
   const error = present ? validate(entry.type, value) : null;
 
+  // `enum:disable` and similar single-value flags are really booleans
+  // in disguise: the key is either absent (= default behavior on) or
+  // set to the single allowed value (= behavior off). We render them
+  // as an `[ enabled ][ disabled ]` toggle that owns both states,
+  // skipping the regular present/unset split.
+  const isDisableFlag =
+    isEnum(entry.type) && enumValues(entry.type).length === 1;
+  const flagValue = isDisableFlag ? enumValues(entry.type)[0] : null;
+
   return (
     <div className="px-4 py-2.5">
       {/* Header row: identity pills, description (filling the available
@@ -452,7 +461,7 @@ function SettingRow({
         </span>
         <TypePill type={entry.type} />
         {entry.scope && <ScopePill scope={entry.scope} />}
-        {present && !error && (
+        {present && !error && !isDisableFlag && (
           <span className="font-mono text-[10.5px] text-emerald-400">set</span>
         )}
         {error && (
@@ -472,7 +481,22 @@ function SettingRow({
           docs <ExternalLink className="h-2.5 w-2.5" />
         </a>
       </div>
-      {present ? (
+      {isDisableFlag && flagValue ? (
+        <div className="mt-1.5 flex items-center gap-3">
+          <span className="flex-1" />
+          <PillSegment
+            options={[
+              { value: "enabled", label: "enabled" },
+              { value: "disabled", label: "disabled" },
+            ]}
+            active={present ? "disabled" : "enabled"}
+            disabled={!editable}
+            onSelect={(v) =>
+              v === "enabled" ? onUnset(entry.key) : onSet(entry.key, flagValue)
+            }
+          />
+        </div>
+      ) : present ? (
         <ValueEditor
           entry={entry}
           value={value}
@@ -509,20 +533,20 @@ function ValueEditor({
   const inputBase =
     "rounded-[3px] border border-border bg-bg-elev-2 px-2 py-1 font-mono text-[12px] outline-none transition-colors focus:border-border-hover disabled:cursor-not-allowed disabled:opacity-50";
 
-  // boolean → checkbox
+  // boolean → segmented `[ true ][ false ]` pill group (same visual
+  // language as enum pills below for consistency)
   if (entry.type === "boolean" && typeof value === "boolean") {
     return (
       <Row onUnset={onUnset}>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-[12px]">
-          <input
-            type="checkbox"
-            checked={value}
-            disabled={disabled}
-            onChange={(e) => onChange(e.target.checked)}
-            className="h-3.5 w-3.5 accent-primary"
-          />
-          <span className="font-mono text-fg-muted">{String(value)}</span>
-        </label>
+        <PillSegment
+          options={[
+            { value: "true", label: "true" },
+            { value: "false", label: "false" },
+          ]}
+          active={value ? "true" : "false"}
+          disabled={disabled}
+          onSelect={(v) => onChange(v === "true")}
+        />
       </Row>
     );
   }
@@ -657,6 +681,46 @@ function ValueEditor({
           <Trash2 className="h-3 w-3" /> unset
         </button>
       </div>
+    </div>
+  );
+}
+
+// Generic segmented-control pill group. Shared by booleans, short
+// enums (≤ PILL_THRESHOLD), and the `enum:disable` flag toggles. The
+// caller owns the option list and the meaning of each value.
+function PillSegment<T extends string>({
+  options,
+  active,
+  disabled,
+  onSelect,
+}: {
+  options: { value: T; label: string }[];
+  active: T;
+  disabled: boolean;
+  onSelect: (v: T) => void;
+}) {
+  return (
+    <div className="inline-flex flex-wrap items-center gap-0.5 rounded-[3px] border border-border bg-bg-elev-2 p-0.5">
+      {options.map((opt) => {
+        const isActive = opt.value === active;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onSelect(opt.value)}
+            disabled={disabled}
+            aria-pressed={isActive}
+            className={cn(
+              "rounded-[2px] px-2 py-0.5 font-mono text-[11.5px] transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+              isActive
+                ? "bg-bg-elev text-foreground shadow-[inset_0_0_0_1px_var(--border)]"
+                : "text-fg-muted hover:text-foreground",
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

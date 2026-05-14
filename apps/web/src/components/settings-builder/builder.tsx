@@ -19,7 +19,20 @@ import type {
   SettingEntry,
   SettingScope,
 } from "@/lib/settings-catalogue";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+// Enums with ≤ PILL_THRESHOLD options render as an inline segmented
+// control so every option is visible at a glance — the same pattern
+// macOS / VSCode use for short discrete choices. Longer enums fall
+// back to a shadcn Select so the row doesn't wrap awkwardly.
+const PILL_THRESHOLD = 4;
 
 type ParseResult =
   | { ok: true; value: Record<string, unknown> }
@@ -487,26 +500,71 @@ function ValueEditor({
     );
   }
 
-  // enum → select
+  // enum → segmented control (small) or shadcn Select (longer)
   if (isEnum(entry.type)) {
     const allowed = enumValues(entry.type);
+    const currentString = typeof value === "string" ? value : "";
+
+    if (allowed.length <= PILL_THRESHOLD) {
+      return (
+        <Row onUnset={onUnset}>
+          <div className="inline-flex flex-wrap items-center gap-0.5 rounded-[3px] border border-border bg-bg-elev-2 p-0.5">
+            {allowed.map((v) => {
+              const active = v === currentString;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => onChange(v)}
+                  disabled={disabled}
+                  className={cn(
+                    "rounded-[2px] px-2 py-0.5 font-mono text-[11.5px] transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                    active
+                      ? "bg-bg-elev text-foreground shadow-[inset_0_0_0_1px_var(--border)]"
+                      : "text-fg-muted hover:text-foreground",
+                  )}
+                  aria-pressed={active}
+                >
+                  {v}
+                </button>
+              );
+            })}
+            {currentString && !allowed.includes(currentString) && (
+              <span className="rounded-[2px] bg-red-500/10 px-2 py-0.5 font-mono text-[11.5px] text-red-400">
+                {currentString} (invalid)
+              </span>
+            )}
+          </div>
+        </Row>
+      );
+    }
+
     return (
       <Row onUnset={onUnset}>
-        <select
-          value={typeof value === "string" ? value : ""}
+        <Select
+          value={currentString}
+          onValueChange={(v) => onChange(v)}
           disabled={disabled}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(inputBase, "min-w-[140px] flex-1")}
         >
-          {typeof value === "string" && !allowed.includes(value) && (
-            <option value={value}>{value} (invalid)</option>
-          )}
-          {allowed.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger size="sm" className="min-w-[180px] font-mono">
+            <SelectValue placeholder="Choose a value…" />
+          </SelectTrigger>
+          <SelectContent>
+            {currentString && !allowed.includes(currentString) && (
+              <SelectItem
+                value={currentString}
+                className="font-mono text-red-400"
+              >
+                {currentString} (invalid)
+              </SelectItem>
+            )}
+            {allowed.map((v) => (
+              <SelectItem key={v} value={v} className="font-mono">
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </Row>
     );
   }

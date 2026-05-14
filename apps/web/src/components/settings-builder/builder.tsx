@@ -484,7 +484,7 @@ function SettingRow({
         <UnsetActions
           entry={entry}
           disabled={!editable}
-          onSet={() => onSet(entry.key, initialValue(entry))}
+          onSet={(v) => onSet(entry.key, v)}
         />
       )}
     </div>
@@ -596,18 +596,29 @@ function ValueEditor({
     );
   }
 
-  // string → text input
+  // string → text input (plus suggestion chips when the catalogue
+  // declares them, e.g. canonical Claude model aliases)
   if (entry.type === "string" && typeof value === "string") {
     return (
-      <Row onUnset={onUnset}>
-        <input
-          type="text"
-          value={value}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(inputBase, "flex-1")}
-        />
-      </Row>
+      <>
+        <Row onUnset={onUnset}>
+          <input
+            type="text"
+            value={value}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value)}
+            className={cn(inputBase, "flex-1")}
+          />
+        </Row>
+        {entry.suggestions && entry.suggestions.length > 0 && (
+          <SuggestionChips
+            options={entry.suggestions}
+            value={value}
+            disabled={disabled}
+            onChange={onChange}
+          />
+        )}
+      </>
     );
   }
 
@@ -670,6 +681,46 @@ function Row({
   );
 }
 
+// One-click value chips, shown beneath a string input when the
+// catalogue lists `suggestions` for it. The currently-active value is
+// highlighted; clicking any chip overwrites the value without leaving
+// the row.
+function SuggestionChips({
+  options,
+  value,
+  disabled,
+  onChange,
+}: {
+  options: string[];
+  value: string;
+  disabled: boolean;
+  onChange: (v: unknown) => void;
+}) {
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1">
+      {options.map((opt) => {
+        const active = opt === value;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            disabled={disabled}
+            className={cn(
+              "rounded-[3px] border px-2 py-0.5 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+              active
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                : "border-border bg-bg-elev-2 text-fg-muted hover:border-border-hover hover:text-foreground",
+            )}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Unset row actions ────────────────────────────────────────────────
 
 function UnsetActions({
@@ -679,11 +730,26 @@ function UnsetActions({
 }: {
   entry: SettingEntry;
   disabled: boolean;
-  onSet: () => void;
+  onSet: (value: unknown) => void;
 }) {
+  const hasSuggestions = !!entry.suggestions && entry.suggestions.length > 0;
   return (
     <div className="mt-1.5 flex items-center gap-3">
-      {entry.example ? (
+      {hasSuggestions ? (
+        <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+          {entry.suggestions!.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onSet(opt)}
+              disabled={disabled}
+              className="rounded-[3px] border border-border bg-bg-elev-2 px-2 py-0.5 font-mono text-[11px] text-fg-muted transition-colors hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      ) : entry.example ? (
         <code className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-fg-faint">
           {entry.example}
         </code>
@@ -691,7 +757,7 @@ function UnsetActions({
         <span className="flex-1" />
       )}
       <button
-        onClick={onSet}
+        onClick={() => onSet(initialValue(entry))}
         disabled={disabled}
         className="inline-flex shrink-0 items-center gap-1 rounded-[3px] border border-border bg-bg-elev-2 px-2 py-1 text-[11px] text-fg-muted transition-colors hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
       >

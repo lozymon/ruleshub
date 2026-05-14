@@ -22,6 +22,11 @@ export type SettingEntry = {
   example: string | null;
   nested: SettingEntry[] | null;
   scope?: SettingScope;
+  // Optional curated values rendered as one-click chips next to the
+  // input. Used for keys with a small, well-known set of canonical
+  // values (e.g. Claude model aliases) while still allowing free-text
+  // entries the chips can't enumerate (Bedrock ARNs, future models).
+  suggestions?: string[];
 };
 
 export type SettingCategory = { name: string; settings: SettingEntry[] };
@@ -38,6 +43,11 @@ export const SETTINGS_CATEGORIES: SettingCategory[] = [
         docsUrl:
           "https://code.claude.com/docs/en/settings.md#model--performance",
         example: '{"model": "claude-sonnet-4-6"}',
+        suggestions: [
+          "claude-opus-4-7",
+          "claude-sonnet-4-6",
+          "claude-haiku-4-5-20251001",
+        ],
         nested: null,
       },
       {

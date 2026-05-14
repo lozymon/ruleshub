@@ -23,6 +23,7 @@ export const routes = {
     `/collections/${username}/${slug}`,
   leaderboard: "/leaderboard",
   comingSoon: "/coming-soon",
+  settingsBuilder: "/settings-builder",
   docs: "/docs",
   docsPage: (...slugs: string[]) => `/docs/${slugs.join("/")}`,
   privacy: "/privacy",

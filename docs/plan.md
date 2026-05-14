@@ -1017,15 +1017,15 @@ your existing `settings.json` and see every key rendered with inline documentati
 you can learn what's configurable without reading the full Claude Code docs. Install
 and publish flows come in later iterations once the settings asset type lands.
 
-- [ ] **v1 — paste-and-explore (read mostly)**
-  - [ ] `/settings-builder` route on `apps/web`, no auth required
-  - [ ] Two-column layout — left: visual controls, right: JSON editor (read-only for v1, paste-only at the top)
-  - [ ] Settings schema catalogue — TypeScript file in `apps/web` enumerating known `settings.json` keys with `{ key, type, default, description, docsUrl, example }` for each (`permissions`, `model`, `env`, `hooks`, `statusLine`, `apiKeyHelper`, `includeCoAuthoredBy`, etc.)
-  - [ ] Control rendering per type — boolean → toggle · string → input · enum → select · object → expandable section · array → list with add/remove
-  - [ ] Unknown keys preserved in a "Custom" section so paste → render → re-export is lossless
-  - [ ] Inline `?` tooltip per setting linking to the official docs page
-  - [ ] Copy-to-clipboard button on the JSON pane
-  - [ ] No persistence yet — pure client-side scratchpad (sessionStorage at most)
+- [x] **v1 — paste-and-explore (read mostly)**
+  - [x] `/settings-builder` route on `apps/web`, no auth required; linked from the footer's Product column
+  - [x] Two-column layout — paste-textarea on the left (sticky), category-grouped catalogue on the right. (Mirrored from the original sketch — left-as-action / right-as-result reads more naturally for paste-first flow.)
+  - [x] Settings schema catalogue — `apps/web/src/lib/settings-catalogue.ts`, 86 keys across 18 categories from the canonical docs (snapshot 2026-05-13)
+  - [~] Control rendering per type — deferred to v2; v1 renders the **current value** as JSON when a key is set and the **example** when it isn't (matches "first iteration only copy and paste" framing)
+  - [x] Unknown keys preserved in a "Custom keys" section at the bottom so paste → render is lossless
+  - [x] Inline docs link per setting (direct "docs ↗" link rather than `?` tooltip — same destination, less UI chrome)
+  - [x] Copy-to-clipboard button on the JSON pane (+ Load sample + Clear)
+  - [x] No persistence — pure client-side `useState`, no sessionStorage
 - [ ] **v2 — two-way editing**
   - [ ] Edits on the visual side update the JSON live; edits on the JSON side update the visual side (debounced, with parse-error pill)
   - [ ] Diff view against the originally pasted JSON

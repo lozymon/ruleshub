@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 // Enums with ≤ PILL_THRESHOLD options render as an inline segmented
@@ -197,6 +198,14 @@ export function SettingsBuilder({
     return Object.keys(parsed.value).filter((k) => !knownKeys.has(k));
   }, [parsed, knownKeys]);
 
+  // Count of catalogued (known) keys present in the parsed object —
+  // drives the Settings tab badge. Excludes Custom keys so the badge
+  // measures "how many catalogued settings have you touched".
+  const cataloguedSetCount = useMemo(() => {
+    if (parsed?.ok !== true) return 0;
+    return Object.keys(parsed.value).filter((k) => knownKeys.has(k)).length;
+  }, [parsed, knownKeys]);
+
   // Diff against baseline — count of top-level keys that differ.
   const modified = useMemo(() => {
     if (!baseline || parsed?.ok !== true) return 0;
@@ -244,40 +253,79 @@ export function SettingsBuilder({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
-      {/* LEFT — JSON pane (sticky on desktop) */}
-      <div className="flex flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-4rem)]">
-        <div className="flex items-center gap-2 text-[12px] text-fg-dim">
-          <span className="font-mono font-medium text-fg-muted">
+    <Tabs defaultValue="settings" className="gap-4">
+      {/* Tab bar — settings & JSON triggers on the left, Load sample on the right. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <TabsList variant="line">
+          <TabsTrigger value="settings">
+            Settings
+            {cataloguedSetCount > 0 && (
+              <span className="rounded-[3px] bg-emerald-500/10 px-1 py-0.5 font-mono text-[10px] text-emerald-400">
+                {cataloguedSetCount} set
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="json">
             settings.json
-          </span>
-          {parsed && (
-            <span
-              className={cn(
-                "ml-auto rounded-[3px] px-1.5 py-0.5 font-mono text-[10.5px]",
-                parsed.ok
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "bg-red-500/10 text-red-400",
-              )}
-            >
-              {parsed.ok
-                ? `${Object.keys(parsed.value).length} keys`
-                : "invalid JSON"}
-            </span>
-          )}
-          {modified > 0 && (
-            <span className="rounded-[3px] bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10.5px] text-amber-400">
-              {modified} modified
-            </span>
-          )}
-        </div>
+            {parsed && (
+              <span
+                className={cn(
+                  "rounded-[3px] px-1 py-0.5 font-mono text-[10px]",
+                  parsed.ok
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "bg-red-500/10 text-red-400",
+                )}
+              >
+                {parsed.ok
+                  ? `${Object.keys(parsed.value).length} keys`
+                  : "invalid"}
+              </span>
+            )}
+            {modified > 0 && (
+              <span className="rounded-[3px] bg-amber-500/10 px-1 py-0.5 font-mono text-[10px] text-amber-400">
+                {modified} modified
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+        <button
+          onClick={loadSample}
+          className="ml-auto rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
+        >
+          Load sample
+        </button>
+      </div>
+
+      {/* Settings tab — full-width visual catalogue. */}
+      <TabsContent value="settings" className="space-y-5">
+        {categories.map((cat) => (
+          <Category
+            key={cat.name}
+            category={cat}
+            parsed={parsed}
+            editable={editable}
+            onSet={setValue}
+            onUnset={unsetValue}
+          />
+        ))}
+        {parsed?.ok && customKeys.length > 0 && (
+          <CustomKeys
+            keys={customKeys}
+            parsed={parsed.value}
+            onUnset={unsetValue}
+          />
+        )}
+      </TabsContent>
+
+      {/* JSON tab — textarea + action toolbar. */}
+      <TabsContent value="json" className="space-y-3">
         <textarea
           value={rawJson}
           onChange={(e) => setRawJson(e.target.value)}
           placeholder="Paste your .claude/settings.json here, or click Load sample…"
           spellCheck={false}
           aria-label="settings.json content"
-          className="min-h-[420px] flex-1 resize-none rounded-[4px] border border-border bg-bg-elev p-3 font-mono text-[12.5px] leading-relaxed outline-none transition-colors focus:border-border-hover"
+          className="min-h-[520px] w-full resize-y rounded-[4px] border border-border bg-bg-elev p-3 font-mono text-[12.5px] leading-relaxed outline-none transition-colors focus:border-border-hover"
         />
         {parsed?.ok === false && (
           <p className="rounded-[3px] border border-red-500/30 bg-red-500/5 px-2.5 py-2 font-mono text-[12px] text-red-400">
@@ -285,12 +333,6 @@ export function SettingsBuilder({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={loadSample}
-            className="rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
-          >
-            Load sample
-          </button>
           <button
             onClick={copyJson}
             disabled={!rawJson}
@@ -322,29 +364,8 @@ export function SettingsBuilder({
             <X className="h-3 w-3" /> Clear
           </button>
         </div>
-      </div>
-
-      {/* RIGHT — visual */}
-      <div className="space-y-5 lg:max-h-[calc(100vh-4rem)] lg:overflow-auto lg:pr-1">
-        {categories.map((cat) => (
-          <Category
-            key={cat.name}
-            category={cat}
-            parsed={parsed}
-            editable={editable}
-            onSet={setValue}
-            onUnset={unsetValue}
-          />
-        ))}
-        {parsed?.ok && customKeys.length > 0 && (
-          <CustomKeys
-            keys={customKeys}
-            parsed={parsed.value}
-            onUnset={unsetValue}
-          />
-        )}
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 

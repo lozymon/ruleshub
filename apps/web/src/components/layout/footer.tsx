@@ -50,6 +50,7 @@ export function Footer() {
               { href: routes.browse, label: "Browse" },
               { href: routes.publish, label: "Publish" },
               { href: "/docs/cli/overview", label: "CLI" },
+              { href: routes.settingsBuilder, label: "Settings builder" },
             ].map(({ href, label }) => (
               <Link
                 key={href}

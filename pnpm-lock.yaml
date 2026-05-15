@@ -165,6 +165,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      prismjs:
+        specifier: ^1.30.0
+        version: 1.30.0
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -174,6 +177,9 @@ importers:
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.14)(react@19.2.4)
+      react-simple-code-editor:
+        specifier: ^0.14.1
+        version: 0.14.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       rehype-pretty-code:
         specifier: ^0.14.3
         version: 0.14.3(shiki@4.0.2)
@@ -214,6 +220,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.39
+      '@types/prismjs':
+        specifier: ^1.26.6
+        version: 1.26.6
       '@types/react':
         specifier: ^19
         version: 19.2.14
@@ -2016,6 +2025,9 @@ packages:
 
   '@types/passport@1.0.17':
     resolution: {integrity: sha512-aciLyx+wDwT2t2/kJGJR2AEeBz0nJU4WuRX04Wu9Dqc5lSUtwu0WERPHYsLhF9PtseiAMPBGNUOtFjxZ56prsg==}
+
+  '@types/prismjs@1.26.6':
+    resolution: {integrity: sha512-vqlvI7qlMvcCBbVe0AKAb4f97//Hy0EBTaiW8AalRnG/xAN5zOiWWyrNqNXeq8+KAuvRewjCVY1+IPxk4RdNYw==}
 
   '@types/prompts@2.4.9':
     resolution: {integrity: sha512-qTxFi6Buiu8+50/+3DGIWLHM6QuWsEKugJnnP6iv2Mc4ncxE4A/OJkjuVOA+5X0X1S/nq5VJRa8Lu+nwcvbrKA==}
@@ -5207,6 +5219,10 @@ packages:
     engines: {node: '>=16.13'}
     hasBin: true
 
+  prismjs@1.30.0:
+    resolution: {integrity: sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==}
+    engines: {node: '>=6'}
+
   process-nextick-args@2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
 
@@ -5274,6 +5290,12 @@ packages:
     peerDependencies:
       '@types/react': '>=18'
       react: '>=18'
+
+  react-simple-code-editor@0.14.1:
+    resolution: {integrity: sha512-BR5DtNRy+AswWJECyA17qhUDvrrCZ6zXOCfkQY5zSmb96BVUbpVAv03WpcjcwtCwiLbIANx3gebHOcXYn1EHow==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   react@19.2.4:
     resolution: {integrity: sha512-9nfp2hYpCwOjAN+8TZFGhtWEwgvWHXqESH8qT89AT/lWklpLON22Lc8pEtnpsZz7VmawabSU0gCjnj8aC0euHQ==}
@@ -8059,6 +8081,8 @@ snapshots:
   '@types/passport@1.0.17':
     dependencies:
       '@types/express': 4.17.25
+
+  '@types/prismjs@1.26.6': {}
 
   '@types/prompts@2.4.9':
     dependencies:
@@ -12109,6 +12133,8 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
+  prismjs@1.30.0: {}
+
   process-nextick-args@2.0.1: {}
 
   prompts@2.4.2:
@@ -12192,6 +12218,11 @@ snapshots:
       vfile: 6.0.3
     transitivePeerDependencies:
       - supports-color
+
+  react-simple-code-editor@0.14.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   react@19.2.4: {}
 

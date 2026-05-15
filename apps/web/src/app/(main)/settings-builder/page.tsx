@@ -24,10 +24,10 @@ export default function SettingsBuilderPage() {
           Browse every key your{" "}
           <code className="font-mono text-[13px]">.claude/settings.json</code>{" "}
           supports — what each one does, its type, and a link to the canonical
-          docs. Edit in the Settings tab or paste raw JSON in the{" "}
-          <span className="font-mono">settings.json</span> tab; the two stay in
-          sync. Snapshot of <span className="font-mono">{totalKeys}</span>{" "}
-          settings across{" "}
+          docs. Pick a category in the sidebar to edit settings, or jump to{" "}
+          <span className="font-mono">settings.json</span> to paste raw JSON;
+          the two stay in sync. Snapshot of{" "}
+          <span className="font-mono">{totalKeys}</span> settings across{" "}
           <span className="font-mono">{SETTINGS_CATEGORIES.length}</span>{" "}
           categories.
         </p>

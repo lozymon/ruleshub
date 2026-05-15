@@ -30,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 // Enums with ≤ PILL_THRESHOLD options render as an inline segmented
@@ -202,14 +201,6 @@ export function SettingsBuilder({
     return Object.keys(parsed.value).filter((k) => !knownKeys.has(k));
   }, [parsed, knownKeys]);
 
-  // Count of catalogued (known) keys present in the parsed object —
-  // drives the Settings tab badge. Excludes Custom keys so the badge
-  // measures "how many catalogued settings have you touched".
-  const cataloguedSetCount = useMemo(() => {
-    if (parsed?.ok !== true) return 0;
-    return Object.keys(parsed.value).filter((k) => knownKeys.has(k)).length;
-  }, [parsed, knownKeys]);
-
   // Diff against baseline — count of top-level keys that differ.
   const modified = useMemo(() => {
     if (!baseline || parsed?.ok !== true) return 0;
@@ -256,133 +247,368 @@ export function SettingsBuilder({
     setBaseline(rawJson);
   }
 
-  return (
-    <Tabs defaultValue="settings" className="gap-4">
-      {/* Tab bar — settings & JSON triggers on the left, Load sample on the right. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <TabsList variant="line">
-          <TabsTrigger value="settings">
-            Settings
-            {cataloguedSetCount > 0 && (
-              <span className="rounded-[3px] bg-emerald-500/10 px-1 py-0.5 font-mono text-[10px] text-emerald-400">
-                {cataloguedSetCount} set
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="json">
-            settings.json
-            {parsed && (
-              <span
-                className={cn(
-                  "rounded-[3px] px-1 py-0.5 font-mono text-[10px]",
-                  parsed.ok
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-red-500/10 text-red-400",
-                )}
-              >
-                {parsed.ok
-                  ? `${Object.keys(parsed.value).length} keys`
-                  : "invalid"}
-              </span>
-            )}
-            {modified > 0 && (
-              <span className="rounded-[3px] bg-amber-500/10 px-1 py-0.5 font-mono text-[10px] text-amber-400">
-                {modified} modified
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-        <button
-          onClick={loadSample}
-          className="ml-auto rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
-        >
-          Load sample
-        </button>
-      </div>
+  // Active view in the main pane — either a category name or "json".
+  // Default to the first category so the page lands on Model & Performance.
+  const [view, setView] = useState<string>(categories[0]?.name ?? "json");
 
-      {/* Settings tab — full-width visual catalogue. */}
-      <TabsContent value="settings" className="space-y-5">
-        {categories.map((cat) => (
-          <Category
-            key={cat.name}
-            category={cat}
+  // File-scope filter — controls which settings appear in the catalogue.
+  // Project mode hides anything the file can't actually use; Global
+  // mode keeps user-only entries since they're valid there.
+  const [scope, setScope] = useState<"project" | "global">("project");
+
+  // Compute which settings are visible per scope. We don't drop them
+  // from the catalogue object (we still need every key for the JSON
+  // round-trip and Custom-keys check); we just decide what to render.
+  function settingVisibleInScope(entry: SettingEntry): boolean {
+    if (entry.scope === "managed-only") return false;
+    if (entry.scope === "user-only" && scope === "project") return false;
+    return true;
+  }
+
+  const filteredCategories = useMemo(
+    () =>
+      categories.map((cat) => ({
+        ...cat,
+        settings: cat.settings.filter(settingVisibleInScope),
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [categories, scope],
+  );
+
+  function setCountForCategory(cat: SettingCategory): number {
+    if (parsed?.ok !== true) return 0;
+    const obj = parsed.value;
+    return cat.settings
+      .filter(settingVisibleInScope)
+      .filter((s) => s.key in obj).length;
+  }
+
+  const activeCategory =
+    view === "json"
+      ? null
+      : (filteredCategories.find((c) => c.name === view) ?? null);
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+      {/* SIDEBAR — scope toggle + category nav + JSON entry at the bottom. */}
+      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+        {/* Scope toggle */}
+        <div>
+          <div className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+            File scope
+          </div>
+          <PillSegment
+            options={[
+              { value: "project", label: "Project" },
+              { value: "global", label: "Global" },
+            ]}
+            active={scope}
+            disabled={false}
+            onSelect={(v) => setScope(v as "project" | "global")}
+          />
+          <p className="mt-1.5 px-1 text-[10.5px] text-fg-faint">
+            {scope === "project"
+              ? "Showing settings valid in .claude/settings.json and .claude/settings.local.json."
+              : "Showing settings valid in ~/.claude/settings.json (the global user file)."}
+          </p>
+        </div>
+
+        {/* Category list */}
+        <nav className="space-y-0.5" aria-label="Settings categories">
+          <SidebarSectionLabel>Settings</SidebarSectionLabel>
+          {filteredCategories.map((cat) => {
+            const n = setCountForCategory(cat);
+            const isEmpty = cat.settings.length === 0;
+            return (
+              <SidebarItem
+                key={cat.name}
+                active={view === cat.name}
+                disabled={isEmpty}
+                onClick={() => setView(cat.name)}
+                label={cat.name}
+                badge={n > 0 ? `${n}` : null}
+              />
+            );
+          })}
+          <div className="my-2 border-t border-border" />
+          <SidebarItem
+            active={view === "json"}
+            onClick={() => setView("json")}
+            label="settings.json"
+            badge={
+              parsed
+                ? parsed.ok
+                  ? `${Object.keys(parsed.value).length}`
+                  : "!"
+                : null
+            }
+            badgeTone={
+              parsed?.ok === false ? "red" : modified > 0 ? "amber" : "emerald"
+            }
+          />
+        </nav>
+
+        {/* Footer actions */}
+        <div className="space-y-1 border-t border-border pt-3">
+          <button
+            onClick={loadSample}
+            className="w-full rounded-[3px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
+          >
+            Load sample
+          </button>
+          {rawJson && (
+            <button
+              onClick={clearAll}
+              className="inline-flex w-full items-center justify-center gap-1 rounded-[3px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground"
+            >
+              <X className="h-3 w-3" /> Clear all
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <main className="min-w-0">
+        {view === "json" ? (
+          <JsonView
+            rawJson={rawJson}
+            onRawChange={setRawJson}
+            parsed={parsed}
+            modified={modified}
+            copied={copied}
+            onCopy={copyJson}
+            onResetBaseline={resetBaseline}
+            onClear={clearAll}
+          />
+        ) : activeCategory ? (
+          <CategoryPane
+            category={activeCategory}
+            scope={scope}
             parsed={parsed}
             editable={editable}
             onSet={setValue}
             onUnset={unsetValue}
+            customKeys={customKeys}
+            customParsed={parsed?.ok ? parsed.value : null}
           />
-        ))}
-        {parsed?.ok && customKeys.length > 0 && (
-          <CustomKeys
-            keys={customKeys}
-            parsed={parsed.value}
-            onUnset={unsetValue}
-          />
+        ) : (
+          <div className="rounded-[4px] border border-border bg-bg-elev p-6 text-[13px] text-fg-muted">
+            No settings in this category for the {scope} file scope.
+          </div>
         )}
-      </TabsContent>
+      </main>
+    </div>
+  );
+}
 
-      {/* JSON tab — react-simple-code-editor (overlay technique: a
-          transparent textarea on top of a Prism-highlighted <pre>) with
-          a Prism JSON tokeniser. */}
-      <TabsContent value="json" className="space-y-3">
-        <div className="json-editor min-h-[520px] w-full overflow-auto rounded-[4px] border border-border bg-bg-elev font-mono text-[12.5px] leading-relaxed focus-within:border-border-hover">
-          <Editor
-            value={rawJson}
-            onValueChange={setRawJson}
-            highlight={(code) =>
-              Prism.highlight(code, Prism.languages.json, "json")
-            }
-            padding={12}
-            textareaId="settings-json-editor"
-            aria-label="settings.json content"
-            style={{
-              fontFamily: "inherit",
-              fontSize: "inherit",
-              lineHeight: "inherit",
-              minHeight: 520,
-              outline: "none",
-            }}
-          />
-        </div>
-        {parsed?.ok === false && (
-          <p className="rounded-[3px] border border-red-500/30 bg-red-500/5 px-2.5 py-2 font-mono text-[12px] text-red-400">
-            {parsed.error}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={copyJson}
-            disabled={!rawJson}
-            className="inline-flex items-center gap-1 rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {copied ? (
-              <>
-                <Check className="h-3 w-3" /> Copied
-              </>
-            ) : (
-              <>
-                <Copy className="h-3 w-3" /> Copy
-              </>
-            )}
-          </button>
-          {modified > 0 && (
-            <button
-              onClick={resetBaseline}
-              className="rounded-[4px] border border-amber-500/30 bg-amber-500/5 px-2.5 py-1 text-[12px] text-amber-400 transition-colors hover:bg-amber-500/10"
-            >
-              Mark as baseline
-            </button>
+// ── Sidebar primitives ──────────────────────────────────────────────
+
+function SidebarSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-1 px-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-dim">
+      {children}
+    </div>
+  );
+}
+
+function SidebarItem({
+  active,
+  disabled,
+  onClick,
+  label,
+  badge,
+  badgeTone = "emerald",
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  label: string;
+  badge: string | null;
+  badgeTone?: "emerald" | "amber" | "red";
+}) {
+  const toneClass =
+    badgeTone === "red"
+      ? "bg-red-500/10 text-red-400"
+      : badgeTone === "amber"
+        ? "bg-amber-500/10 text-amber-400"
+        : "bg-emerald-500/10 text-emerald-400";
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex w-full items-center gap-1.5 rounded-[3px] px-2 py-1 text-left text-[12.5px] transition-colors disabled:cursor-not-allowed",
+        active
+          ? "bg-bg-elev text-foreground"
+          : "text-fg-muted hover:bg-bg-elev hover:text-foreground",
+        disabled && !active && "opacity-40 hover:bg-transparent",
+      )}
+    >
+      <span className="truncate normal-case">{label.toLowerCase()}</span>
+      {badge && (
+        <span
+          className={cn(
+            "ml-auto rounded-[3px] px-1 py-0.5 font-mono text-[10px]",
+            toneClass,
           )}
-          <button
-            onClick={clearAll}
-            disabled={!rawJson}
-            className="ml-auto inline-flex items-center gap-1 rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ── Main panes ──────────────────────────────────────────────────────
+
+function CategoryPane({
+  category,
+  scope,
+  parsed,
+  editable,
+  onSet,
+  onUnset,
+  customKeys,
+  customParsed,
+}: {
+  category: SettingCategory;
+  scope: "project" | "global";
+  parsed: ParseResult | null;
+  editable: boolean;
+  onSet: (key: string, value: unknown) => void;
+  onUnset: (key: string) => void;
+  customKeys: string[];
+  customParsed: Record<string, unknown> | null;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-baseline gap-2 px-1">
+        <h2 className="text-[16px] font-semibold tracking-[-0.01em]">
+          {category.name.toLowerCase()}
+        </h2>
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-fg-dim">
+          {scope}
+        </span>
+      </div>
+      <Category
+        category={category}
+        parsed={parsed}
+        editable={editable}
+        onSet={onSet}
+        onUnset={onUnset}
+      />
+      {/* Custom keys only show on the first category (Model) so they
+          stay visible regardless of which category is active. */}
+      {customKeys.length > 0 && customParsed && (
+        <CustomKeys keys={customKeys} parsed={customParsed} onUnset={onUnset} />
+      )}
+    </div>
+  );
+}
+
+function JsonView({
+  rawJson,
+  onRawChange,
+  parsed,
+  modified,
+  copied,
+  onCopy,
+  onResetBaseline,
+  onClear,
+}: {
+  rawJson: string;
+  onRawChange: (v: string) => void;
+  parsed: ParseResult | null;
+  modified: number;
+  copied: boolean;
+  onCopy: () => void;
+  onResetBaseline: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-baseline gap-2 px-1">
+        <h2 className="text-[16px] font-semibold tracking-[-0.01em]">
+          settings.json
+        </h2>
+        {parsed && (
+          <span
+            className={cn(
+              "rounded-[3px] px-1.5 py-0.5 font-mono text-[10.5px]",
+              parsed.ok
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "bg-red-500/10 text-red-400",
+            )}
           >
-            <X className="h-3 w-3" /> Clear
+            {parsed.ok
+              ? `${Object.keys(parsed.value).length} keys`
+              : "invalid JSON"}
+          </span>
+        )}
+        {modified > 0 && (
+          <span className="rounded-[3px] bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10.5px] text-amber-400">
+            {modified} modified
+          </span>
+        )}
+      </div>
+      <div className="json-editor min-h-[520px] w-full overflow-auto rounded-[4px] border border-border bg-bg-elev font-mono text-[12.5px] leading-relaxed focus-within:border-border-hover">
+        <Editor
+          value={rawJson}
+          onValueChange={onRawChange}
+          highlight={(code) =>
+            Prism.highlight(code, Prism.languages.json, "json")
+          }
+          padding={12}
+          textareaId="settings-json-editor"
+          aria-label="settings.json content"
+          style={{
+            fontFamily: "inherit",
+            fontSize: "inherit",
+            lineHeight: "inherit",
+            minHeight: 520,
+            outline: "none",
+          }}
+        />
+      </div>
+      {parsed?.ok === false && (
+        <p className="rounded-[3px] border border-red-500/30 bg-red-500/5 px-2.5 py-2 font-mono text-[12px] text-red-400">
+          {parsed.error}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={onCopy}
+          disabled={!rawJson}
+          className="inline-flex items-center gap-1 rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3" /> Copied
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" /> Copy
+            </>
+          )}
+        </button>
+        {modified > 0 && (
+          <button
+            onClick={onResetBaseline}
+            className="rounded-[4px] border border-amber-500/30 bg-amber-500/5 px-2.5 py-1 text-[12px] text-amber-400 transition-colors hover:bg-amber-500/10"
+          >
+            Mark as baseline
           </button>
-        </div>
-      </TabsContent>
-    </Tabs>
+        )}
+        <button
+          onClick={onClear}
+          disabled={!rawJson}
+          className="ml-auto inline-flex items-center gap-1 rounded-[4px] border border-border bg-bg-elev px-2.5 py-1 text-[12px] text-fg-muted transition-colors hover:bg-bg-elev-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <X className="h-3 w-3" /> Clear
+        </button>
+      </div>
+    </div>
   );
 }
 
